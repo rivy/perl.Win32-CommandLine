@@ -8,8 +8,8 @@ use warnings;
 use 5.006;      # v5.5 [for AUTHOR and ABSTRACT in Makefile.PL], v5.6 for 'our'
 
 ## config
-my $module_name = 'Win32::CommandLine';
-my $specific_os = 'MSWin32';	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
+my $module_name = undef;
+my $specific_os = undef;	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
 ##
 
 # VERSION: x.y.date[.build]  { y is odd = beta/experimental; y is even = release }
