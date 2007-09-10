@@ -1,0 +1,20 @@
+---
+name: Win32-CommandLine
+version: 0.1.20070910.0
+author:
+  - 'Roy Ivy III <rivy[at]cpan.org>'
+abstract: Retrieve and reparse the Win32 command line
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+build_requires:
+  File::Which: 0
+  version: 0
+provides:
+  Win32::CommandLine:
+    file: lib/Win32/CommandLine.pm
+    version: 0.1.20070910.0
+generated_by: Module::Build version 0.2808
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

@@ -1,0 +1,45 @@
+# Win32::CommandLine
+\bWin32-CommandLine-.*$
+\bWin32-CommandLine.ppd$
+\blib/Win32/CommandLine.xs$
+\.(bs|c|def|obj|o|pdb)$
+#\.build\.tmpl$
+#\.tar\.gz$
+#DDS\.pm
+#^dds\w+\.pl
+
+# Avoid Module::Build generated and utility files.
+\bBuild$
+\bBuild.bat$
+\b_build/
+
+# Avoid Makemaker generated and utility files.
+\bMANIFEST\.bak
+\bMakefile$
+\bblib/
+\bMakeMaker-\d
+\bpm_to_blib\.ts$
+\bpm_to_blib$
+\bblibdirs\.ts$         # 6.18 through 6.25 generated this
+
+# Avoid version control files.
+\bRCS\b
+\bCVS\b
+\bSCCS\b
+,v$
+\B\.svn\b
+\b_darcs\b
+\.hgignore\b
+\b.hg\b
+
+# Avoid temp and backup files.
+~$
+\.old$
+\#$
+\b\.#
+\.bak$
+\.tmp$
+
+# Avoid Devel::Cover files.
+\bcover_db\b
+
