@@ -14,6 +14,7 @@ my $specific_os = undef;	# limit to a single specific OS (eg, 'MSWin32') [defaul
 
 # VERSION: x.y.date[.build]  { y is odd = beta/experimental; y is even = release }
 use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).'.'.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+our $REVISION = qw($Revision$)[-2];
 
 use Module::Build;
 
