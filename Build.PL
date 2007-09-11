@@ -7,29 +7,34 @@ use strict;
 use warnings;
 use 5.006;      # v5.5 [for AUTHOR and ABSTRACT in Makefile.PL], v5.6 for 'our'
 
-## config
-my $module_name = 'Win32::CommandLine';
-my $specific_os = 'MSWin32';	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
+##- config
+my %config;
+$config{'module_name'} = undef;
+$config{'specific_os'} = undef;	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
+#
+$config{'rc_filename'} = '.buildrc';	# configuration file name
 ##
 
+if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
+
 # VERSION: x.y[.z[.date/build]]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv('0.1.0'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+use version qw(); our $VERSION = version::qv('0.1.0'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).q{.}.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 our $REVISION = qw($Revision$)[-2];
 
 use Module::Build;
 
-if (!$module_name) { die '$module_name must be defined'; };		## no critic ( RequireCarping )
+if (!$config{'module_name'}) { die '$config{module_name} must be defined'; };		## no critic ( RequireCarping )
 
-my $specific_os_msg = "$module_name is designed to be used for ".($specific_os ? $specific_os : '<any>')." systems only - installation aborted\n";
+my $specific_os_msg = "$config{module_name} is designed to be used for ".($config{'specific_os'} ? $config{'specific_os'} : '<any>')." systems only - installation aborted\n";
 
-if (defined($specific_os) && $^O ne $specific_os) { die $specific_os_msg; };		## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
+if (defined($config{'specific_os'}) && $^O ne $config{'specific_os'}) { die $specific_os_msg; };		## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
-my $lib_directory = 'lib/'.join(q{\\}, split(/::/xms, ($module_name =~ m/(.*)::.*?$/xms ? $1 : q{})));
+my $lib_directory = 'lib/'.join(q{\\}, split(/::/xms, ($config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{})));
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my $build = $class->new
   (
-	module_name         => $module_name,
+	module_name         => $config{'module_name'},
 	dist_author         => 'Roy Ivy III <rivy[at]cpan.org>',
 	license             => 'perl',
 	requires => {
@@ -46,8 +51,8 @@ my $build = $class->new
 	create_makefile_pl => 'traditional',
 	PL_files => {},
 	add_to_cleanup => [
-			(map { join(q{-}, split(/::/xms)).q{-*} } $module_name),
-			(map { join(q{-}, split(/::/xms)).'.ppd' } $module_name),
+			(map { join(q{-}, split(/::/xms)).q{-*} } $config{'module_name'}),
+			(map { join(q{-}, split(/::/xms)).'.ppd' } $config{'module_name'}),
 			'MANIFEST.bak',
 			'Build.bat',
 			'Makefile',
@@ -213,8 +218,8 @@ my $code = q{
 			my $fh;
 			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
 		};
-	if (defined($specific_os)) { $code .= qq{
-			print \$fh q(BEGIN {if (\$^O ne '$specific_os') { die "$specific_os_msg"; }});
+	if (defined($config{'specific_os'})) { $code .= qq{
+			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
 		};
 		}
 	$code .= q{
