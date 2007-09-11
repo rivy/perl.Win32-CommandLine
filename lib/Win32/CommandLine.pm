@@ -1,5 +1,5 @@
 #-*- tab-width: 4; mode: perl -*-
-package Win32::CommandLine;
+ package Win32::CommandLine;
 #$Id$
 
 use strict;
