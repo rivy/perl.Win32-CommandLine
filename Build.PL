@@ -12,15 +12,15 @@ my $module_name = undef;
 my $specific_os = undef;	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
 ##
 
-# VERSION: x.y.date[.build]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).'.'.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+# VERSION: x.y[.z[.date/build]]  { y is odd = beta/experimental; y is even = release }
+use version qw(); our $VERSION = version::qv('0.1.0'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 our $REVISION = qw($Revision$)[-2];
 
 use Module::Build;
 
 if (!$module_name) { die '$module_name must be defined'; };		## no critic ( RequireCarping )
 
-my $specific_os_msg = "$module_name is designed to be used for $specific_os systems only - installation aborted\n";
+my $specific_os_msg = "$module_name is designed to be used for ".($specific_os ? $specific_os : '<any>')." systems only - installation aborted\n";
 
 if (defined($specific_os) && $^O ne $specific_os) { die $specific_os_msg; };		## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
