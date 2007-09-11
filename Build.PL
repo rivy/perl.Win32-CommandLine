@@ -17,7 +17,7 @@ $config{'rc_filename'} = '.buildrc';	# configuration file name
 
 if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
 
-# VERSION: x.y[.z[.date/build]]  { y is odd = beta/experimental; y is even = release }
+ # VERSION: x.y[.z[.date/build]]  { y is odd = beta/experimental; y is even = release }
 use version qw(); our $VERSION = version::qv('0.1.0'.'.'.join(q{}, split(/\//xms,qw($Date: 2007/09/11 21:50:11 $)[-3])).q{.}.qw($Rev: 6 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 our $REVISION = qw($Revision: cd38ad3605da $)[-2];
 
