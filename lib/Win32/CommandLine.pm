@@ -10,7 +10,7 @@ use warnings;
 use version qw(); our $VERSION = version::qv(qw($Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 our $REVISION = qw($Revision$)[-2];
 
- # Module Summary
+# Module Summary
 
 =head1 NAME
 
@@ -18,7 +18,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
-This document describes C<Win32::CommandLine> ($Revision$, $Date$).
+This document describes C<Win32::CommandLine> ($Version$).
 
 =cut
 
