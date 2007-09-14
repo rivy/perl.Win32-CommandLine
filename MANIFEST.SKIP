@@ -30,7 +30,7 @@
 \B\.svn\b
 \b_darcs\b
 \.hgignore\b
-\b.hg\b
+.hg\b
 
 # Avoid temp and backup files.
 ~$

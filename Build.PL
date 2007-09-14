@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v cd38ad3605da 2007/09/11 21:50:11 rivy $
+#$Id: Build.PL,v 0.3.20070913.79438 (r 905f33a27656) 2007/09/14 03:03:58 rivy $
 
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins )
 
@@ -12,13 +12,16 @@ my %config;
 $config{'module_name'} = undef;
 $config{'specific_os'} = undef;	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
 #
-$config{'rc_filename'} = '.buildrc';	# configuration file name
+# config may be done via local config file (allows Build.PL to be used without change between modules)
+$config{'rc_filename'} = 'Build.PL.config';	# configuration file name (in .NET style)
 ##
+## TODO: redo config file to be a parsed file containing <var>=<value> pairs instead of eval'ing the lines
 if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
 
-# VERSION: x.y[.z[.date/build]]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv('0.1.0'.'.'.join(q{}, split(/\//xms,qw($Date: 2007/09/11 21:50:11 $)[-3])).q{.}.qw($Rev: 6 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
-our $REVISION = qw($Revision: cd38ad3605da $)[-2];
+# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+#use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date: 2007/09/14 03:03:58 $)[-3])).q{.}.qw($Rev: 13 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+use version qw(); our $VERSION = version::qv(qw($Version: 0.3.20070913.79438 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+our $REVISION = qw($Revision: 905f33a27656 $)[-2];
 
 use Module::Build;
 

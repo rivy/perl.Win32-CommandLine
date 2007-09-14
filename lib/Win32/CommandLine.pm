@@ -5,9 +5,10 @@ package Win32::CommandLine;
 use strict;
 use warnings;
 
-# VERSION: x.y.date[.build]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv('0.1.0'.q{.}.join(q{}, split(/\//xms,qw($Date$)[-3])).q{.}.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
-our $REVISION = '$Revision$, $Date$';
+# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+#use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).q{.}.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+use version qw(); our $VERSION = version::qv(qw($Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+our $REVISION = qw($Revision$)[-2];
 
 # Module Summary
 

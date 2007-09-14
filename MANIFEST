@@ -1,4 +1,6 @@
+.hgtags
 Build.PL
+Build.PL.config
 Changes
 CommandLine.xs
 lib/Win32/CommandLine.pm
@@ -15,6 +17,7 @@ t/01.commandline.t
 t/02.argv.t
 t/98.pod-coverage.t
 t/98.pod.t
+t/99.critic-tests.t
 t/99.critic.t
 t/99.kwalitee.t
 t/lib/Algorithm/Diff.pm
@@ -22,4 +25,5 @@ t/lib/Algorithm/DiffOld.pm
 t/lib/Test/Differences.pm
 t/lib/Text/Diff.pm
 t/lib/Text/Diff/Table.pm
+t/ltrim.t
 t/test.t
