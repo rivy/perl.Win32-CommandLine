@@ -10,7 +10,7 @@ use warnings;
 use version qw(); our $VERSION = version::qv(qw($Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 our $REVISION = qw($Revision$)[-2];
 
-# Module Summary
+ # Module Summary
 
 =head1 NAME
 
