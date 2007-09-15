@@ -2,8 +2,8 @@ NAME
     Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 VERSION
-    This document describes `Win32::CommandLine' ($Revision: 65970d81e91e $,
-    $Date: 2007/09/11 21:57:23 $).
+    This document describes `Win32::CommandLine' ($Version:
+    0.2.20070913.79932 $).
 
 SYNOPSIS
         @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };

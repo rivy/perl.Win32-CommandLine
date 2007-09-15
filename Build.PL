@@ -1,11 +1,14 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.3.20070913.79438 (r 905f33a27656) 2007/09/14 03:03:58 rivy $
+#$Id: Build.PL,v 0.1.20070914.71492 ( rev 19:dd19276bed68 ) 2007/09/15 00:51:32 rivy $
 
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins )
 
 use strict;
 use warnings;
 use 5.006;      # v5.5 [for AUTHOR and ABSTRACT in Makefile.PL], v5.6 for 'our'
+
+# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+use version qw(); our $VERSION = version::qv(qw($Version: 0.1.20070914.71492 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )
 
 ##- config
 my %config;
@@ -15,17 +18,39 @@ $config{'specific_os'} = undef;	# limit to a single specific OS (eg, 'MSWin32') 
 # config may be done via local config file (allows Build.PL to be used without change between modules)
 $config{'rc_filename'} = 'Build.PL.config';	# configuration file name (in .NET style)
 ##
-## TODO: redo config file to be a parsed file containing <var>=<value> pairs instead of eval'ing the lines
-if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
-
-# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
-#use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date: 2007/09/14 03:03:58 $)[-3])).q{.}.qw($Rev: 13 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
-use version qw(); our $VERSION = version::qv(qw($Version: 0.3.20070913.79438 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
-our $REVISION = qw($Revision: 905f33a27656 $)[-2];
 
 use Module::Build;
 
-if (!$config{'module_name'}) { die '$config{module_name} must be defined'; };		## no critic ( RequireCarping )
+## TODO: redo config file to be a parsed file containing <var>=<value> pairs instead of eval'ing the lines
+##if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
+#MODEL: if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; return; } } }
+# include configuration options, if the file exists
+if (-e $config{'rc_filename'}) {
+	open(FH, $config{'rc_filename'});
+	my $line = 0;
+	while(my $s = <FH>) {
+		$line++;
+		#eval $s;
+		my ($key, $value, $quote);
+		if ( $s =~ m/^\s*$/ ) { next; }					# skip any blank line
+		if ( $s =~ m/^\s*(?:[#;']|\/\/).*$/ ) { next; }	# skip any line starting with '#', ';', q{'}, or '//' as a comment line
+		if ( $s =~ m/^\s*(.*?)\s*=\s*(['"])?(.*)\2\s*$/ ) { 	#"' quoted values are allowed with perl quoting semantics
+			$key = $1;
+			$quote = $2;
+			$value = $3;
+			if (exists $config{$key}) {
+				if ($quote eq '"' ) {
+					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/eval 'return "'.$1.'"'/eg;		# safely eval qq character escapes
+					}
+				$config{$key} = $value;
+				}
+			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
+			}
+		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
+		}
+	}
+
+if (!$config{'module_name'}) { die '$config{module_name} must be defined'."\n"; };		## no critic ( RequireCarping )
 
 my $specific_os_msg = "$config{module_name} is designed to be used for ".($config{'specific_os'} ? $config{'specific_os'} : '<any>')." systems only - installation aborted\n";
 
@@ -194,6 +219,14 @@ my $code = q{
 		use File::Which;
 		return File::Which::which('ppm');
 	  }
+    sub ACTION_distmeta {
+        my ($self) = @_;
+
+        #[ADD] update the MANIFEST when building 'distmeta'
+        $self->depends_on('manifest');
+
+        return $self->SUPER::ACTION_distmeta;
+      }
     sub ACTION_testall {
         my ($self) = @_;
 

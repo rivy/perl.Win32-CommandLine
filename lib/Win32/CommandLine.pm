@@ -221,7 +221,7 @@ sub _ltrim_shortcut_idiom {
         'trim_re' => '\s+',
         );
     # retrieve and validate options if they exist
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".(caller(0))[3]; } } }
+    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".(caller(0))[3]; } } }
 
     my $t = $opt{'trim_re'};
 
@@ -293,7 +293,7 @@ sub _ltrim_prototype(;\[$@]@) {     ## no critic (Subroutines::ProhibitSubroutin
     my %opt = (
         'trim_re' => '\s+',
         );
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".(caller(0))[3]; return; } } }
+    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".(caller(0))[3]; return; } } }
 
     my $t = $opt{'trim_re'};
 
@@ -365,7 +365,7 @@ sub _ltrim_no_array {
     my %opt = (
         'trim_re' => '\s+',
         );
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
+    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
 
     my $t = $opt{'trim_re'};
 
@@ -420,7 +420,7 @@ sub _ltrim {
     my $me = (caller(0))[3];
     my $opt_ref;
     $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference (assumed to be options for our function)
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; return; } } }
+    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; return; } } }
     if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me."($_) instead?)"; return; }
     if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
 
@@ -491,7 +491,7 @@ sub _dequote{
     my $me = (caller(0))[3];
     my $opt_ref;
     $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference (assumed to be options for our function)
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
+    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
 
 	my $w = $opt{'surround_re'};
 	my $q = $opt{'allowed_quotes_re'};

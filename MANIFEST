@@ -6,7 +6,7 @@ CommandLine.xs
 lib/Win32/CommandLine.pm
 LICENSE
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
@@ -21,7 +21,6 @@ t/99.critic-tests.t
 t/99.critic.t
 t/99.kwalitee.t
 t/lib/Algorithm/Diff.pm
-t/lib/Algorithm/DiffOld.pm
 t/lib/Test/Differences.pm
 t/lib/Text/Diff.pm
 t/lib/Text/Diff/Table.pm
