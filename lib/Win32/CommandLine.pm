@@ -7,7 +7,7 @@ use warnings;
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
 #use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).q{.}.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
-use version qw(); our $VERSION = version::qv(qw($Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+use version qw(); our $VERSION = version::qv(qw($Version 1 $)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 
 # Module Summary
 

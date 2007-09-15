@@ -3,7 +3,7 @@ NAME
 
 VERSION
     This document describes `Win32::CommandLine' ($Version:
-    0.2.20070913.79932 $).
+    0.1.20070914.72236 $).
 
 SYNOPSIS
         @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
