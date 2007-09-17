@@ -5,8 +5,8 @@ package Win32::CommandLine;
 use strict;
 use warnings;
 
-# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }		[NOTE: "default-v 0.1" makes code resilient vs missing keyword expansion]
-use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 # Module Summary
 
@@ -76,12 +76,12 @@ my %_PG = ( # package globals
     #$_PG{'glob_char'} = quotemeta ( "?*[{" );  # glob signal characters
     #
     #$_PG{'unbalanced_quotes'} = 0;
-    'single_q'			=> q{'},				# '
-    'double_q'			=> q{"},				# "
-    'quote'				=> q{'"},				# ' and "
-    'quote_meta'		=> quotemeta q{'"},		# quotemeta ' and "
-    'escape_char'		=> q{\\},
-    'glob_char'			=> quotemeta ( '?*[{' ),  # glob signal characters
+    'single_q'			=> q{'},					# '
+    'double_q'			=> q{"},					# "
+    'quote'				=> q{'"},					# ' and "
+    'quote_meta'		=> quotemeta q{'"},			# quotemeta ' and "
+    'escape_char'		=> q{\\},					# escape character (\)
+    'glob_char'			=> quotemeta ( '?*[{' ),  	# glob signal characters
     'unbalanced_quotes' => 0,
     );
 
@@ -375,12 +375,6 @@ sub _ltrim_no_array {
     my $arg_ref;
     $arg_ref = \@_;
     $arg_ref = [ @_ ] if defined wantarray;     # break aliasing if non-void return context
-
-@_ = @_ ? @_ : $_ if defined wantarray;     # disconnect aliasing if non-void return context
-
-for (@_ ? @_ : $_) { s/\A\s+// }
-
-return wantarray ? @_ : "@_";
 
     for my $arg ( @{$arg_ref} ) {
         if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
@@ -778,6 +772,8 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
     return @argv2_g;
 }
 
+1; # Magic true value required at end of module (for require)
+
 ####
 
 #sub _mytokens
@@ -852,8 +848,6 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
 #pos($$textref) = $position + $posadvance;
 #return ($r, $s, $p);
 #}
-
-1; # Magic true value required at end of module
 
 =for readme continue
 

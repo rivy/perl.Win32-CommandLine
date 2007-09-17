@@ -1,14 +1,14 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
 #$Id: Build.PL,v 0.1.20070914.71492 ( rev 19:dd19276bed68 ) 2007/09/15 00:51:32 rivy $
 
-## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins )
+## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
 use strict;
 use warnings;
-use 5.006;      # v5.5 [for AUTHOR and ABSTRACT in Makefile.PL], v5.6 for 'our'
+use 5.006;      # v5.5 [for AUTHOR and ABSTRACT in Makefile.PL]; v5.6 for 'our', three-argument open, and indirect filehandles
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv(qw($Version: 0.1.20070914.71492 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )
+use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version: 0.1.20070914.71492 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 ##- config
 my %config;
@@ -20,26 +20,33 @@ $config{'rc_filename'} = 'Build.PL.config';	# configuration file name (in .NET s
 ##
 
 use Module::Build;
+use English qw( -no_match_vars ) ;  # Avoids regex performance penalty
 
 ## TODO: redo config file to be a parsed file containing <var>=<value> pairs instead of eval'ing the lines
 ##if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
 #MODEL: if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; return; } } }
 # include configuration options, if the file exists
 if (-e $config{'rc_filename'}) {
-	open(FH, $config{'rc_filename'});
+	my $single_q = q{'};	# single-quote (')
+	my $double_q = q{"};	# double-quote (")
+	my $quote_chars = $single_q . $double_q;
+	my $comment_chars = q{#;} . $single_q;
+	my $fh = undef;
+	open($fh, '<', $config{'rc_filename'}) or die "Can't open '$config{'rc_filename'}': $OS_ERROR";	## no critic ( RequireCarping )
 	my $line = 0;
-	while(my $s = <FH>) {
+	while(my $s = <$fh>) {
 		$line++;
 		#eval $s;
 		my ($key, $value, $quote);
-		if ( $s =~ m/^\s*$/ ) { next; }					# skip any blank line
-		if ( $s =~ m/^\s*(?:[#;']|\/\/).*$/ ) { next; }	# skip any line starting with '#', ';', q{'}, or '//' as a comment line
-		if ( $s =~ m/^\s*(.*?)\s*=\s*(['"])?(.*)\2\s*$/ ) { 	#"' quoted values are allowed with perl quoting semantics
+		if ( $s =~ m/^\s*$/ ) { next; }								# skip any blank line
+		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }		# skip any line starting with '#', ';', q{'}, or '//' as a comment line
+		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ ) { 	# quoted values are allowed with perl quoting semantics
 			$key = $1;
 			$quote = $2;
 			$value = $3;
 			if (exists $config{$key}) {
-				if ($quote eq '"' ) {
+				if ($quote eq $double_q ) {
+					# decode perl qq{} semantics
 					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/eval 'return "'.$1.'"'/eg;		# safely eval qq character escapes
 					}
 				$config{$key} = $value;
@@ -48,9 +55,10 @@ if (-e $config{'rc_filename'}) {
 			}
 		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
 		}
+    close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR";		## no critic ( RequireCarping )
 	}
 
-if (!$config{'module_name'}) { die '$config{module_name} must be defined'."\n"; };		## no critic ( RequireCarping )
+if (!$config{'module_name'}) { die '$config{module_name} must be defined'."\n"; };	## no critic ( RequireCarping RequireInterpolation )
 
 my $specific_os_msg = "$config{module_name} is designed to be used for ".($config{'specific_os'} ? $config{'specific_os'} : '<any>')." systems only - installation aborted\n";
 
