@@ -175,9 +175,10 @@ sub _decode {
 # remember...
 # lodin says  Re Is silent use of $_ for empty argument lists reasonable for "shortcut" functions? If you ask me, just use "for" and "map" for lists and only care about $_[0]. Good node btw. I ++:ed it.
 # lodin says Re Is silent use of $_ for empty argument lists reasonable for "shortcut" functions? Perhaps that didn't make sense. I mean use "@bar = map trim(), @foo" and "trim() for @foo" if you have lists.
+# could use "@bar = map trim($_, {<opts>})" and "trim($_, {<opts>}) for @foo" to add optional named arguments
 # [aka] - these should _always_ work no matter what the implementation
 #   @bar = map trim($_, {}), @foo;
-#   @bar = trim($_, {}) for @foo;
+#   @bar = trim($_, {}) for @foo;		[??? does this work]
 sub _ltrim_standard_shortcut {
     # _ltrim( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
     # trim leading whitespace
