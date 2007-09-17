@@ -5,10 +5,8 @@ package Win32::CommandLine;
 use strict;
 use warnings;
 
-# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
-#use version qw(); our $VERSION = version::qv('0.1'.'.'.join(q{}, split(/\//xms,qw($Date$)[-3])).q{.}.qw($Rev$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
-# make resilient to missing keyword expansion
-use version qw(); our $VERSION = version::qv(qw( default-v 0 $Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
+# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }		[NOTE: "default-v 0.1" makes code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$)[-2]);		## no critic ( ProhibitCallsToUnexportedSubs )
 
 # Module Summary
 
