@@ -2,8 +2,11 @@
 package Win32::CommandLine;
 #$Id$
 
+## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking )
+
 use strict;
 use warnings;
+#use 5.006;
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
 use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
@@ -19,8 +22,6 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 This document describes C<Win32::CommandLine> ($Version$).
 
 =cut
-
-#use 5.006;      # 5.6: for 'use charnames qw( :full )'
 
 # Module base/ISA and Exports
 
@@ -501,13 +502,14 @@ sub _dequote{
     }
 
 sub _zero_position {
+	use English qw( -no_match_vars ) ;  # '-no_match_vars' avoids regex performance penalty
     my $q = shift @_;
     my @a = @_;
     my $pos;
     # find $0 in the ARGV array
     #print "0 = $0\n";
     #win32 - filenames are case-preserving but case-insensitive [so, case doesn't matter]
-    my $zero = $0;      ## no critic (Variables::ProhibitPunctuationVars)
+    my $zero = $PROGRAM_NAME;      ## no critic (Variables::ProhibitPunctuationVars)
     my $zero_lc = lc($zero);
     my $zero_dq = _dequote($zero_lc);  # dequoted $0
 
