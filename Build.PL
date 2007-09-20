@@ -5,7 +5,7 @@
 
 use strict;
 use warnings;
-use 5.006;      # v5.5 [for AUTHOR and ABSTRACT in Makefile.PL]; v5.6 for 'our', three-argument open, and indirect filehandles
+use 5.006;      # v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
 use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version: 0.1.20070914.71492 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
@@ -20,11 +20,8 @@ $config{'rc_filename'} = 'Build.PL.config';	# configuration file name (in .NET s
 ##
 
 use Module::Build;
-use English qw( -no_match_vars ) ;  # Avoids regex performance penalty
+use English qw( -no_match_vars ) ;  # '-no_match_vars' avoids regex performance penalty
 
-## TODO: redo config file to be a parsed file containing <var>=<value> pairs instead of eval'ing the lines
-##if (-e $config{'rc_filename'}) { open(FH, $config{'rc_filename'}); while(my $t = <FH>) { eval $t; } }	# include build configuration if it exists
-#MODEL: if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; return; } } }
 # include configuration options, if the file exists
 if (-e $config{'rc_filename'}) {
 	my $single_q = q{'};	# single-quote (')
@@ -38,7 +35,7 @@ if (-e $config{'rc_filename'}) {
 		$line++;
 		#eval $s;
 		my ($key, $value, $quote);
-		if ( $s =~ m/^\s*$/ ) { next; }								# skip any blank line
+		if ( $s =~ m/^\s*$/ ) { next; }									# skip any blank line
 		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }		# skip any line starting with '#', ';', q{'}, or '//' as a comment line
 		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ ) { 	# quoted values are allowed with perl quoting semantics
 			$key = $1;
@@ -47,7 +44,7 @@ if (-e $config{'rc_filename'}) {
 			if (exists $config{$key}) {
 				if ($quote eq $double_q ) {
 					# decode perl qq{} semantics
-					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/eval 'return "'.$1.'"'/eg;		# safely eval qq character escapes
+					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/eval 'return "'.$1.'"'/eg; 	# safely eval qq character escapes
 					}
 				$config{$key} = $value;
 				}
@@ -55,7 +52,7 @@ if (-e $config{'rc_filename'}) {
 			}
 		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
 		}
-    close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR";		## no critic ( RequireCarping )
+    close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; 	## no critic ( RequireCarping )
 	}
 
 if (!$config{'module_name'}) { die '$config{module_name} must be defined'."\n"; };	## no critic ( RequireCarping RequireInterpolation )
@@ -118,12 +115,48 @@ my $code = q{
 		# this is an ActivePerl installation
 
 		#print "ActivePerl: PRESENT\n";
-		my $installdirs = $self->SUPER::installdirs;
-		#print "installdirs = $installdirs\n";
-		require ActivePerl::DocTools;
-		$self->SUPER::log_info("HTMLifying PODs\n");
-		$self->SUPER::log_verbose("ActivePerl::DocTools::UpdateHTML_blib( installdirs => \"$installdirs\" )\n");
-		ActivePerl::DocTools::UpdateHTML_blib( installdirs => "$installdirs" );
+
+		# [code modified from Module::Build::Base.pm]
+		#print "type = $type\n";
+		#my $htmldir = shift || File::Spec->catdir($self->blib, "${type}html");
+		my $htmldir = shift || File::Spec->catdir($self->blib, "html/site/lib");
+
+		require Module::Build::PodParser;
+		require Pod::Html;
+
+		$self->add_to_cleanup('pod2htm*');
+
+		my $pods = $self->_find_pods( $self->{properties}{"${type}doc_dirs"}, exclude => [ qr/\.(?:bat|com|html)$/ ] );
+		return unless %$pods;  # nothing to do
+
+		my $up_to_date = 1;
+		foreach my $pod ( keys %$pods ) {
+
+		  my ($name, $path) = File::Basename::fileparse($pods->{$pod}, qr{\.(?:pm|plx?|pod)$});
+		  my @dirs = File::Spec->splitdir( File::Spec->canonpath( $path ) );
+		  pop( @dirs ) if $dirs[-1] eq File::Spec->curdir;
+
+		  my $fulldir = File::Spec->catfile($htmldir, @rootdirs, @dirs);
+		  my $outfile = File::Spec->catfile($fulldir, "${name}.html");
+		  my $infile  = File::Spec->abs2rel($pod);
+
+		  #print "infile = $infile\n";
+		  #print "outfile = $outfile\n";
+
+		  next if $self->up_to_date($infile, $outfile);
+
+		  $up_to_date = 0;
+		  last;
+		  }
+
+		if (!$up_to_date) {
+			my $installdirs = $self->SUPER::installdirs;
+			#print "installdirs = $installdirs\n";
+			require ActivePerl::DocTools;
+			$self->SUPER::log_info("HTMLifying PODs\n");
+			$self->SUPER::log_verbose("ActivePerl::DocTools::UpdateHTML_blib( installdirs => \"$installdirs\" )\n");
+			ActivePerl::DocTools::UpdateHTML_blib( installdirs => "$installdirs" );
+			}
 		}
 	# correct PPM generation for ActivePerl installations (modified from Module::Build::Base.pm v0.2808)
 	sub ACTION_ppmdist {
@@ -192,9 +225,9 @@ my $code = q{
 	sub ACTION_install {
 		my ($self) = @_;
 
-		if (!(eval { require ActivePerl; })) { return $self->SUPER::ACTION_install; }
+		if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
 
-		# this is an ActivePerl installation (with ppm available)
+		# this is an ActivePerl installation (and ppm is available)
 
 		# build ppd and ppm
 		$self->depends_on('build');
@@ -209,9 +242,9 @@ my $code = q{
 	sub ACTION_fakeinstall {
 		my ($self) = @_;
 
-		if (!(eval { require ActivePerl; })) { return $self->SUPER::ACTION_fakeinstall; }
+		if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_fakeinstall; }
 
-		# this is an ActivePerl installation (with ppm available)
+		# this is an ActivePerl installation (and ppm is available)
 
 		# build ppd and ppm
 		$self->depends_on('build');
