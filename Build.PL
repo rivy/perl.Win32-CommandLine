@@ -43,8 +43,8 @@ if (-e $config{'rc_filename'}) {
 			$value = $3;
 			if (exists $config{$key}) {
 				if ($quote eq $double_q ) {
-					# decode perl qq{} semantics
-					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/eval 'return "'.$1.'"'/eg; 	# safely eval qq character escapes
+					# decode perl qq{} semantics (except \<unknown> is left as \<unknown> instead of <unknown>)
+					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/'"'.$1.'"'/eego; 	# safely eval qq character escapes
 					}
 				$config{$key} = $value;
 				}
