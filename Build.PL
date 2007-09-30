@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.20070914.71492 ( rev 19:dd19276bed68 ) 2007/09/15 00:51:32 rivy $
+#$Id: Build.PL,v 0.1.20070921.12217 ( rev 20:dfc9917d5705 ) 2007/09/21 03:23:37 rivy $
 
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -8,7 +8,7 @@ use warnings;
 use 5.006;      # v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version: 0.1.20070914.71492 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version: 0.1.20070921.12217 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 ##- config
 my %config;

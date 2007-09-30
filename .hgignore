@@ -1,1 +1,8 @@
 t/lib/*/*
+Build
+Build.bat
+_build/*
+blib/*
+lib/Win32/CommandLine.c
+lib/Win32/CommandLine.o
+lib/Win32/CommandLine.xs

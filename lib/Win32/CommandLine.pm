@@ -2,7 +2,7 @@
 package Win32::CommandLine;
 #$Id$
 
-## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking )
+## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking RequirePodAtEnd )
 
 use strict;
 use warnings;
@@ -82,7 +82,7 @@ my %_PG = ( # package globals
     'quote'				=> q{'"},					# ' and "
     'quote_meta'		=> quotemeta q{'"},			# quotemeta ' and "
     'escape_char'		=> q{\\},					# escape character (\)
-    'glob_char'			=> quotemeta ( '?*[{' ),  	# glob signal characters
+    'glob_char'			=> quotemeta ( '?*[{~' ),  	# glob signal characters
     'unbalanced_quotes' => 0,
     );
 
@@ -164,7 +164,7 @@ $table{'c?'} = chr(0x7f);
 sub _decode {
     # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
     # decode ANSI C string
-    @_ = @_ ? @_ : $_ if defined wantarray;     # break aliasing if non-void return context           ## no critic (ProhibitPostfixControls)
+    @_ = @_ ? @_ : $_ if defined wantarray; 	## no critic (ProhibitPostfixControls) 	## break aliasing if non-void return context
 
     my $c = '0abefnrtv'.$_PG{'escape_char'}.$_PG{'single_q'}.$_PG{'double_q'};
     for (@_ ? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g }
@@ -173,217 +173,7 @@ sub _decode {
     }
 }
 
-# remember...
-# lodin says  Re Is silent use of $_ for empty argument lists reasonable for "shortcut" functions? If you ask me, just use "for" and "map" for lists and only care about $_[0]. Good node btw. I ++:ed it.
-# lodin says Re Is silent use of $_ for empty argument lists reasonable for "shortcut" functions? Perhaps that didn't make sense. I mean use "@bar = map trim(), @foo" and "trim() for @foo" if you have lists.
-# could use "@bar = map trim($_, {<opts>})" and "trim($_, {<opts>}) for @foo" to add optional named arguments
-# [aka] - these should _always_ work no matter what the implementation
-#   @bar = map trim($_, {}), @foo;
-#   @bar = trim($_, {}) for @foo;		[??? does this work]
-sub _ltrim_standard_shortcut {
-    # _ltrim( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
-    # trim leading whitespace
-    @_ = @_ ? @_ : $_ if defined wantarray;     # disconnect aliasing if non-void return context
-
-    for (@_ ? @_ : $_) { s/\A\s+// }
-
-    return wantarray ? @_ : "@_";
-    }
-
-sub _ltrim_lex_version {
-    # _ltrim( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
-    # trim leading whitespace
-    # NOTE: not able to currently determine the difference between a function call with a zero arg list {"f([]);"} and a function call with no arguments {"f();"}
-    #@_ = @_ ? @_ : $_ if defined wantarray;        # break aliasing if non-void return context
-    use Lexical::Alias ( qw(alias_a) );             # TODO: "use Data::Alias" if perl version >= 5.8.1
-
-    my @args;
-
-    alias_a( @_, @args );
-    @args = @_ if defined wantarray;        # disconnect aliasing if non-void return context
-
-    #for (@_ ? @_ : $_) { s/\A\s+// }
-    for ( @args ) { s/\A\s+//; }
-
-    return wantarray ? @args : "@args";
-    }
-
 sub _is_const { return !eval { ($_[0]) = $_[0]; 1; }; }
-
-sub _is_const_B {use B; return B::SVf_READONLY & B::svref_2object(\$_[0])->FLAGS; }
-
-sub _ltrim_shortcut_idiom {
-    # _ltrim( <null>|$|@ [,\%] ): returns <null>|$|@ [standard 'shortcut' function] (with optional hash_ref containing function options)
-    # trim leading characters (defaults to whitespace)
-    my $opt_ref;
-    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference
-    my %opt = (
-        'trim_re' => '\s+',
-        );
-    # retrieve and validate options if they exist
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".(caller(0))[3]; } } }
-
-    my $t = $opt{'trim_re'};
-
-    my $arg_ref;
-    $arg_ref = \@_;
-    $arg_ref = @_ ? [ @_ ] : [ $_ ] if defined wantarray;       # break aliasing if non-void return context
-
-    for my $arg ( @{$arg_ref} ? @{$arg_ref} : $_ ) {    # all args or just $_ if no args
-        if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-        $arg =~ s/\A$t//;
-        }
-
-    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
-    }
-
-#sub _trim_disambiguate_model(;\[$@]@)
-#{
-#    return _trim( $_ )
-#        if  ! @_;
-#    my $ref= shift @_;
-#    return _trim( eval{@$ref;1} ? @$ref : $$ref, @_ )
-#}
-
-# _l()
-# _l($)
-# _l($, $)
-# _l($, @)
-# _l(@)
-# _l(@, $)
-# _l(@, @)
-
-
-sub _ltrim_disambiguate_o(;\[$@]@) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes Subroutines::ProhibitManyArgs)
-    my $t = '\s+';
-
-    my $arg_ref_ref = [ [] ];
-    # if (! @_) { leave $arg_ref_ref as empty array }
-    if (@_) {
-        # have arguments
-        if (defined wantarray) {
-            # disconnect aliases by copying to local
-            if (ref($_[0]) eq 'SCALAR') { $arg_ref_ref = [ [${shift @_}, @_] ]; }
-            else { $arg_ref_ref = [ [@{shift @_}, @_] ]; }
-            }
-        else {
-            # void-context (keep aliases)
-            if (ref($_[0]) eq 'SCALAR') { $arg_ref_ref = [ shift @_, \@_ ]; }
-            else { $arg_ref_ref = [ \@{shift @_}, \@_ ]; }
-            }
-        }
-
-    for my $arg_ref ( @{$arg_ref_ref} ? @{$arg_ref_ref} : \$_ ) {   # all args or just $_ if no args
-        if (_is_const(${$arg_ref})) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-        ${$arg_ref} =~ s/\A$t//;
-        }
-
-    return wantarray ? @{${$arg_ref_ref}} : "@{${$arg_ref_ref}}";
-}
-
-sub _ltrim_prototype(;\[$@]@) {     ## no critic (Subroutines::ProhibitSubroutinePrototypes Subroutines::ProhibitExcessComplexity Subroutines::ProhibitManyArgs)
-    # fails for things like _ltrim(<STDIN>) because '<STDIN>' doesn't match the prototype
-    # @arg = (qq{ testing}, { trim_re => '[\st]+'}) => _ltrim(@arg) fails because @arg is forced into ref and function options are integrated as a part of 1st argument
-    use Data::Dump qw( dump );
-    #print "\n";
-    print '_lt:@'.'_:'.dump(@_)."\n";
-
-    my $opt_ref;
-    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference
-    my %opt = (
-        'trim_re' => '\s+',
-        );
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".(caller(0))[3]; return; } } }
-
-    my $t = $opt{'trim_re'};
-
-    print '_lt:@'.'_:'.dump(@_)."\n";
-
-    my $use_alias = 0;
-    my @arg_ref_array = ([]);
-    print '_lt:@'.'arg_ref_array:'.dump(@arg_ref_array)."\n";
-    # if (! @_) { leave $arg_ref_ref as empty array }
-    if (@_) {
-        # have arguments
-        if (defined wantarray) {
-            # disconnect aliases by copying to local
-            if (ref($_[0]) eq 'SCALAR') { my @a1 = ( ${shift @_} ); my @a2 = @_; @arg_ref_array = ( \(@a1), (@a2 ? \(@a2) : ()) ); }
-            else { my @a1 = @{shift @_}; my @a2 = @_; @arg_ref_array = ( \(@a1), (@a2 ? \(@a2) : ()) ); }
-            }
-        else {
-            # void-context (keep aliases)
-            if (ref($_[0]) eq 'SCALAR') { @arg_ref_array = ( shift @_, (@_ ? \(@_) : ()) ); }
-            else { @arg_ref_array = ( \(@{shift @_}), (@_ ? \(@_) : ()) ); }
-            }
-        }
-    else {
-        # no arguments
-        if (defined wantarray) { my @a1 = ( $_ ); @arg_ref_array = \(@a1); }    # disconnect $_ alias
-#       else { $arg_ref_ref = [ [\$_] ]; }                      # keep $_ alias
-        else { $use_alias = 1; }                                # keep $_ alias
-        }
-
-#   my @x = ( @{$arg_ref_ref} );
-#   print '_lt:@x:'.dump(@x)."\n";
-#   my $y = [ 1, 2 ];
-#   foreach (@$y) {
-#       print '_lt:@y[]:'.dump($_)."\n";
-#       }
-#   print '_lt:$y:'.dump($y)."\n";
-    print '_lt:@'.'arg_ref_array:'.dump(@arg_ref_array)."\n";
-#   print '_lt:@{$arg_ref_ref}:'.dump(@{$arg_ref_ref})."\n";
-#   print '_lt:@$arg_ref_ref->[0]:'.dump(@$arg_ref_ref->[0])."\n";
-#   print '_lt:@{@$arg_ref_ref->[0]}:'.dump(@{@$arg_ref_ref->[0]})."\n";
-#   print '_lt:@$arg_ref_ref->[0]->[0]:'.dump(@$arg_ref_ref->[0]->[0])."\n";
-
-#   for my $arg_ref ( @$arg_ref_ref->[0] ? @$arg_ref_ref->[0] : \$_ ) { # all args or just $_ if no args
-#   for my $arg ( @{@$arg_ref_ref->[0]} ? @{@$arg_ref_ref->[0]} : $_ ) {    # all args or just $_ if no args
-    print "use_alias = $use_alias\n";
-#   for my $arg ( $use_alias ? $_ : @{$arg_ref_ref} ) {
-    for my $arg_ref ( $use_alias ? \$_ : @arg_ref_array ) {
-#       print '_lt:$arg_ref:'.dump($arg_ref)."\n";
-#       print '_lt:@{$arg_ref}:'.dump(@{$arg_ref})."\n";
-        print '_lt:$'.'{$'.'arg_ref}:'.dump(${$arg_ref})."\n";
-        if (_is_const(${$arg_ref})) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-        ${$arg_ref} =~ s/\A$t//;
-        }
-
-    if ($use_alias) { return; }
-    my @return_array = map { ${$_} } @arg_ref_array;
-    return wantarray ? @return_array : "@return_array";
-}
-
-sub _ltrim_no_array {
-    # _ltrim( $ [,\%] ): returns $ (with optional hash_ref containing function options)
-    # trim leading characters (defaults to whitespace)
-    # remember...
-    # lodin says  Re Is silent use of $_ for empty argument lists reasonable for "shortcut" functions? If you ask me, just use "for" and "map" for lists and only care about $_[0]. Good node btw. I ++:ed it.
-    # lodin says Re Is silent use of $_ for empty argument lists reasonable for "shortcut" functions? Perhaps that didn't make sense. I mean use "@bar = map trim(), @foo" and "trim() for @foo" if you have lists.
-    my $me = (caller(0))[3];
-    my $opt_ref;
-    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference (assumed to be options for our function)
-    my %opt = (
-        'trim_re' => '\s+',
-        );
-    if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
-
-    my $t = $opt{'trim_re'};
-
-    #if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me.'($_) instead?)'; return; }
-    #if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
-    if ( @_ > 1 ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
-
-    my $arg_ref;
-    $arg_ref = \@_;
-    $arg_ref = [ @_ ] if defined wantarray;     # break aliasing if non-void return context
-
-    for my $arg ( @{$arg_ref} ) {
-        if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-        $arg =~ s/\A$t//;
-        }
-
-    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
-    }
 
 sub _ltrim {
     # _ltrim( $|@ [,\%] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
@@ -413,7 +203,7 @@ sub _ltrim {
 
     my $me = (caller(0))[3];
     my $opt_ref;
-    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference (assumed to be options for our function)
+    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH')); 	## no critic (ProhibitPostfixControls) 	## pop last argument only if it's a HASH reference (assumed to be options for our function)
     if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; return; } } }
     if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me."($_) instead?)"; return; }
     if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
@@ -422,7 +212,7 @@ sub _ltrim {
 
     my $arg_ref;
     $arg_ref = \@_;
-    $arg_ref = [ @_ ] if defined wantarray;     # break aliasing if non-void return context
+    $arg_ref = [ @_ ] if defined wantarray; 	## no critic (ProhibitPostfixControls) 	## break aliasing if non-void return context
 
     for my $arg ( @{$arg_ref} ) {
         if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
@@ -439,8 +229,8 @@ sub _gen_delimeted_regexp {
     # $SINGLE = qr{'[^'\\]+(?:\\.[^'\\]+)+'};
     ## no critic (ControlStructures::ProhibitCStyleForLoops)
     my ($dels, $escs) = @_;
-    return q{} unless $dels =~ /^\S+$/;
-    $escs = q{} unless $escs;
+    return q{} unless $dels =~ /^\S+$/;		## no critic (ProhibitPostfixControls)
+    $escs = q{} unless $escs;				## no critic (ProhibitPostfixControls)
 
     #print "dels = $dels\n";
     #print "escs = $escs\n";
@@ -484,13 +274,13 @@ sub _dequote{
 
     my $me = (caller(0))[3];
     my $opt_ref;
-    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop last argument only if it's a HASH reference (assumed to be options for our function)
+    $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH')); 	## no critic (ProhibitPostfixControls) 	## pop last argument only if it's a HASH reference (assumed to be options for our function)
     if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
 
 	my $w = $opt{'surround_re'};
 	my $q = $opt{'allowed_quotes_re'};
 
-    @_ = @_ ? @_ : $_ if defined wantarray;  # break aliasing if non-void return context
+    @_ = @_ ? @_ : $_ if defined wantarray; 	## no critic (ProhibitPostfixControls) 	## break aliasing if non-void return context
 
     for (@_ ? @_ : $_)
         {
@@ -504,7 +294,7 @@ sub _dequote{
 sub _zero_position {
 	use English qw( -no_match_vars ) ;  # '-no_match_vars' avoids regex performance penalty
     my $q = shift @_;
-    my @a = @_;
+    my @args = @_;
     my $pos;
     # find $0 in the ARGV array
     #print "0 = $0\n";
@@ -518,8 +308,8 @@ sub _zero_position {
     print "zero_dq = $zero_dq\n";
 
 #   while (my $arg = shift @a) {
-    for ($pos=0; $pos<$#a; $pos++) {		## no critic (ProhibitCStyleForLoops)
-        my $arg = $a[$pos];
+    for ($pos=0; $pos<$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
+        my $arg = $args[$pos];
 #    for my $arg (@a) {
         print "arg = $arg\n";
         if ($zero_lc eq lc($arg))
@@ -600,6 +390,9 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
     # "..." => literal (no escapes but allows internal globbing) [differs from bash]
     # $"..."  => same as "..."
 
+	# TODO: Change semantics so that "..." has no internal globbing (? unless has at least one non-quoted glob character, vs what to do with combination quoted and non-quoted glob characters)
+	#		only glob bare (non-quoted) characters
+
     my @argv2;
     my @argv2_globok;           # glob signal per argv2 entry
 
@@ -671,7 +464,7 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
                 if ($1) { $t .= $1; }
                 $s = $2 ? $2 : q{};
                 _ltrim($s);
-                if (! $s ) { last; }
+                if (! $s ) { last; }		## TODO: test for non-null instead of truth
                 #if ($2) { $s = $2; } else {$s = q{}; last; }
                 if ($3)
                     {# $'<...> or $"<...>
@@ -682,7 +475,7 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
                         my $two = $2;
                         #print "d_one = $d_one\n";
                         #if ($d_one =~ /[$gc]/) { $glob_this_token = 0; }
-                        $glob_this_token = 0 if ($d_one =~ /[$gc]/);
+                        $glob_this_token = 0 if ($d_one =~ /[$gc]/);		## no critic (ProhibitPostfixControls)
                         $t .= _dequote($d_one);
                         $s = $two;
                         next;
@@ -717,7 +510,7 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
                         {
                         #print "one = $one\n";
                         #if ($one =~ /^\'.*[$gc]+.*/) { $glob_this_token = 0; }
-                        $glob_this_token = 0 if ($one =~ /^\'.*[$gc]+.*/);
+                        $glob_this_token = 0 if ($one =~ /^\'.*[$gc]+.*/);		## no critic (ProhibitPostfixControls)
                         $t .= _dequote($one);
                         $s = $two;
                         }
@@ -767,7 +560,7 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
         $pat =~ s/\\/\//g;      # change '\' to '/' within path for correct globbing [Win32]
         if ($pat =~ /\s/) { $pat = $_PG{'single_q'}.$pat.$_PG{'single_q'}; }
         #if ($argv2_globok[$i]) { @g = File::DosGlob::glob( $pat ) if $pat =~ /[$gc]/; }
-        if ($argv2_globok[$i]) { @g = glob( $pat ) if $pat =~ /[$gc]/; }
+        if ($argv2_globok[$i]) { @g = glob( $pat ) if $pat =~ /[$gc]/; }		## no critic (ProhibitPostfixControls)
         push @argv2_g, @g ? @g : $argv2[$i];        # default to non-nullglob
         }
 
