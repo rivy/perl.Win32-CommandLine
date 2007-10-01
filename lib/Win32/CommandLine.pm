@@ -66,23 +66,15 @@ use Carp::Assert qw();
 use File::Spec qw();
 use File::Which qw();
 
+use Data::Dumper::Simple;
+
 my %_PG = ( # package globals
-    #$_PG{'single_q'} = "'";
-    #$_PG{'double_q'} = '"';
-    #$_PG{'quote'} = $_PG{'single_q'}.$_PG{'double_q'};
-    #$_PG{'quote_meta'} = quotemeta $_PG{'quote'};
-    #
-    #$_PG{'escape_char'} = q$_PG{'escape_char'};
-    #
-    #$_PG{'glob_char'} = quotemeta ( "?*[{" );  # glob signal characters
-    #
-    #$_PG{'unbalanced_quotes'} = 0;
     'single_q'			=> q{'},					# '
     'double_q'			=> q{"},					# "
     'quote'				=> q{'"},					# ' and "
     'quote_meta'		=> quotemeta q{'"},			# quotemeta ' and "
     'escape_char'		=> q{\\},					# escape character (\)
-    'glob_char'			=> quotemeta ( '?*[{~' ),  	# glob signal characters
+    'glob_char'			=> quotemeta ( '?*[]{}' ), 	# glob signal characters (no '~' for Win32)
     'unbalanced_quotes' => 0,
     );
 
@@ -381,6 +373,20 @@ sub _argv_NEW{
     return @argv2_g;
 }
 
+sub _quote_gc_meta{
+	my $s = shift @_;
+#	my $gc = $_PG{glob_char};
+
+	my $gc = quotemeta( '?*[]{}~' );
+#	my $dgc = quotemeta ( '?*' );
+
+	$s =~ s/([$gc])/\\$1/g;
+
+#	$s =~ s/([$dgc])/\\\\\\\\\\$1/g;		# see Dos::Glob notes for literally quoting '*' or '?'
+
+	return $s;
+}
+
 sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
     # _argv( $command_line )
 
@@ -396,12 +402,14 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
     my @argv2;
     my @argv2_globok;           # glob signal per argv2 entry
 
+	my @argv_3;				# [] of [](token => <token_portion>, glob => glob_this)
+
     my $sq = $_PG{'single_q'};              # single quote (')
     my $dq = $_PG{'double_q'};              # double quote (")
-    my $quotes = $sq.$dq;       # quote chars ('")
+    my $quotes = $sq.$dq;       			# quote chars ('")
     my $q = quotemeta $quotes;
 
-    my $gc = quotemeta ( '?*[{' );  # glob signal characters
+    my $gc = quotemeta ( $_PG{'glob_char'} );  # glob signal characters
 
     my $escape = $_PG{'escape_char'};
 
@@ -423,103 +431,123 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
     my $command_line = shift @_;    # "extract_..." is destructive of the original string
     my $s = $command_line;
     my $glob_this_token = 1;
-    while ($s)
+    while ($s ne q{})
         {
+        # $s == string being parsed
+        # $t == partial or full token
+
+        my $t = q{};
+
         #print "s = `$s`\n";
 
         _ltrim($s); # remove leading whitespace
         $glob_this_token = 1;
+	    my $i = scalar(@argv_3);
 
-        # have leading token with no quote delimeters?
         if ($s =~ /^([^\s$q]+)(\s.*$|$)/)
-            {# token with no quote delimeter characters
+            {# simple leading full token with no quote delimeter characters
             # $1 = non-whitespace/non-quote token
             # $2 = rest of string (with leading whitespace) [if exists]
             #print "1-push `$1` (g_ok = $glob_this_token)\n";
-            push @argv2, $1;
-            push @argv2_globok, $glob_this_token;
+            $t = $1;
+            #push @argv2, $1;
+            #push @argv2_globok, $glob_this_token;
+            push @{ $argv_3[ scalar(@argv_3) ] }, { token => $1, glob => 1, id => 'simple:token' };
             $s = $2 ? $2 : q{};
-            _ltrim($s);
-            next;
+            #_ltrim($s);
+            #next;
             }
-
-        # token contains quote delimeters
-        Carp::Assert::assert( $s =~ /[$q]/ );
-        my $t = q{};
-        while ($s =~ /^[^\s]/)
-            {# $s contains non-whitespace characters
-            if ($s =~ /^((?:[^\s$q\$]|\$[^$q])*)((?:(\$([$q]))|[$q])?(.*))$/)
-                {
-                # initial non-quotes now removed
-                # $1 = initial non-quote/non-whitespace characters (excepting '$<quote-char>')
-                # $2 = rest of string after non-quote characters (including possible $<quote-char><...>)
-                # $3 = $<quote-char> [if exists]
-                # $4 = <quote-char> (of '$<quote-char>') [if exists]
-                # $5 = rest of quoted string (and any extra following characters)
-                #print "1.1 = `$1`\n" if $1;
-                #print "1.2 = `$2`\n" if $2;
-                #print "1.3 = `$3`\n" if $3;
-                #print "1.4 = `$4`\n" if $4;
-                #print "1.5 = `$5`\n" if $5;
-                if ($1) { $t .= $1; }
-                $s = $2 ? $2 : q{};
-                _ltrim($s);
-                if (! $s ) { last; }		## TODO: test for non-null instead of truth
-                #if ($2) { $s = $2; } else {$s = q{}; last; }
-                if ($3)
-                    {# $'<...> or $"<...>
-                    $s = $4.$5;
-                    if ($s =~ /^($re_q_esc)(.*)$/)
-                        {# $'...'
-                        my $d_one = _decode($1);
-                        my $two = $2;
-                        #print "d_one = $d_one\n";
-                        #if ($d_one =~ /[$gc]/) { $glob_this_token = 0; }
-                        $glob_this_token = 0 if ($d_one =~ /[$gc]/);		## no critic (ProhibitPostfixControls)
-                        $t .= _dequote($d_one);
-                        $s = $two;
-                        next;
-                        }
-                    if ($s =~ /^($re_qq)(.*)$/)
-                        {# $"..."
-                        #my $one = $1;
-                        #my $two = $2;
-                        #if ($one =~ /[$gc]/) { $glob_this_token = 0; } # globbing within ""'s is ok
-                        #$t .= $one;
-                        #$s = $two;
-                        $t .= $1;
-                        $s = $2;
-                        next;
-                        }
-                    $t .= q{$}.$s;
-                    $_unbalanced_command_line_quotes = 1;
-                    $s = q{};
-                    last;
-                    }
-                if ($s =~ /^(?:($re_noesc)(.*))|(.*)$/)
-                    {
-                    #print "2.1 = `$1`\n" if $1;
-                    #print "2.2 = `$2`\n" if $2;
-                    #print "2.3 = `$3`\n" if $3;
-                    ##print "2.4 = `$4`\n" if $4;
-                    #$t .= $1;
-                    my $one = $1 ? $1 : q{};
-                    my $two = $2 ? $2 : q{};
-                    my $three = $3 ? $3 : q{};
-                    if ($one)
-                        {
-                        #print "one = $one\n";
-                        #if ($one =~ /^\'.*[$gc]+.*/) { $glob_this_token = 0; }
-                        $glob_this_token = 0 if ($one =~ /^\'.*[$gc]+.*/);		## no critic (ProhibitPostfixControls)
-                        $t .= _dequote($one);
-                        $s = $two;
-                        }
-                    else { $t .= $three; $_unbalanced_command_line_quotes = 1; $s = q{}; last; }
-                    #else { $t .= $4; $s = q{}; $_unbalanced_command_line_quotes = 1; last; }
-                    }
-                }
-			else { Carp::croak q{no match: shouldn't get here...}; };
-            }
+		else
+			{
+			# complex token containing quote delimeters
+			Carp::Assert::assert( $s =~ /[$q]/ );
+			#my $t = q{};
+			while ($s =~ /^[^\s]/)
+				{# parse full token containing quote delimeters
+				# $s contains non-whitespace characters and starts with non-whitespace
+				if ($s =~ /^((?:[^\s$q\$]|\$[^$q])*)((?:(\$([$q]))|[$q])?(.*))$/)
+					{
+					# initial non-quotes now seperated
+					# $1 = initial non-quote/non-whitespace characters (excepting '$<quote-char>')
+					# $2 = rest of string after non-quote characters (including possible $<quote-char><...>)
+					# $3 = $<quote-char> [if exists]
+					# $4 = <quote-char> (of '$<quote-char>') [if exists]
+					# $5 = rest of quoted string (and any extra following characters)
+					#print "1.1 = `$1`\n" if $1;
+					#print "1.2 = `$2`\n" if $2;
+					#print "1.3 = `$3`\n" if $3;
+					#print "1.4 = `$4`\n" if $4;
+					#print "1.5 = `$5`\n" if $5;
+					if ($1) {
+						$t .= $1;
+						push @{ $argv_3[ $i ] }, { token => $1, glob => 1, id => 'complex:leading non-quoted+whitespace' };
+						}
+					$s = $2 ? $2 : q{};
+					#_ltrim($s);
+					if ( $s =~ /^[\s]/ || _ltrim($s) eq q{} ) { last; }
+					#if ($2) { $s = $2; } else {$s = q{}; last; }
+					if ($3)
+						{# $'<...> or $"<...>
+						$s = $4.$5;
+						if ($s =~ /^($re_q_esc)(.*)$/)
+							{# $'...'
+							my $d_one = _decode($1);
+							my $two = $2;
+							#print "d_one = $d_one\n";
+							#if ($d_one =~ /[$gc]/) { $glob_this_token = 0; }
+							$glob_this_token = 0 if ($d_one =~ /[$gc]/);		## no critic (ProhibitPostfixControls)
+							$t .= _dequote($d_one);
+							$s = $two;
+							push @{ $argv_3[ $i ] }, { token => _dequote($d_one), glob => 0, id => 'complex:re_q_esc' };
+							next;
+							}
+						if ($s =~ /^($re_qq)(.*)$/)
+							{# $"..."
+							#my $one = $1;
+							#my $two = $2;
+							#if ($one =~ /[$gc]/) { $glob_this_token = 0; } # globbing within ""'s is ok
+							#$t .= $one;
+							#$s = $two;
+							$t .= $1;
+							$s = $2;
+							push @{ $argv_3[ $i ] }, { token => $1, glob => 0, id => 'complex:re_qq' };
+							next;
+							}
+						$t .= q{$}.$s;
+						$_unbalanced_command_line_quotes = 1;
+						$s = q{};
+						last;
+						}
+					if ($s =~ /^(?:($re_noesc)(.*))|(.*)$/)
+						{
+						#print "2.1 = `$1`\n" if $1;
+						#print "2.2 = `$2`\n" if $2;
+						#print "2.3 = `$3`\n" if $3;
+						##print "2.4 = `$4`\n" if $4;
+						#$t .= $1;
+						my $one = $1 ? $1 : q{};
+						my $two = $2 ? $2 : q{};
+						my $three = $3 ? $3 : q{};
+						if ($one)
+							{
+							#print "one = $one\n";
+							#if ($one =~ /^\'.*[$gc]+.*/) { $glob_this_token = 0; }
+							$glob_this_token = 0 if ($one =~ /^\'.*[$gc]+.*/);		## no critic (ProhibitPostfixControls)
+							$t .= _dequote($one);
+							$s = $two;
+							push @{ $argv_3[ $i ] }, { token => _dequote($one), glob => 0, id => 'complex:noescapes' };
+							}
+						else {
+							$t .= $three; $_unbalanced_command_line_quotes = 1; $s = q{};
+							push @{ $argv_3[ $i ] }, { token => $three, glob => 1, id => 'complex:NON-quoted/unbalanced' };
+							last;
+							}
+						#else { $t .= $4; $s = q{}; $_unbalanced_command_line_quotes = 1; last; }
+						}
+					}
+				else { Carp::croak q{no match: shouldn't get here...}; };
+				}
+			}
 
         _ltrim($s);
         if ($t)
@@ -527,6 +555,7 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
             #print "2-push `$t` (g_ok = $glob_this_token)\n";
             push @argv2, $t;
             push @argv2_globok, $glob_this_token;
+           	#push @{ $argv_3[ $i ] }, { token => $t, glob => 1, id => '$t' };
             next;
             }
 
@@ -535,11 +564,13 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
         #print "*-push `$s` (g_ok = $glob_this_token)\n";
         push @argv2, $s;
         push @argv2_globok, $glob_this_token;
+       	push @{ $argv_3[ scalar(@argv_3) ] }, { token => $s, glob => 1, id => 'WRONG:$s (shouldn\'t get here' };
         $s = q{};
         }
 
     #@argv2 = Text::Balanced::extract_multiple($command_line, [ qr/\s*([^\s'"]+)\s/, sub { _mytokens($_[0]) }, qr/\S+/ ], undef, 1);
 
+	print "" . Dumper( @argv_3 )."\n";
 
     # remove $0 (and any prior entries) from ARGV array (and the matching glob signal array)
     my $n = _zero_position( $q, @argv2 );
@@ -558,10 +589,21 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
         #print "argv2[$i] = $argv2[$i] (globok = $argv2_globok[$i])\n";
         my $pat = $argv2[$i];
         $pat =~ s/\\/\//g;      # change '\' to '/' within path for correct globbing [Win32]
-        if ($pat =~ /\s/) { $pat = $_PG{'single_q'}.$pat.$_PG{'single_q'}; }
+
+		my $s = q{};
+		foreach my $r_h ( @{ $argv_3[$n+$i+1] } ) { my $t = $r_h->{token}; $t =~ s/\\/\//g; if ($r_h->{glob} == 0) { $t = _quote_gc_meta($t); }; $s .= $t;}
+		print "s = '$s'\n";
+		$pat = $s;
+
+        if ($pat =~ /\s/) { $pat = $_PG{'single_q'}.$pat.$_PG{'single_q'}; }		# quote if contains white space to avoid
+		print "pat = '$pat'\n";
         #if ($argv2_globok[$i]) { @g = File::DosGlob::glob( $pat ) if $pat =~ /[$gc]/; }
-        if ($argv2_globok[$i]) { @g = glob( $pat ) if $pat =~ /[$gc]/; }		## no critic (ProhibitPostfixControls)
-        push @argv2_g, @g ? @g : $argv2[$i];        # default to non-nullglob
+        # TODO: Figure out how to quote glob meta characters in the string corresponding _only_ to quoted sections of the token (? and glob all tokens)
+##        if ($argv2_globok[$i]) { @g = glob( $pat ) if $pat =~ /[$gc]/; }		## no critic (ProhibitPostfixControls)
+##        @g = File::Glob::glob( $pat ) if ( $pat =~ /[$gc]/ );		## no critic (ProhibitPostfixControls)		## only glob if glob characters are in string
+        @g = glob( $pat ) if ( $pat =~ /[$gc]/ );		## no critic (ProhibitPostfixControls)		## only glob if glob characters are in string
+        @g = () if $pat =~ /\\[?*]/;	## '?' and '*' are not allowed in filenames in Win32 and Win32 DosISH globbing doesn't correctly escape them when backslash quoted, so skip globbing results (TODO: skip globbing altogether)
+        push @argv2_g, @g ? @g : $argv2[$i];        # default to non-nullglob (if null return, push back original token (unmodified by slash changes and quoting)
         }
 
     return @argv2_g;
@@ -575,8 +617,7 @@ sub _argv{  ## no critic (Subroutines::ProhibitExcessComplexity)
 #{# parse tokens with one or more quotes (balanced or not)
 ## bash-like tokens ($'...' and $"...")
 ## ToDO: Rename => extract_quotedToken? remove_semiquoted? ...
-## ToDO?: make more general specifying quote character sets
-#my $textref = defined $_[0] ? \$_[0] : \$_;
+## ToDO?: make more general specifying quote character set#my $textref = defined $_[0] ? \$_[0] : \$_;
 #my $wantarray = wantarray;
 #my $position = pos $$textref || 0;
 #

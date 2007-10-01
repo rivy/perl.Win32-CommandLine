@@ -62,7 +62,7 @@ add_test( qq{$0 a b c t/\*.t}, ( qw{a b c}, glob('t/*.t') ) );
 
 add_test( qq{$0 a t/\*.t b}, ( "a", glob('t/*.t'), "b" ) );
 
-add_test( qq{$0 t/\"*".t}, ( glob('t/*.t') ) );
+add_test( qq{$0 t/\"*".t}, ( q{t/*.t} ) );
 
 add_test( qq{$0 t/\'*'.t}, ( q{t/*.t} ) );
 
@@ -78,7 +78,9 @@ add_test( qq{$0 t/\{t,p,0\}\*.t}, ( glob('t/{t,p,0}*.t') ) );
 
 add_test( qq{$0 t/\*}, ( glob('t/*') ) );
 
-add_test( qq{$0 't\*'}, ( qw{t*} ) );
+add_test( qq{$0 't\\glob-file tests\\'*}, ( glob('t/glob-file\ tests/*') ) );
+
+add_test( qq{$0 't\\glob-file tests\\*'}, ( q{t\\glob-file tests\\*} ) );
 
 ## do tests
 
