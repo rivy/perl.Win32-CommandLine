@@ -1,44 +1,44 @@
-#-*- tab-width:	4; mode: perl -*-
+#-*- tab-width: 4; mode: perl -*-
 package	Win32::CommandLine;
 #$Id$
 
-## no critic ( ProhibitPostfixControls CodeLayout::ProhibitHardTabs	CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking RequirePodAtEnd )
+## no critic ( ProhibitPostfixControls CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking RequirePodAtEnd )
 
-use	strict;
-use	warnings;
+use strict;
+use warnings;
 #use 5.006;
 
-# VERSION: x.y[.date[.build]]  { y is odd =	beta/experimental; y is	even = release }
-use	version	qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version: 0.3.20071001.20342	$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v	0.1" makes the code	resilient vs missing keyword expansion]
+# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 # Module Summary
 
 =head1 NAME
 
-Win32::CommandLine - Retrieve and reparse the Win32	command	line
+Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
-This document describes	C<Win32::CommandLine> ($Version: 0.3.20071001.20342	$).
+This document describes C<Win32::CommandLine> ($Version$).
 
 =cut
 
 # Module base/ISA and Exports
 
-use	base qw( DynaLoader	Exporter );
+use base qw( DynaLoader Exporter );
 
 #our @EXPORT = qw( );	# no default exported symbols
-our	%EXPORT_TAGS = (
-	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/	} keys %Win32::CommandLine::) ],  #	all	non-internal symbols [Note:	internal symbols are ALL_CAPS or start with	a leading '_']
-#	'INTERNAL'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %Win32::CommandLine::) ],	  #	all	internal functions [Note: internal functions start with	a leading '_']
+our %EXPORT_TAGS = (
+	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %Win32::CommandLine::) ],  # all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
+#	'INTERNAL'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %Win32::CommandLine::) ],   # all internal functions [Note: internal functions start with a leading '_']
 	);
-our	@EXPORT_OK = ( map { @{$_} } values	%EXPORT_TAGS );
+our @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
 
 # Module Interface
 
-sub	command_line;	# return Win32 command line	string
-sub	parse;			# parse	string as a	"bash-like"	command	line (globbing is done,	but	no other expansions	or substitions)
-sub	argv;			# get commandline and reparse it, returning	a new ARGV array
+sub command_line;	# return Win32 command line string
+sub parse;			# parse string as a "bash-like" command line (globbing is done, but no other expansions or substitions)
+sub argv;			# get commandline and reparse it, returning a new ARGV array
 
 ####
 
@@ -46,34 +46,34 @@ sub	argv;			# get commandline and reparse it, returning	a new ARGV array
 
 bootstrap Win32::CommandLine $VERSION;
 
-sub	command_line{
+sub command_line{
 	# command_line(): returns $
 	return _wrap_GetCommandLine();
 }
 
-sub	argv{
+sub argv{
 	# argv(): returns @
-	return parse( command_line() );		# get commandline and reparse it returning the new ARGV	array
+	return parse( command_line() ); 	# get commandline and reparse it returning the new ARGV array
 }
 
-sub	parse{
-	# parse( $ [,\%] ):	returns	@
-	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
-#	# [%]: an optional hash_ref	containing function	options	as named parameters
-#	#	nullglob = true/false [default = true]	# if true, patterns	which match	no files are expanded to a null	string,	rather than	the	pattern	itself
+sub parse{
+	# parse( $ [,\%] ): returns @
+	# parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed)
+#	# [%]: an optional hash_ref containing function options as named parameters
+#	#	nullglob = true/false [default = true] # if true, patterns which match no files are expanded to a null string, rather than the pattern itself
 #	#TODO: ?rename (? parse_bash, ...)
-#	 my	%opt = (
-##		  'nullglob' =>	1,
-#		 );
+#	 my %opt = (
+##		'nullglob' => 1,
+#		);
 #
 #	# read/expand optional named parameters
-#	 my	$me	= (caller(0))[3];
-#	 my	$opt_ref;
-#	 $opt_ref =	pop	@_ if (	@_ && (ref($_[-1]) eq 'HASH'));	 # pop trailing	argument only if it's a	HASH reference (assumed	to be options for our function)
-#	 if	($opt_ref) { for (keys %{$opt_ref})	{ if (defined $opt{$_})	{ $opt{$_} = $opt_ref->{$_}; } else	{ Carp::carp "Unknown option '$_' to for function ".$me; } } }
+#	 my $me = (caller(0))[3];
+#	 my $opt_ref;
+#	 $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop trailing argument only if it's a HASH reference (assumed to be options for our function)
+#	 if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
 #
-#	my $s =	shift @_;
-#	return _argv( $s, {	%opt } );
+#	my $s = shift @_;
+#	return _argv( $s, { %opt } );
 	return _argv( @_ );
 }
 
@@ -86,7 +86,7 @@ use	Carp::Assert qw();
 #use Class::Std;
 
 use	File::Spec qw();
-use	File::Which	qw();
+use	File::Which qw();
 
 use	Data::Dumper::Simple;
 
@@ -95,40 +95,40 @@ my %_G = ( # package globals
 	qq					=> q{"},					# "
 	single_q			=> q{'},					# '
 	double_q			=> q{"},					# "
-	quote				=> q{'"},					# '	and	"
-	quote_meta			=> quotemeta q{'"},			# quotemeta	' and "
+	quote				=> q{'"},					# ' and "
+	quote_meta			=> quotemeta q{'"},			# quotemeta ' and "
 	escape_char			=> q{\\},					# escape character (\)
 	glob_char			=> '?*[]{}',				# glob signal characters (no '~' for Win32)
 	unbalanced_quotes	=> 0,
 	);
 
 {
-sub	_decode; # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+sub _decode; # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
 my %table;
 ###
-#Escape	Sequences
+#Escape Sequences
 #\\	- 0x5c - Backslash
-#\'	- 0x27 - Single	Quote (not sure	if it is hex 27	???)
-#\"	- 0x22 - Double	Quote (not sure	if it is hex 22	???)
+#\'	- 0x27 - Single Quote (not sure if it is hex 27 ???)
+#\"	- 0x22 - Double Quote (not sure if it is hex 22 ???)
 #\?	- 0x3f - Question Mark
 #\0	- 0x00 - null
-#\a	- 0x07 - Alert = Produces an audible or	visible	alert.
-#\b	- 0x08 - Backspace = Moves the cursor back one position	(non-destructive).
-#\f	- 0x0c - Form Feed = Moves the cursor to the first position	of the next	page.
-#\n	- 0x0a - New Line =	Moves the cursor to	the	first position of the next line.
-#\r	- 0x0d - Carriage Return = Moves the cursor	to the first position of the current line.
-#\t	- 0x09 - Horizontal	Tab	= Moves	the	cursor to the next horizontal tabular position.
-#\v	- 0x0b-	Vertical Tab = Moves the cursor	to the next	vertical tabular position.
+#\a	- 0x07 - Alert = Produces an audible or visible alert.
+#\b	- 0x08 - Backspace = Moves the cursor back one position (non-destructive).
+#\f	- 0x0c - Form Feed = Moves the cursor to the first position of the next page.
+#\n	- 0x0a - New Line = Moves the cursor to the first position of the next line.
+#\r	- 0x0d - Carriage Return = Moves the cursor to the first position of the current line.
+#\t	- 0x09 - Horizontal Tab = Moves the cursor to the next horizontal tabular position.
+#\v	- 0x0b- Vertical Tab = Moves the cursor to the next vertical tabular position.
 #
-#Numeric Escape	Sequences
-#\nnn -	n =	octal digit, 8 bit
-#\xnn -	n =	hexadecimal	digit, 8 bit
-#\Xnn -	n =	hexadecimal	digit, 8 bit
-#\unnnn	- n	= hexadecimal digit, 16	bit
-#\Unnnnnnnn	- n	= hexadecimal digit, 32	bit###
-#			   \a	  alert	(bell)
+#Numeric Escape Sequences
+#\nnn - n = octal digit, 8 bit
+#\xnn - n = hexadecimal digit, 8 bit
+#\Xnn - n = hexadecimal digit, 8 bit
+#\unnnn - n = hexadecimal digit, 16 bit
+#\Unnnnnnnn - n = hexadecimal digit, 32 bit###
+#			   \a	  alert (bell)
 #			   \b	  backspace
-#			   \e	  an escape	character
+#			   \e	  an escape character
 #			   \f	  form feed
 #			   \n	  new line
 #			   \r	  carriage return
@@ -136,18 +136,18 @@ my %table;
 #			   \v	  vertical tab
 #			   \\	  backslash
 #			   \'	  single quote
-#			   \nnn	  the eight-bit	character whose	value is the octal value  nnn  (one	 to
-#					  three	digits)
-#			   \xHH	  the  eight-bit character whose value is the hexadecimal value	HH (one
+#			   \nnn	  the eight-bit character whose value is the octal value  nnn  (one  to
+#					  three digits)
+#			   \xHH	  the  eight-bit character whose value is the hexadecimal value HH (one
 #					  or two hex digits)
-#			   \XHH	  the  eight-bit character whose value is the hexadecimal value	HH (one
+#			   \XHH	  the  eight-bit character whose value is the hexadecimal value HH (one
 #					  or two hex digits)
-#			   \cx	  a	control-x character
+#			   \cx	  a control-x character
 
-# Not implemented (not used	in bash):
-#\unnnn	- n	= hexadecimal digit, 16	bit
-#\Unnnnnnnn	- n	= hexadecimal digit, 32	bit
-$table{'0'}	= chr(0x00);	# NUL (REMOVE: implemented with	octal section)
+# Not implemented (not used in bash):
+#\unnnn - n = hexadecimal digit, 16 bit
+#\Unnnnnnnn - n = hexadecimal digit, 32 bit
+$table{'0'}	= chr(0x00);	# NUL (REMOVE: implemented with octal section)
 $table{'a'}	= "\a";			# BEL
 $table{'b'}	= "\b";			# BS
 $table{'e'}	= "\e";			# ESC
@@ -157,95 +157,95 @@ $table{'r'}	= "\r";			# CR
 $table{'t'}	= "\t";			# TAB/HT
 $table{'v'}	= chr(0x0b);	# VT
 
-$table{$_G{'single_q'}}	= $_G{'single_q'};		# single-quote
-$table{$_G{'double_q'}}	= $_G{'double_q'};		# double-quote
-$table{$_G{'escape_char'}} = $_G{'escape_char'};	# backslash-escape
+$table{$_G{'single_q'}}	= $_G{single_q};		# single-quote
+$table{$_G{'double_q'}}	= $_G{double_q};		# double-quote
+$table{$_G{'escape_char'}} = $_G{escape_char};	# backslash-escape
 
 #octal
-#	for	(my	$i = 0;	$i < oct('1000'); $i++)	{ $table{sprintf("%3o",$i)}	= chr($i); }
-for	my $i (0..oct('777')) {	$table{sprintf('%3o',$i)} =	chr($i); }
+#	for (my $i = 0; $i < oct('1000'); $i++) { $table{sprintf("%3o",$i)} = chr($i); }
+for my $i (0..oct('777')) { $table{sprintf('%3o',$i)} = chr($i); }
 
 #hex
-#	for	(my	$i = 0;	$i < 0x10; $i++) { $table{"x".sprintf("%1x",$i)} = chr($i);	$table{"X".sprintf("%1x",$i)} =	chr($i); $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)}	= chr($i); }
-#	for	(my	$i = 0x10; $i <	0x100; $i++) { $table{"x".sprintf("%2x",$i)} = chr($i);	$table{"X".sprintf("%2x",$i)} =	chr($i); }
-for	my $i (0..0xf) { $table{'x'.sprintf('%1x',$i)} = chr($i); $table{'X'.sprintf('%1x',$i)}	= chr($i); $table{'x'.sprintf('%2x',$i)} = chr($i);	$table{'X'.sprintf('%2x',$i)} =	chr($i); }
-for	my $i (0x10..0xff) { $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)}	= chr($i); }
+#	for (my $i = 0; $i < 0x10; $i++) { $table{"x".sprintf("%1x",$i)} = chr($i); $table{"X".sprintf("%1x",$i)} = chr($i); $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)} = chr($i); }
+#	for (my $i = 0x10; $i < 0x100; $i++) { $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)} = chr($i); }
+for my $i (0..0xf) { $table{'x'.sprintf('%1x',$i)} = chr($i); $table{'X'.sprintf('%1x',$i)} = chr($i); $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }
+for my $i (0x10..0xff) { $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }
 
 #control characters
-#	for	(my	$i = 0;	$i < 0x20; $i++) { $table{"c".chr(ord('@')+$i)}	= chr($i); }
-my $base_char =	ord(q{@});
-for	my $i (0..(0x20	- 1)) {	$table{'c'.chr($base_char+$i)} = chr($i); }
+#	for (my $i = 0; $i < 0x20; $i++) { $table{"c".chr(ord('@')+$i)} = chr($i); }
+my $base_char = ord(q{@});
+for my $i (0..(0x20 - 1)) { $table{'c'.chr($base_char+$i)} = chr($i); }
 $table{'c?'} = chr(0x7f);
 
-sub	_decode	{
-	# _decode( <null>|$|@ ): returns <null>|$|@	['shortcut'	function]
-	# decode ANSI C	string
-	@_ = @_	? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+sub	_decode {
+	# _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# decode ANSI C string
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
-	my $c =	'0abefnrtv'.$_G{'escape_char'}.$_G{single_q}.$_G{double_q};
-	for	(@_	? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g }
+	my $c = '0abefnrtv'.$_G{'escape_char'}.$_G{single_q}.$_G{double_q};
+	for (@_ ? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g }
 
-	return wantarray ? @_ :	"@_";
+	return wantarray ? @_ : "@_";
 	}
 }
 
-sub	_is_const {	return !eval { ($_[0]) = $_[0];	1; }; }
+sub	_is_const { return !eval { ($_[0]) = $_[0]; 1; }; }
 
 sub	_ltrim {
-	# _ltrim( $|@ [,\%]	): returns $|@ ['shortcut' function] (with optional	hash_ref containing	function options)
-	# trim leading characters (defaults	to whitespace)
-	# NOTE:	not	able to	currently determine	the	difference between a function call with	a zero arg list	{"f(());"} and a function call with	no arguments {"f();"}
-	#		so,	by the Principle of	Least Surprise,	f()	in void	context	is disallowed instead of being an alias	of "f($_)" so that f(@array) doesn't silently perform f($_)	when @array	has	zero elements
-	#		use	"f($_)"	instead	of "f()" when needed
-	#		carp on	both
-	# NOTE:	alternatively, could use _ltrim( <null>|$|\@[,\%] ), carping on	more than one argument
-	# NOTE:	alternatively, could use _ltrim( <null>|$|@|\@[,\%]	), carping on more than	one	argument
-	# NOTE:	after thinking and reading PBP (specifically Dollar-Underscore (p85) and Interator Variables (p105)), I	think disallowing zero arguments is	for	the	best.
-	#		making operation on	$_ require explicit	coding breeds more maintainable	code with little extra effort
+	# _ltrim( $|@ [,\%] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
+	# trim leading characters (defaults to whitespace)
+	# NOTE: not able to currently determine the difference between a function call with a zero arg list {"f(());"} and a function call with no arguments {"f();"}
+	#		so, by the Principle of Least Surprise, f() in void context is disallowed instead of being an alias of "f($_)" so that f(@array) doesn't silently perform f($_) when @array has zero elements
+	#		use "f($_)" instead of "f()" when needed
+	#		carp on both
+	# NOTE: alternatively, could use _ltrim( <null>|$|\@[,\%] ), carping onaamore than one argument
+	# NOTE: alternatively, could use _ltrim( <null>|$|@|\@[,\%] ), carping on more than one argument
+	# NOTE: after thinking and reading PBP (specifically Dollar-Underscore (p85) and Interator Variables (p105)), I think disallowing zero arguments is for the best.
+	#		making operation on $_ require explicit coding breeds more maintainable code with little extra effort
 	# so:
 	#	$foo = _ltrim($bar);
-	#	@foo = _ltrim(@bar)	if @bar;
-	#	$foo = _ltrim(@bar)	if @bar;
+	#	@foo = _ltrim(@bar) if @bar;
+	#	$foo = _ltrim(@bar) if @bar;
 	#	_ltrim($bar);
-	#	_ltrim(@bar) if	@bar;
+	#	_ltrim(@bar) if @bar;
 	#	$foo = _ltrim($_);
 	#	_ltrim($_);
-	#	@bar = ();	$xxx = ltrim(@bar);	## ERROR
+	#	@bar = (); $xxx = ltrim(@bar);	## ERROR
 	#	$xxx = ltrim();					## ERROR
 	#	ltrim();						## ERROR
 	my %opt	= (
-		'trim_re' => '\s+',
+		trim_re => '\s+',
 		);
 
 	my $me = (caller(0))[3];
 	my $opt_ref;
-	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last	argument only if it's a	HASH reference (assumed	to be options for our function)
-	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(exists	$opt{$_}) {	$opt{$_} = $opt_ref->{$_}; } else {	Carp::carp "Unknown	option '$_'	to for function	".$me; return; } } }
-	if ( !@_ &&	!defined(wantarray)	) {	Carp::carp 'Useless	use	of '.$me.' with	no arguments in	void return	context	(did you want '.$me."($_) instead?)"; return; }
-	if ( !@_ ) { Carp::carp	'Useless use of	'.$me.'	with no	arguments';	return;	}
+	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last argument only if it's a HASH reference (assumed to be options for our function)
+	if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' for function ".$me; return; } } }
+	if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me."($_) instead?)"; return; }
+	if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
 
-	my $t =	$opt{'trim_re'};
+	my $t = $opt{trim_re};
 
 	my $arg_ref;
 	$arg_ref = \@_;
-	$arg_ref = [ @_	] if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+	$arg_ref = [ @_ ] if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
-	for	my $arg	( @{$arg_ref} )	{
+	for	my $arg ( @{$arg_ref} ) {
 		if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-		$arg =~	s/\A$t//;
+		$arg =~ s/\A$t//;
 		}
 
 	return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 	}
 
 sub	_gen_delimeted_regexp {
-	# _gen_delimeted_regexp	( $delimiters, $escapes	): returns $
-	# from "Mastering Regular Expressions, 2e; p. 281" and modified	from Text::Balanced::gen_delimited_pat($;$)	[v1.95]
-	# $DOUBLE =	qr{"[^"\\]+(?:\\.[^"\\]+)+"};
-	# $SINGLE =	qr{'[^'\\]+(?:\\.[^'\\]+)+'};
+	# _gen_delimeted_regexp ( $delimiters, $escapes ): returns $
+	# from "Mastering Regular Expressions, 2e; p. 281" and modified from Text::Balanced::gen_delimited_pat($;$) [v1.95]
+	# $DOUBLE = qr{"[^"\\]+(?:\\.[^"\\]+)+"};
+	# $SINGLE = qr{'[^'\\]+(?:\\.[^'\\]+)+'};
 	## no critic (ControlStructures::ProhibitCStyleForLoops)
-	my ($dels, $escs) =	@_;
-	return q{} unless $dels	=~ /^\S+$/;		## no critic (ProhibitPostfixControls)
+	my ($dels, $escs) = @_;
+	return q{} unless $dels =~ /^\S+$/;		## no critic (ProhibitPostfixControls)
 	$escs =	q{}	unless $escs;				## no critic (ProhibitPostfixControls)
 
 	#print "dels = $dels\n";
@@ -284,8 +284,9 @@ sub	_dequote{
 	# $opt{'allowed_quotes_re'}	= balanced 'quote' delimeters which	are	removed	[default = q{['"]} ]
 
 	my %opt	= (
-		'surround_re' => '\s*',
-		'allowed_quotes_re'	=> '['.$_G{'quote_meta'}.']',
+		surround_re			=> '\s*',
+		allowed_quotes_re	=> '['.$_G{quote_meta}.']',
+		_return_quote		=>	0,							# true/false [ default = false ], if true, return quote as first character in returned array
 		);
 
 	my $me = (caller(0))[3];
@@ -293,15 +294,24 @@ sub	_dequote{
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last	argument only if it's a	HASH reference (assumed	to be options for our function)
 	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(exists	$opt{$_}) {	$opt{$_} = $opt_ref->{$_}; } else {	Carp::carp "Unknown	option '$_'	to for function	".$me; } } }
 
-	my $w =	$opt{'surround_re'};
-	my $q =	$opt{'allowed_quotes_re'};
+	my $w =	$opt{surround_re};
+	my $q =	$opt{allowed_quotes_re};
+	my $quoter = q{};
 
 	@_ = @_	? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
 	for	(@_	? @_ : $_)
 		{
 		s/^$w($q)(.*)\1$w$/$2/;
-		#print "_ =	$_\n";
+		if (defined($1)) { $quoter = $1; }
+		#print "_ = $_\n";
+		}
+
+	if ( $opt{_return_quote} )
+		{
+		unshift @_, $quoter;
+		#print "quoter = $quoter\n";
+		#print "_ = @_\n";
 		}
 
 	return wantarray ? @_ :	"@_";
@@ -440,9 +450,10 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# _argv( $ [,\%] ):	returns	@
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [%]: an optional hash_ref	containing function	options	as named parameters
-	#	nullglob = true/false [default = true]	# if true, patterns	which match	no files are expanded to a null	string,	rather than	the	pattern	itself
 	my %opt	= (
-		'nullglob' => 0,
+		nullglob => 0,				# = true/false [default = false]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself
+		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
+		_carp_unbalanced => 1,		# = true/false [default = true]		# <private> if true, carp for unbalanced command line quotes
 		);
 
 	# read/expand optional named parameters
@@ -454,16 +465,16 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	my @argv2;
 	my @argv2_globok;			# glob signal per argv2	entry
 
-	my @argv_3;				# [] of	[](token =>	<token_portion>, glob => glob_this)
+	my @argv_3;					# [] of	[](token =>	<token_portion>, glob => glob_this)
 
-	my $sq = $_G{'single_q'};			   # single	quote (')
-	my $dq = $_G{'double_q'};			   # double	quote (")
+	my $sq = $_G{single_q};			   # single	quote (')
+	my $dq = $_G{double_q};			   # double	quote (")
 	my $quotes = $sq.$dq;					# quote	chars ('")
 	my $q =	quotemeta $quotes;
 
-	my $gc = quotemeta ( $_G{'glob_char'} );  #	glob signal	characters
+	my $gc = quotemeta ( $_G{glob_char} );  #	glob signal	characters
 
-	my $escape = $_G{'escape_char'};
+	my $escape = $_G{escape_char};
 
 	my $_unbalanced_command_line_quotes	= 0;
 
@@ -500,7 +511,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			{# simple leading full token with no quote delimeter characters
 			# $1 = non-whitespace/non-quote	token
 			# $2 = rest	of string (with	leading	whitespace)	[if	exists]
-			print "1-push `$1`	(g_ok =	$glob_this_token)\n";
+			#print "1-push `$1`	(g_ok =	$glob_this_token)\n";
 			$t = $1;
 			#push @argv2, $1;
 			#push @argv2_globok, $glob_this_token;
@@ -563,7 +574,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							#$s	= $two;
 							$t .= $1;
 							$s = $2;
-							push @{	$argv_3[ $i	] }, { token =>	$1,	glob =>	0, id => 'complex:re_qq' };
+							push @{	$argv_3[ $i	] }, { token =>	$1,	glob =>	$opt{_glob_within_qq}, id => 'complex:re_qq' };
 							next;
 							}
 						$t .= q{$}.$s;
@@ -584,12 +595,18 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 						my $three =	defined($3) ? $3 : q{};
 						if ($one)
 							{
+							my $quote;
+							my $dequoted_token;
+							my $glob_this_token = 0;
 							#print "one	= $one\n";
 							#if	($one =~ /^\'.*[$gc]+.*/) {	$glob_this_token = 0; }
-							$glob_this_token = 0 if	($one =~ /^\'.*[$gc]+.*/);		## no critic (ProhibitPostfixControls)
-							$t .= _dequote($one);
+							#$glob_this_token = 0 if	($one =~ /^\'.*[$gc]+.*/);		## no critic (ProhibitPostfixControls)
+							( $quote, $dequoted_token ) = _dequote($one, {_return_quote => 1});
+							#$dequoted_token = _dequote($one);
+							$glob_this_token = $opt{_glob_within_qq} && ($quote eq $_G{qq});
+							$t .= $dequoted_token;
 							$s = $two;
-							push @{	$argv_3[ $i ] }, { token => _dequote($one), glob =>	0, id => 'complex:noescapes' };
+							push @{	$argv_3[ $i ] }, { token => _dequote($one), glob =>	$glob_this_token, id => 'complex:noescapes' };
 							}
 						else {
 							$t .= $three; $_unbalanced_command_line_quotes = 1; $s = q{};
@@ -633,7 +650,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	@argv2_globok =	@argv2_globok[$n+1..$#argv2_globok];
 
 	# check	for	unbalanced quotes and croak	if so...
-	if ($_unbalanced_command_line_quotes) { Carp::croak 'Unbalanced command line quotes (at token `'.$argv2[-1].'`)'; }
+	if ($opt{_carp_unbalanced} && $_unbalanced_command_line_quotes) { Carp::croak 'Unbalanced command line quotes (at token `'.$argv2[-1].'`)'; }
 
 	# do globbing
 	my @argv2_g;
@@ -653,7 +670,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		#print "s =	'$s'\n";
 		#$pat =	$s;
 
-		#if	($pat =~ /\s/) { $pat =	$_G{'single_q'}.$pat.$_G{'single_q'}; }		# quote	if contains	white space	to avoid splitting pattern	(NOT needed	for	bsd_glob())
+		#if	($pat =~ /\s/) { $pat =	$_G{'single_q'}.$pat.$_G{q}; }		# quote	if contains	white space	to avoid splitting pattern	(NOT needed	for	bsd_glob())
 
 		#print "pat = '$pat'\n";
 		#if ($argv2_globok[$i]) { @g = File::DosGlob::glob(	$pat ) if $pat =~ /[$gc]/; }
@@ -663,7 +680,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
 
-		if ( $opt{'nullglob'} )
+		if ( $opt{nullglob} )
 			{
 			$glob_flags	|= GLOB_NOMAGIC;
 			}
@@ -672,7 +689,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			$glob_flags	|= GLOB_NOCHECK;
 			}
 		if ( $pat =~ /\\[?*]/ )
-			{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing
+			{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
 			@g = ( $s );
 			}
 		else
@@ -921,20 +938,20 @@ None.
 None reported.
 
 
-=head1 BUGS	AND	LIMITATIONS
+=head1 BUGS AND LIMITATIONS
 
 =for author_to_fill_in
-	A list of known	problems with the module, together with	some
-	indication Whether they	are	likely to be fixed in an upcoming
-	release. Also a	list of	restrictions on	the	features the module
-	does provide: data types that cannot be	handled, performance issues
-	and	the	circumstances in which they	may	arise, practical
-	limitations	on the size	of data	sets, special cases	that are not
+	A list of known problems with the module, together with some
+	indication Whether they are likely to be fixed in an upcoming
+	release. Also a list of restrictions on the features the module
+	does provide: data types that cannot be handled, performance issues
+	and the circumstances in which they may arise, practical
+	limitations on the size of data sets, special cases that are not
 	(yet) handled, etc.
 
-Brackets ('{' and '}') and braces ('[' and ']')	must be	quoted to be matched literally.	This may be	a gotcha for some users, although if the filename has internal spaces, the standard	Win32 shell	(cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
+Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 
-No bugs	have been reported.
+No bugs have been reported.
 
 
 Please report any bugs or feature requests to
@@ -942,122 +959,122 @@ C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>.
 
 
-=for readme	continue
+=for readme continue
 
 =head1 AUTHOR
 
-Roy	Ivy	III	<rivy[at]cpan.org>
+Roy Ivy III <rivy[at]cpan.org>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2007,	Roy	Ivy	III	<rivy[at]cpan.org>.
-All	rights reserved.
+Copyright (c) 2007, Roy Ivy III <rivy[at]cpan.org>.
+All rights reserved.
 
-This module	is free	software; you can redistribute it and/or
-modify it under	the	same terms as Perl itself. See L<perlartistic>.
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
 
 
 =head1 DISCLAIMER OF WARRANTY
 
-BECAUSE	THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE	IS NO WARRANTY
-FOR	THE	SOFTWARE, TO THE EXTENT	PERMITTED BY APPLICABLE	LAW. EXCEPT	WHEN
-OTHERWISE STATED IN	WRITING	THE	COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE	THE	SOFTWARE ''AS IS'' WITHOUT WARRANTY	OF ANY KIND, EITHER
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE SOFTWARE ''AS IS'' WITHOUT WARRANTY OF ANY KIND, EITHER
 EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A	PARTICULAR PURPOSE.	THE
-ENTIRE RISK	AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD	THE	SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR	CORRECTION.
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
+YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
-IN NO EVENT	UNLESS REQUIRED	BY APPLICABLE LAW OR AGREED	TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER	PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE	LICENCE, BE
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF	THE	USE	OR INABILITY TO	USE
-THE	SOFTWARE (INCLUDING	BUT	NOT	LIMITED	TO LOSS	OF DATA	OR DATA	BEING
-RENDERED INACCURATE	OR LOSSES SUSTAINED	BY YOU OR THIRD	PARTIES	OR A
-FAILURE	OF THE SOFTWARE	TO OPERATE WITH	ANY	OTHER SOFTWARE), EVEN IF
-SUCH HOLDER	OR OTHER PARTY HAS BEEN	ADVISED	OF THE POSSIBILITY OF
+OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGES.
 
-=for readme	stop
+=for readme stop
 
 =begin IMPLEMENTATION-NOTES
 
 BASH QUOTING
-	   Quoting is used to remove the special meaning of	certain	characters or words	to the
-	   shell.  Quoting can be used to disable special treatment	for	special	characters,	to
-	   prevent	reserved  words	 from  being  recognized as	such, and to prevent parameter
-	   expansion.
+    Quoting is used to remove the special meaning of certain characters or words to the
+    shell.  Quoting can be used to disable special treatment for special characters, to
+    prevent reserved  words  from  being  recognized as such, and to prevent parameter
+    expansion.
 
-	   Each	of the metacharacters listed above under DEFINITIONS has  special  meaning	to
-	   the shell and must be quoted	if it is to	represent itself.
+    Each of the metacharacters listed above under DEFINITIONS has  special  meaning to
+    the shell and must be quoted if it is to represent itself.
 
-	   When	the	command	history	expansion facilities are being used	(see HISTORY EXPANSION
-	   below), the history expansion character,	usually	!, must	be quoted to prevent  his-
-	   tory	expansion.
+    When the command history expansion facilities are being used (see HISTORY EXPANSION
+    below), the history expansion character, usually !, must be quoted to prevent  his-
+    tory expansion.
 
-	   There are three quoting mechanisms: the escape character, single	quotes,	and	double
-	   quotes.
+    There are three quoting mechanisms: the escape character, single quotes, and double
+    quotes.
 
-	   A non-quoted	backslash (\) is the escape	character.	It preserves the literal value
-	   of  the	next character that	follows, with the exception	of <newline>.  If a	\<new-
-	   line> pair appears, and the backslash is	 not  itself  quoted,  the	\<newline>	is
-	   treated	as	a  line	continuation (that is, it is removed from the input	stream and
-	   effectively ignored).
+    A non-quoted backslash (\) is the escape character. It preserves the literal value
+    of  the next character that follows, with the exception of <newline>.  If a \<new-
+    line> pair appears, and the backslash is  not  itself  quoted,  the \<newline> is
+    treated as a  line continuation (that is, it is removed from the input stream and
+    effectively ignored).
 
-	   Enclosing characters	in single quotes preserves the literal value of	each character
-	   within  the	quotes.	 A single quote	may	not	occur between single quotes, even when
-	   preceded	by a backslash.
+    Enclosing characters in single quotes preserves the literal value of each character
+    within  the quotes.  A single quote may not occur between single quotes, even when
+    preceded by a backslash.
 
-	   Enclosing characters	in double quotes preserves the literal value of	all	characters
-	   within  the	quotes,	 with the exception	of $, `, \,	and, when history expansion	is
-	   enabled,	!.	The	characters $ and ` retain  their  special  meaning	within	double
-	   quotes.	The	backslash retains its special meaning only when	followed by	one	of the
-	   following characters: $,	`, ", \, or	<newline>.	 A	double	quote  may	be	quoted
-	   within  double quotes by	preceding it with a	backslash.	If enabled,	history	expan-
-	   sion	will be	performed unless an	!  appearing in	double quotes is escaped  using	 a
-	   backslash.  The backslash preceding the !  is not removed.
+    Enclosing characters in double quotes preserves the literal value of all characters
+    within  the quotes,  with the exception of $, `, \, and, when history expansion is
+    enabled, !. The characters $ and ` retain  their  special  meaning within double
+    quotes. The backslash retains its special meaning only when followed by one of the
+    following characters: $, `, ", \, or <newline>.  A double quote  may be quoted
+    within  double quotes by preceding it with a backslash. If enabled, history expan-
+    sion will be performed unless an !  appearing in double quotes is escaped  using  a
+    backslash.  The backslash preceding the !  is not removed.
 
-	   The	special	 parameters	 *	and	 @ have	special	meaning	when in	double quotes (see
-	   PARAMETERS below).
+    The special  parameters  * and  @ have special meaning when in double quotes (see
+    PARAMETERS below).
 
-	   Words of	the	form $'string' are treated specially.  The	word  expands  to  string,
-	   with	 backslash-escaped	characters	replaced  as specified by the ANSI C standard.
-	   Backslash escape	sequences, if present, are decoded as follows:
-			  \a	 alert (bell)
-			  \b	 backspace
-			  \e	 an	escape character
-			  \f	 form feed
-			  \n	 new line
-			  \r	 carriage return
-			  \t	 horizontal	tab
-			  \v	 vertical tab
-			  \\	 backslash
-			  \'	 single	quote
-			  \nnn	 the eight-bit character whose value is	the	octal value	 nnn  (one	to
-					 three digits)
-			  \xHH	 the  eight-bit	character whose	value is the hexadecimal value HH (one
-					 or	two	hex	digits)
-			  \cx	 a control-x character
+    Words of the form $'string' are treated specially.  The word  expands  to  string,
+    with  backslash-escaped characters replaced  as specified by the ANSI C standard.
+    Backslash escape sequences, if present, are decoded as follows:
+     \a  alert (bell)
+     \b  backspace
+     \e  an escape character
+     \f  form feed
+     \n  new line
+     \r  carriage return
+     \t  horizontal tab
+     \v  vertical tab
+     \\  backslash
+     \'  single quote
+     \nnn  the eight-bit character whose value is the octal value  nnn  (one to
+      three digits)
+     \xHH  the  eight-bit character whose value is the hexadecimal value HH (one
+      or two hex digits)
+     \cx  a control-x character
 
-	   The expanded	result is single-quoted, as	if the dollar sign had not been	present.
+    The expanded result is single-quoted, as if the dollar sign had not been present.
 
-	   A double-quoted string preceded by a	dollar sign	($)	will cause the	string	to	be
-	   translated  according  to the current locale.  If the current locale	is C or	POSIX,
-	   the dollar sign is ignored.	If the string is translated	and	replaced, the replace-
-	   ment	is double-quoted.
+    A double-quoted string preceded by a dollar sign ($) will cause the string to be
+    translated  according  to the current locale.  If the current locale is C or POSIX,
+    the dollar sign is ignored. If the string is translated and replaced, the replace-
+    ment is double-quoted.
 
 EXPANSION
-	   Use "glob" to expand	filenames.
+    Use "glob" to expand filenames.
 
 
 SUMMARY
-	'...'	=> literal (no escapes and no globbing within quotes)
-	$'...'	=> ANSI	C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other	\<x> =>\<x>)
-	"..."	=> literal (no escapes but allows internal globbing) [differs from bash]
-	$"..."	=> same	as "..."
-???	$"..."	=> modified	bash escapes (for $, ",	\ only)	and	$ expansion	(?$() shell	escapes), no ``	shell escapes, note: \<x> => \<x> unless <x> = {$, ", or <NL>}
+ '...' => literal (no escapes and no globbing within quotes)
+ $'...' => ANSI C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other \<x> =>\<x>)
+ "..." => literal (no escapes but allows internal globbing) [differs from bash]
+ $"..." => same as "..."
+??? $"..." => modified bash escapes (for $, ", \ only) and $ expansion (?$() shell escapes), no `` shell escapes, note: \<x> => \<x> unless <x> = {$, ", or <NL>}
 
 
 =end IMPLEMENTATION-NOTES
