@@ -20,7 +20,7 @@ goto endofperl
 # note: command line args are dequoted so commands taking string arguments and expecting them quoted might not work exactly the same (eg, echo 'a s' => 'a s' vs x echo 'a s' => "a s")
 #		using $"<string>" => "<string>" quote preservation behavior can overcome this issue (eg, x perl -e $"print 'test'")
 #		[??] $"<string>" under bash ignores the $ if C or POSIX locale in force, and only leaves string qq'd if translated to another locale
-#		[??] use another method to preserve quotes for appropriate commands
+#		[??] use another method to preserve quotes for appropriate commands (such as "'"'<string'"'" (noisy but it works)
 
 use strict;
 use warnings;
@@ -30,7 +30,7 @@ use version qw(); our $VERSION = version::qv(qw( default-v 0.3 $Version: 0.3.200
 @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
 
 #exec { $ARGV[0] } @ARGV;	# doesn't see "echo" as a command
-#print "argv = '@ARGV'\n";
+#print "argv = `@ARGV`\n";
 
 system @ARGV;
 
