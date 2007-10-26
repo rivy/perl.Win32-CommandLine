@@ -781,125 +781,125 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 #return	($r, $s, $p);
 #}
 
-=for readme	continue
+=for readme continue
 
 =head1 SYNOPSIS
 
 =for author_to_fill_in
 	Brief code example(s) here showing commonest usage(s).
-	This section will be as	far	as many	users bother reading
-	so make	it as educational and exeplary as possible.
+	This section will be as far as many users bother reading
+	so make it as educational and exeplary as possible.
 
-	@ARGV =	Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
+	@ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
 
 	_or_
 
-	use	Win32::CommandLine qw( command_line	);
-	my $commandline	= command_line();
+	use Win32::CommandLine qw( command_line );
+	my $commandline = command_line();
 	...
 
-=for readme	stop
+=for readme stop
 
 =head1 DESCRIPTION
 
 =for author_to_fill_in
-	Write a	full description of	the	module and its features	here.
-	Use	subsections	(=head2, =head3) as	appropriate.
+	Write a full description of the module and its features here.
+	Use subsections (=head2, =head3) as appropriate.
 
-This module	is used	to reparse the Win32 command line, automating better quoting and globbing of the command line.
+This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line.
 
-=for readme	continue
+=for readme continue
 
 =head1 INSTALLATION
 
-To install this	module,	run	the	following commands:
+To install this module, run the following commands:
+
+	perl Build.PL
+	./Build
+	./Build test
+	./Build install
+
+Alternatively, using the standard make idiom (if you do not have Module::Build installed):
 
 	perl Makefile.PL
 	make
 	make test
 	make install
 
-(On	Windows	platforms you should use C<nmake> instead.)
+(On Windows platforms you should use C<nmake> instead.)
 
-Alternatively, using Build.PL (if you have Module::Build installed):
+PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
 
-	perl Build.PL
-	./Build
-	./Build	test
-	./Build	install
+Note: On ActivePerl installations, './Build install' will do a full installation using C<ppm> (see L<ppm>).
 
-PPM	installation bundles should	also be	available in the ActiveState PPM archive.
-
-Note: On ActivePerl	installations, './Build	install' will do a full	installation using C<ppm> (see L<ppm>).
-
-=for readme	stop
+=for readme stop
 
 =head1 INTERFACE
 
 =for author_to_fill_in
-	Write a	separate section listing the public	components of the modules
-	interface. These normally consist of either	subroutines	that may be
-	exported, or methods that may be called	on objects belonging to	the
-	classes	provided by	the	module.
+	Write a separate section listing the public components of the modules
+	interface. These normally consist of either subroutines that may be
+	exported, or methods that may be called on objects belonging to the
+	classes provided by the module.
 
 =head1 SUBROUTINES/METHODS
 
 =for author_to_fill_in
-	Write a	separate section listing the public	components of the modules
-	interface. These normally consist of either	subroutines	that may be
-	exported, or methods that may be called	on objects belonging to	the
-	classes	provided by	the	module.
+	Write a separate section listing the public components of the modules
+	interface. These normally consist of either subroutines that may be
+	exported, or methods that may be called on objects belonging to the
+	classes provided by the module.
 
-=head2 command_line()
+=head2 command_line( )
 
 C<command_line()> returns the full Win32 command line as a string.
 
-=head2 argv()
+=head2 argv( )
 
-C<argv()> returns the reparsed command line	as an array.
+C<argv()> returns the reparsed command line as an array.
 
-=head2 parse( $	)
+=head2 parse( $ )
 
-C<argv()> returns the reparsed command line	as an array.
+C<parse()> returns the parsed argument string as an array.
 
 =head1 IMPLEMENTATION and INTERNALS
 
 #=h#ead2 wrap_GetCommandLine()
 #
-#[XS] Use C	and	Win32 API to get the command line.
+#[XS] Use C and Win32 API to get the command line.
 
 =head1 DIAGNOSTICS
 
 =for author_to_fill_in
-	List every single error	and	warning	message	that the module	can
-	generate (even the ones	that will ''never happen''), with a	full
-	explanation	of each	problem, one or	more likely	causes,	and	any
+	List every single error and warning message that the module can
+	generate (even the ones that will ''never happen''), with a full
+	explanation of each problem, one or more likely causes, and any
 	suggested remedies.
 
 =over
 
-=item C<< Error	message	here, perhaps with %s placeholders >>
+=item C<< Error message here, perhaps with %s placeholders >>
 
-[Description of	error here]
+[Description of error here]
 
-=item C<< Another error	message	here >>
+=item C<< Another error message here >>
 
-[Description of	error here]
+[Description of error here]
 
-[Et	cetera,	et cetera]
+[Et cetera, et cetera]
 
 =back
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
 =for author_to_fill_in
-	A full explanation of any configuration	system(s) used by the
-	module,	including the names	and	locations of any configuration
-	files, and the meaning of any environment variables	or properties
-	that can be	set. These descriptions	must also include details of any
+	A full explanation of any configuration system(s) used by the
+	module, including the names and locations of any configuration
+	files, and the meaning of any environment variables or properties
+	that can be set. These descriptions must also include details of any
 	configuration language used.
 
-Win32::CommandLine requires	no configuration files or environment variables.
+Win32::CommandLine requires no configuration files or environment variables.
 
 =over
 
@@ -907,33 +907,33 @@ Win32::CommandLine requires	no configuration files or environment variables.
 
 [???] $ENV{NULLGLOB} = 0/1 => override default 'nullglob' setting
 
-[???] $ENV{WIN32_COMMANDLINE_RULE} = "sh" |	"bash" (case doesn't matter) =>	argv will parse	in "sh/bash" manner	if set to "default"|"undef"
-- will warn	(not carp) if value	unrecognized
+[???] $ENV{WIN32_COMMANDLINE_RULE} = "sh" | "bash" (case doesn't matter) => argv will parse in "sh/bash" manner if set to "default"|"undef"
+- will warn (not carp) if value unrecognized
 
 =back
 
-=for readme	continue
+=for readme continue
 
 =head1 DEPENDENCIES
 
 =for author_to_fill_in
-	A list of all the other	modules	that this module relies	upon,
-	including any restrictions on versions,	and	an indication whether
-	the	module is part of the standard Perl	distribution, part of the
-	module's distribution, or must be installed	separately.	]
+	A list of all the other modules that this module relies upon,
+	including any restrictions on versions, and an indication whether
+	the module is part of the standard Perl distribution, part of the
+	module's distribution, or must be installed separately. ]
 
 None.
 
-=for readme	stop
+=for readme stop
 
 =head1 INCOMPATIBILITIES
 
 =for author_to_fill_in
-	A list of any modules that this	module cannot be used in conjunction
-	with. This may be due to name conflicts	in the interface, or
-	competition	for	system or program resources, or	due	to internal
-	limitations	of Perl	(for example, many modules that	use	source code
-	filters	are	mutually incompatible).
+	A list of any modules that this module cannot be used in conjunction
+	with. This may be due to name conflicts in the interface, or
+	competition for system or program resources, or due to internal
+	limitations of Perl (for example, many modules that use source code
+	filters are mutually incompatible).
 
 None reported.
 
