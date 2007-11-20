@@ -4,11 +4,15 @@ package	Win32::CommandLine;
 
 ## no critic ( ProhibitPostfixControls CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking RequirePodAtEnd )
 
+# TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
+
 use strict;
 use warnings;
+#use diagnostics;	# invoke blabbermouth warning mode
 #use 5.006;
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+# NOTE: maximum build number = <unsigned int max (usually 32-bit) = 4,294,967,295> { as seconds => approx 49710 days or > 136 years }
 use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 # Module Summary

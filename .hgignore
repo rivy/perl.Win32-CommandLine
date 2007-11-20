@@ -6,3 +6,4 @@ blib/*
 lib/Win32/CommandLine.c
 lib/Win32/CommandLine.o
 lib/Win32/CommandLine.xs
+Win32-CommandLine*
