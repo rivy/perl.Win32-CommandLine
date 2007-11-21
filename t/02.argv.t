@@ -83,9 +83,15 @@ add_test( [ qq{$0 t/\{t,p,0\}\*.t}, { 'nullglob' => 1 } ], ( glob('t/{t,p,0}*.t'
 
 add_test( [ qq{$0 t/\*} ], ( glob('t/*') ) );
 
-#add_test( [ qq{$0 't\\glob-file tests\\'*} ], ( glob('t/glob-file\ tests/*') ) );
-#
-#add_test( [ qq{$0 't\\glob-file tests\\*'} ], ( q{t\\glob-file tests\\*} ) );
+add_test( [ qq{$0 1 't\\glob-file tests'/*} ], ( 1, glob('t/glob-file\ tests/*') ) );
+
+add_test( [ qq{$0 2 't\\glob-file tests'\\*} ], ( 2, glob('t/glob-file\ tests/*') ) );
+
+add_test( [ qq{$0 3 't\\glob-file tests/'*} ], ( 3, glob('t/glob-file\ tests/*') ) );
+
+add_test( [ qq{$0 4 't\\glob-file tests\\'*} ], ( 4, glob('t/glob-file\ tests/*') ) );
+
+add_test( [ qq{$0 5 't\\glob-file tests\\*'} ], ( 5, q{t\\glob-file tests\\*} ) );
 
 add_test( [ qq{$0 t ""} ], ( q{t}, q{} ) );
 

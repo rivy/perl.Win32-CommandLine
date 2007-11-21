@@ -430,7 +430,8 @@ sub	_quote_gc_meta{
 	my $gc = quotemeta(	'?*[]{}~' );
 #	my $dgc	= quotemeta	( '?*' );
 
-	$s =~ s/([$gc])/\\$1/g;
+	$s =~ s/\\/\//g;						# replace all backslashes with forward slashes
+	$s =~ s/([$gc])/\\$1/g;					# backslash quote all metacharacters (note: there should be no backslashes to quote)
 
 #	$s =~ s/([$dgc])/\\\\\\\\\\$1/g;		# see Dos::Glob	notes for literally	quoting	'*'	or '?'	## doesn't work	for	Win32 (? only MacOS)
 
@@ -657,6 +658,110 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	if ($opt{_carp_unbalanced} && $_unbalanced_command_line_quotes) { Carp::croak 'Unbalanced command line quotes (at token `'.$argv2[-1].'`)'; }
 
 	# do globbing
+#META CHARACTERS
+#
+#  \       Quote the next metacharacter
+#  []      Character class
+#  {}      Multiple pattern
+#  *       Match any string of characters
+#  ?       Match any single character
+#  ~       User name home directory
+#
+#The metanotation a{b,c,d}e is a shorthand for abe ace ade. Left to right order is preserved, with results of matches being sorted separately at a low level to preserve this order. As a special case {, }, and {} are passed undisturbed.
+#
+#POSIX FLAGS
+#
+#The POSIX defined flags for bsd_glob() are:
+#
+#GLOB_ERR
+#
+#    Force bsd_glob() to return an error when it encounters a directory it cannot open or read. Ordinarily bsd_glob() continues to find matches.
+#GLOB_LIMIT
+#
+#    Make bsd_glob() return an error (GLOB_NOSPACE) when the pattern expands to a size bigger than the system constant ARG_MAX (usually found in limits.h). If your system does not define this constant, bsd_glob() uses sysconf(_SC_ARG_MAX) or _POSIX_ARG_MAX where available (in that order). You can inspect these values using the standard POSIX extension.
+#GLOB_MARK
+#
+#    Each pathname that is a directory that matches the pattern has a slash appended.
+#GLOB_NOCASE
+#
+#    By default, file names are assumed to be case sensitive; this flag makes bsd_glob() treat case differences as not significant.
+#GLOB_NOCHECK
+#
+#    If the pattern does not match any pathname, then bsd_glob() returns a list consisting of only the pattern. If GLOB_QUOTE is set, its effect is present in the pattern returned.
+#GLOB_NOSORT
+#
+#    By default, the pathnames are sorted in ascending ASCII order; this flag prevents that sorting (speeding up bsd_glob()).
+#
+#The FreeBSD extensions to the POSIX standard are the following flags:
+#
+#GLOB_BRACE
+#
+#    Pre-process the string to expand {pat,pat,...} strings like csh(1). The pattern '{}' is left unexpanded for historical reasons (and csh(1) does the same thing to ease typing of find(1) patterns).
+#GLOB_NOMAGIC
+#
+#    Same as GLOB_NOCHECK but it only returns the pattern if it does not contain any of the special characters "*", "?" or "[". NOMAGIC is provided to simplify implementing the historic csh(1) globbing behaviour and should probably not be used anywhere else.
+#GLOB_QUOTE
+#
+#    Use the backslash ('\') character for quoting: every occurrence of a backslash followed by a character in the pattern is replaced by that character, avoiding any special interpretation of the character. (But see below for exceptions on DOSISH systems).
+#GLOB_TILDE
+#
+#    Expand patterns that start with '~' to user name home directories.
+#GLOB_CSH
+#
+#    For convenience, GLOB_CSH is a synonym for GLOB_BRACE | GLOB_NOMAGIC | GLOB_QUOTE | GLOB_TILDE | GLOB_ALPHASORT.
+#
+#The POSIX provided GLOB_APPEND, GLOB_DOOFFS, and the FreeBSD extensions GLOB_ALTDIRFUNC, and GLOB_MAGCHAR flags have not been implemented in the Perl version because they involve more complex interaction with the underlying C structures.
+#
+#The following flag has been added in the Perl implementation for csh compatibility:
+#
+#GLOB_ALPHASORT
+#
+#    If GLOB_NOSORT is not in effect, sort filenames is alphabetical order (case does not matter) rather than in ASCII order.
+#
+#DIAGNOSTICS
+#
+#bsd_glob() returns a list of matching paths, possibly zero length. If an error occurred, &File::Glob::GLOB_ERROR will be non-zero and $! will be set. &File::Glob::GLOB_ERROR is guaranteed to be zero if no error occurred, or one of the following values otherwise:
+#
+#GLOB_NOSPACE
+#
+#    An attempt to allocate memory failed.
+#GLOB_ABEND
+#
+#    The glob was stopped because an error was encountered.
+#
+#In the case where bsd_glob() has found some matching paths, but is interrupted by an error, it will return a list of filenames and set &File::Glob::ERROR.
+#
+#Note that bsd_glob() deviates from POSIX and FreeBSD glob(3) behaviour by not considering ENOENT and ENOTDIR as errors - bsd_glob() will continue processing despite those errors, unless the GLOB_ERR flag is set.
+#
+#Be aware that all filenames returned from File::Glob are tainted.
+#
+#
+#NOTES
+#
+#    *
+#
+#      If you want to use multiple patterns, e.g. bsd_glob("a* b*"), you should probably throw them in a set as in bsd_glob("{a*,b*}"). This is because the argument to bsd_glob() isn't subjected to parsing by the C shell. Remember that you can use a backslash to escape things.
+#    *
+#
+#      On DOSISH systems, backslash is a valid directory separator character. In this case, use of backslash as a quoting character (via GLOB_QUOTE) interferes with the use of backslash as a directory separator. The best (simplest, most portable) solution is to use forward slashes for directory separators, and backslashes for quoting. However, this does not match "normal practice" on these systems. As a concession to user expectation, therefore, backslashes (under GLOB_QUOTE) only quote the glob metacharacters '[', ']', '{', '}', '-', '~', and backslash itself. All other backslashes are passed through unchanged.
+#    *
+#
+#      Win32 users should use the real slash. If you really want to use backslashes, consider using Sarathy's File::DosGlob, which comes with the standard Perl distribution.
+#    *
+#
+#      Mac OS (Classic) users should note a few differences. Since Mac OS is not Unix, when the glob code encounters a tilde glob (e.g. ~user) and the GLOB_TILDE flag is used, it simply returns that pattern without doing any expansion.
+#
+#      Glob on Mac OS is case-insensitive by default (if you don't use any flags). If you specify any flags at all and still want glob to be case-insensitive, you must include GLOB_NOCASE in the flags.
+#
+#      The path separator is ':' (aka colon), not '/' (aka slash). Mac OS users should be careful about specifying relative pathnames. While a full path always begins with a volume name, a relative pathname should always begin with a ':'. If specifying a volume name only, a trailing ':' is required.
+#
+#      The specification of pathnames in glob patterns adheres to the usual Mac OS conventions: The path separator is a colon ':', not a slash '/'. A full path always begins with a volume name. A relative pathname on Mac OS must always begin with a ':', except when specifying a file or directory name in the current working directory, where the leading colon is optional. If specifying a volume name only, a trailing ':' is required. Due to these rules, a glob like <*:> will find all mounted volumes, while a glob like <*> or <:*> will find all files and directories in the current directory.
+#
+#      Note that updirs in the glob pattern are resolved before the matching begins, i.e. a pattern like "*HD:t?p::a*" will be matched as "*HD:a*". Note also, that a single trailing ':' in the pattern is ignored (unless it's a volume name pattern like "*HD:"), i.e. a glob like <:*:> will find both directories and files (and not, as one might expect, only directories). You can, however, use the GLOB_MARK flag to distinguish (without a file test) directory names from file names.
+#
+#      If the GLOB_MARK flag is set, all directory paths will have a ':' appended. Since a directory like 'lib:' is not a valid relative path on Mac OS, both a leading and a trailing colon will be added, when the directory name in question doesn't contain any colons (e.g. 'lib' becomes ':lib:').
+#
+#
 	my @argv2_g;
 	for	(my $i=0; $i<=$#argv2; $i++)		## no critic (ProhibitCStyleForLoops)
 		{
@@ -670,6 +775,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		$pat = q{};
 		my $s =	q{};
 		#my	$glob_this = 0;
+		# must meta-quote to allow glob metacharacters to correctly match within quotes
 		foreach my $r_h ( @{ $argv_3[$n+$i+1] } ) { my $t = $r_h->{token}; $s .= $t; if ($r_h->{glob}) { $t =~ s/\\/\//g; } else { $t = _quote_gc_meta($t); }; $pat .= $t;}
 		#print "s =	'$s'\n";
 		#$pat =	$s;
@@ -682,7 +788,14 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 ##		  if ($argv2_globok[$i]) { @g =	glob( $pat ) if	$pat =~	/[$gc]/; }		## no critic (ProhibitPostfixControls)
 ##		  @g = File::Glob::glob( $pat )	if ( $pat =~ /[$gc]/ );		## no critic (ProhibitPostfixControls)		## only	glob if	glob characters	are	in string
 
+
+# NOT!: bash-like globbing EXCEPT no backslash quoting within the glob; this makes "\\" => "\\" instead of "\" so that "\\machine\dir" works
+# instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
+# must do the slash changes for user expectations ( "\\machine\dir\"* should work as expected on Win32 machines )
+# TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
+
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
+#		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE;
 
 		if ( $opt{nullglob} )
 			{
