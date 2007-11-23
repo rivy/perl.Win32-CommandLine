@@ -427,11 +427,14 @@ sub	_quote_gc_meta{
 	my $s =	shift @_;
 #	my $gc = $_G{glob_char};
 
-	my $gc = quotemeta(	'?*[]{}~' );
+	my $gc = quotemeta(	'?*[]{}~'.q{\\} );
 #	my $dgc	= quotemeta	( '?*' );
 
-	$s =~ s/\\/\//g;						# replace all backslashes with forward slashes
-	$s =~ s/([$gc])/\\$1/g;					# backslash quote all metacharacters (note: there should be no backslashes to quote)
+#	$s =~ s/\\/\//g;						# replace all backslashes with forward slashes
+#	$s =~ s/([$gc])/\\$1/g;					# backslash quote all metacharacters (note: there should be no backslashes to quote)
+
+#	$s =~ s/([$gc])/\\$1/g;					# backslash quote all metacharacters (backslashes are ignored)
+	$s =~ s/([$gc])/\\$1/g;					# backslash quote all glob metacharacters (backslashes as well)
 
 #	$s =~ s/([$dgc])/\\\\\\\\\\$1/g;		# see Dos::Glob	notes for literally	quoting	'*'	or '?'	## doesn't work	for	Win32 (? only MacOS)
 
@@ -520,6 +523,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			$t = $1;
 			#push @argv2, $1;
 			#push @argv2_globok, $glob_this_token;
+			#print "1-push (simple:token): token => $1, glob => 1\n";
 			push @{	$argv_3[ scalar(@argv_3) ] }, {	token => $1, glob => 1,	id => 'simple:token' };
 			$s = defined($2) ? $2 : q{};
 			#_ltrim($s);
@@ -546,8 +550,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 					#print "1.3	= `$3`\n" if defined($3);
 					#print "1.4	= `$4`\n" if defined($4);
 					#print "1.5	= `$5`\n" if defined($5);
-					if ( defined($1) )	{
+					if ( defined($1) && length($1) > 0 )	{
 						$t .= $1;
+						#print "1-push (complex:leading non-quoted+whitespace): token => $1, glob => 1\n";
 						push @{	$argv_3[ $i	] }, { token =>	$1,	glob =>	1, id => 'complex:leading non-quoted+whitespace' };
 						}
 					$s = defined($2) ? $2 : q{};
@@ -567,6 +572,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							$glob_this_token = 0 if	($d_one	=~ /[$gc]/);		## no critic (ProhibitPostfixControls)
 							$t .= _dequote($d_one);
 							$s = $two;
+							#print "1-push (complex:re_q_escok): token => $1, glob => 1\n";
 							push @{	$argv_3[ $i	] }, { token =>	_dequote($d_one), glob => 0, id	=> 'complex:re_q_escok'	};
 							next;
 							}
@@ -579,6 +585,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							#$s	= $two;
 							$t .= $1;
 							$s = $2;
+							#print "1-push (complex:re_qq): token => $1, glob => $opt{_glob_within_qq}\n";
 							push @{	$argv_3[ $i	] }, { token =>	$1,	glob =>	$opt{_glob_within_qq}, id => 'complex:re_qq' };
 							next;
 							}
@@ -611,10 +618,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							$glob_this_token = $opt{_glob_within_qq} && ($quote eq $_G{qq});
 							$t .= $dequoted_token;
 							$s = $two;
+							#print "1-push (complex:noescapes): token => $one{dequoted}, glob => $glob_this_token\n";
 							push @{	$argv_3[ $i ] }, { token => _dequote($one), glob =>	$glob_this_token, id => 'complex:noescapes' };
 							}
 						else {
 							$t .= $three; $_unbalanced_command_line_quotes = 1; $s = q{};
+							#print "1-push (complex:NON-quoted/unbalanced): token => $three, glob => 1\n";
 							push @{	$argv_3[ $i	] }, { token => $three, glob => 1, id => 'complex:NON-quoted/unbalanced' };
 							last;
 							}
@@ -763,6 +772,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 #
 #
 	my @argv2_g;
+	my $glob_this;
 	for	(my $i=0; $i<=$#argv2; $i++)		## no critic (ProhibitCStyleForLoops)
 		{
 		use	File::Glob qw( :glob );
@@ -773,10 +783,29 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		#$pat =~ s/\\/\//g;		# change '\' to '/' within	path for correct globbing [Win32 only (? assert	Win32)]
 
 		$pat = q{};
-		my $s =	q{};
-		#my	$glob_this = 0;
+		$s = q{};
+		$glob_this = 0;
 		# must meta-quote to allow glob metacharacters to correctly match within quotes
-		foreach my $r_h ( @{ $argv_3[$n+$i+1] } ) { my $t = $r_h->{token}; $s .= $t; if ($r_h->{glob}) { $t =~ s/\\/\//g; } else { $t = _quote_gc_meta($t); }; $pat .= $t;}
+		foreach my $r_h ( @{ $argv_3[$n+$i+1] } )
+			{
+			my $t = $r_h->{token};
+			$s .= $t;
+			if ($r_h->{glob})
+				{
+				$glob_this = 1;
+				$t =~ s/\\/\//g;
+				}
+			else
+				{ $t = _quote_gc_meta($t); }
+			$pat .= $t;
+			#print "r_h(token) = `$r_h->{token}`\n";
+			#print "r_h(glob) = $r_h->{glob}\n";
+			#print "r_h(id) = `$r_h->{id}`\n";
+			#print "t = `$t`\n";
+			#print "s = `$s`\n";
+			#print "glob_this = $glob_this\n";
+			#print "pat = `$pat`\n";
+			}
 		#print "s =	'$s'\n";
 		#$pat =	$s;
 
@@ -805,14 +834,25 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			{
 			$glob_flags	|= GLOB_NOCHECK;
 			}
-		if ( $pat =~ /\\[?*]/ )
-			{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
-			@g = ( $s );
+
+		if ( $glob_this )
+			{
+			$pat =~ s#\\\\#\/#g;			# replace all backslashes (which are assumed to be backslash quoted already) with forward slashes
+			if ( $pat =~ /\\[?*]/ )
+				{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
+				@g = ( $s );
+				}
+			else
+				{
+				@g = bsd_glob( $pat, $glob_flags );
+				}
 			}
 		else
 			{
-			@g = bsd_glob( $pat, $glob_flags );
+			@g = ( $s );
 			}
+		#print "glob_this = $glob_this\n";
+		#print "s	= `$s`\n";
 		#print "pat	= `$pat`\n";
 		#print "#g = @g\n";
 

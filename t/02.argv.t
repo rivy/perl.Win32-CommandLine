@@ -57,6 +57,8 @@ add_test( [ qq{$0 \$'test'} ], ( qq{test} ) );
 
 add_test( [ qq{$0 \$'\\x34\\x34'} ], ( qq{44} ) );
 
+add_test( [ qq{$0 '\\x34\\x34'} ], ( qq{\\x34\\x34} ) );
+
 add_test( [ qq{$0 \*.t} ], ( q{*.t} ) );
 
 #add_test( [ qq{$0 '*.t} ], ( q{*.t} ) );   # exception: unbalanced quotes
@@ -82,6 +84,16 @@ add_test( [ qq{$0 t/\{0,t,p\}\*.t}, { 'nullglob' => 1 } ], ( glob('t/{0,t,p}*.t'
 add_test( [ qq{$0 t/\{t,p,0\}\*.t}, { 'nullglob' => 1 } ], ( glob('t/{t,p,0}*.t') ) );
 
 add_test( [ qq{$0 t/\*} ], ( glob('t/*') ) );
+
+add_test( [ qq{$0 '\\\\'} ], ( '\\\\' ) );
+
+add_test( [ qq{$0 'a\\a' '\\a\\x\\'} ], ( 'a\\a', '\\a\\x\\' ) );
+
+add_test( [ qq{$0 '/a\a'} ], ( qq{/a\a} ) );
+
+add_test( [ qq{$0 '//foo\\bar'} ], ( q{//foo\\bar} ) );
+
+add_test( [ qq{$0 '/a\a' /foo\\\\bar} ], ( qq{/a\a}, q{/foo//bar} ) ); ## problem
 
 add_test( [ qq{$0 1 't\\glob-file tests'/*} ], ( 1, glob('t/glob-file\ tests/*') ) );
 
