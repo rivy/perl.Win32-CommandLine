@@ -13,14 +13,11 @@ $config{-exclude} = [ qw( CodeLayout::ProhibitHardTabs RegularExpressions::Requi
 $config{-verbose} = '[%l:%c]: (%p; Severity: %s) %m. %e. ';
 ##
 
-eval {
-	require Test::Perl::Critic;
-	import Test::Perl::Critic ( %config );
-};
+my $haveTestPerlCritic = eval {	require Test::Perl::Critic;	import Test::Perl::Critic ( %config );	1; };
 
 plan skip_all => 'Test::Perl::Critic only run for author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR};
 
-plan skip_all => 'Test::Perl::Critic required to criticize code' if $@;
+plan skip_all => 'Test::Perl::Critic required to criticize code' if !$haveTestPerlCritic;
 
 my @files = glob('t/*.t');
 

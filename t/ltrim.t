@@ -6,7 +6,7 @@ use warnings;
 use lib "t/lib";
 use Test::More;
 use Test::Differences;
-eval { require Test::NoWarnings; import Test::NoWarnings; };
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
 use lib qw{ lib blib/lib blib/arch };
 
@@ -31,7 +31,8 @@ add_test( [ qq{ testing}, { trim_re => '[\st]+'} ], [ 'esting'] );
 
 ## do tests
 
-plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
+#plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
+plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0);
 
 do_tests(); # test _ltrim()
 

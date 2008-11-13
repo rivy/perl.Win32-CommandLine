@@ -8,9 +8,10 @@ use warnings;
 use lib 't/lib';
 use Test::More;
 use Test::Differences;
-eval { require Test::NoWarnings; import Test::NoWarnings; };
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
-plan tests => 2 + ($Test::NoWarnings::VERSION ? 1 : 0);
+#plan tests => 2 + ($Test::NoWarnings::VERSION ? 1 : 0);
+plan tests => 2 + ($haveTestNoWarnings ? 1 : 0);
 
 use lib qw{ blib\arch };		# XS module => must rebuild new .DLL before testing
 

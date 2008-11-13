@@ -1,8 +1,11 @@
 #-*- tab-width: 4; mode: perl -*-
-package	Win32::CommandLine;
+package Win32::CommandLine;
 #$Id$
 
-## no critic ( ProhibitPostfixControls CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching RequireArgUnpacking RequirePodAtEnd )
+## Perl::Critic policy exceptions
+## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls RequirePodAtEnd )
+## ---- policies to REVISIT later
+## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
 # TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
 
@@ -33,8 +36,8 @@ use base qw( DynaLoader Exporter );
 
 #our @EXPORT = qw( );	# no default exported symbols
 our %EXPORT_TAGS = (
-	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %Win32::CommandLine::) ],  # all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
-#	'INTERNAL'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %Win32::CommandLine::) ],   # all internal functions [Note: internal functions start with a leading '_']
+	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],  ## no critic ( ProhibitComplexRegexes ) ## all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
+#	'INTERNAL'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],   ## no critic ( ProhibitComplexRegexes ) ## all internal functions [Note: internal functions start with a leading '_']
 	);
 our @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
 
@@ -147,23 +150,25 @@ my %table;
 #			   \XHH	  the  eight-bit character whose value is the hexadecimal value HH (one
 #					  or two hex digits)
 #			   \cx	  a control-x character
-
+#
 # Not implemented (not used in bash):
 #\unnnn - n = hexadecimal digit, 16 bit
 #\Unnnnnnnn - n = hexadecimal digit, 32 bit
-$table{'0'}	= chr(0x00);	# NUL (REMOVE: implemented with octal section)
-$table{'a'}	= "\a";			# BEL
-$table{'b'}	= "\b";			# BS
-$table{'e'}	= "\e";			# ESC
-$table{'f'}	= "\f";			# FF
-$table{'n'}	= "\n";			# NL
-$table{'r'}	= "\r";			# CR
-$table{'t'}	= "\t";			# TAB/HT
-$table{'v'}	= chr(0x0b);	# VT
+## n#o critic ( ProhibitMagicNumbers )
 
-$table{$_G{'single_q'}}	= $_G{single_q};		# single-quote
-$table{$_G{'double_q'}}	= $_G{double_q};		# double-quote
-$table{$_G{'escape_char'}} = $_G{escape_char};	# backslash-escape
+$table{'0'}	= chr(0x00);	## no critic ( ProhibitMagicNumbers ) 	# NUL (REMOVE: implemented with octal section)
+$table{'a'}	= "\a";													# BEL
+$table{'b'}	= "\b";													# BS
+$table{'e'}	= "\e";													# ESC
+$table{'f'}	= "\f";													# FF
+$table{'n'}	= "\n";													# NL
+$table{'r'}	= "\r";													# CR
+$table{'t'}	= "\t";													# TAB/HT
+$table{'v'}	= chr(0x0b);	## no critic ( ProhibitMagicNumbers ) 	# VT
+
+$table{$_G{'single_q'}}	= $_G{single_q};			# single-quote
+$table{$_G{'double_q'}}	= $_G{double_q};			# double-quote
+$table{$_G{'escape_char'}} = $_G{escape_char};		# backslash-escape
 
 #octal
 #	for (my $i = 0; $i < oct('1000'); $i++) { $table{sprintf("%3o",$i)} = chr($i); }
@@ -172,14 +177,14 @@ for my $i (0..oct('777')) { $table{sprintf('%3o',$i)} = chr($i); }
 #hex
 #	for (my $i = 0; $i < 0x10; $i++) { $table{"x".sprintf("%1x",$i)} = chr($i); $table{"X".sprintf("%1x",$i)} = chr($i); $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)} = chr($i); }
 #	for (my $i = 0x10; $i < 0x100; $i++) { $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)} = chr($i); }
-for my $i (0..0xf) { $table{'x'.sprintf('%1x',$i)} = chr($i); $table{'X'.sprintf('%1x',$i)} = chr($i); $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }
-for my $i (0x10..0xff) { $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }
+for my $i (0..0xf) { $table{'x'.sprintf('%1x',$i)} = chr($i); $table{'X'.sprintf('%1x',$i)} = chr($i); $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }		## no critic ( ProhibitMagicNumbers ) ##
+for my $i (0x10..0xff) { $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }																					## no critic ( ProhibitMagicNumbers ) ##
 
 #control characters
 #	for (my $i = 0; $i < 0x20; $i++) { $table{"c".chr(ord('@')+$i)} = chr($i); }
 my $base_char = ord(q{@});
-for my $i (0..(0x20 - 1)) { $table{'c'.chr($base_char+$i)} = chr($i); }
-$table{'c?'} = chr(0x7f);
+for my $i (0..(0x20 - 1)) { $table{'c'.chr($base_char+$i)} = chr($i); }		## no critic ( ProhibitMagicNumbers ) ##
+$table{'c?'} = chr(0x7f);													## no critic ( ProhibitMagicNumbers ) ##
 
 sub	_decode {
 	# _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
@@ -193,7 +198,7 @@ sub	_decode {
 	}
 }
 
-sub	_is_const { return !eval { ($_[0]) = $_[0]; 1; }; }
+sub	_is_const { my $is_const = !eval { ($_[0]) = $_[0]; 1; }; return $is_const; }
 
 sub	_ltrim {
 	# _ltrim( $|@ [,\%] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
@@ -221,7 +226,7 @@ sub	_ltrim {
 		trim_re => '\s+',
 		);
 
-	my $me = (caller(0))[3];
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last argument only if it's a HASH reference (assumed to be options for our function)
 	if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' for function ".$me; return; } } }
@@ -293,7 +298,7 @@ sub	_dequote{
 		_return_quote		=>	0,							# true/false [ default = false ], if true, return quote as first character in returned array
 		);
 
-	my $me = (caller(0))[3];
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last	argument only if it's a	HASH reference (assumed	to be options for our function)
 	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(exists	$opt{$_}) {	$opt{$_} = $opt_ref->{$_}; } else {	Carp::carp "Unknown	option '$_'	to for function	".$me; } } }
@@ -396,7 +401,7 @@ sub	_argv_NEW{
 		);
 
 	# read/expand optional named parameters
-	my $me = (caller(0))[3];
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
 	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp	"Unknown option	'$_' to	for	function ".$me;	} }	}
@@ -465,7 +470,8 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		);
 
 	# read/expand optional named parameters
-	my $me = (caller(0))[3];
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
 	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp	"Unknown option	'$_' to	for	function ".$me;	} }	}
@@ -837,7 +843,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 		if ( $glob_this )
 			{
-			$pat =~ s#\\\\#\/#g;			# replace all backslashes (which are assumed to be backslash quoted already) with forward slashes
+			$pat =~ s#\\\\#\/#g;		## no critic ( ProhibitUnusualDelimiters )	## replace all backslashes (assumed to be backslash quoted already) with forward slashes
 			if ( $pat =~ /\\[?*]/ )
 				{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
 				@g = ( $s );
@@ -1235,3 +1241,5 @@ SUMMARY
 
 
 =end IMPLEMENTATION-NOTES
+
+=cut

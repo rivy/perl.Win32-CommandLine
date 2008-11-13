@@ -6,7 +6,7 @@ use warnings;
 use lib 't/lib';
 use Test::More;
 use Test::Differences;
-eval { require Test::NoWarnings; import Test::NoWarnings; };
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
 if ( !$ENV{HARNESS_ACTIVE} ) {
 	# not executing under Test::Harness
@@ -113,7 +113,8 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
 ## do tests
 
-plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
+#plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
+plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0);
 
 do_tests(); # test re-parsing of command_line() by argv()
 ##

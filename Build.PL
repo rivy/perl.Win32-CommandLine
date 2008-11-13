@@ -1,105 +1,99 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.20070921.12217 ( rev 20:dfc9917d5705 ) 2007/09/21 03:23:37 rivy $
+#$Id: Build.PL,v 0.1.0.37085451 ( r22:9500264bccc2 [mercurial] ) 2008/11/13 04:14:51 rivy $
 
-## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
+## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
 use strict;
 use warnings;
-use 5.006;      # v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
+use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
 # VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version: 0.1.20070921.12217 $)[-2]);	## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = version::qv( qw( default-v 0.1 $Version: 0.1.0.37085451 $) [-2] ); ## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 ##- config
 my %config;
 $config{'module_name'} = undef;
-$config{'specific_os'} = undef;	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
+$config{'specific_os'} = undef; ##	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
 #
 # config may be done via local config file (allows Build.PL to be used without change between modules)
-$config{'rc_filename'} = 'Build.PL.config';	# configuration file name (in .NET style)
+$config{'rc_filename'} = 'Build.PL.config'; ##	# configuration file name (in .NET style)
 ##
 
 use Module::Build;
-use English qw( -no_match_vars ) ;  # '-no_match_vars' avoids regex performance penalty
+use English qw( -no_match_vars ); ##	# '-no_match_vars' avoids regex performance penalty
 
 # include configuration options, if the file exists
-if (-e $config{'rc_filename'}) {
-	my $single_q = q{'};	# single-quote (')
-	my $double_q = q{"};	# double-quote (")
-	my $quote_chars = $single_q . $double_q;
+if ( -e $config{'rc_filename'} )
+{
+	my $single_q      = q{'};                    # single-quote (')
+	my $double_q      = q{"};                    # double-quote (")
+	my $quote_chars   = $single_q . $double_q;
 	my $comment_chars = q{#;} . $single_q;
-	my $fh = undef;
-	open($fh, '<', $config{'rc_filename'}) or die "Can't open '$config{'rc_filename'}': $OS_ERROR";	## no critic ( RequireCarping )
+	my $fh            = undef;
+	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
 	my $line = 0;
-	while(my $s = <$fh>) {
+	while ( my $s = <$fh> )
+	{
 		$line++;
 		#eval $s;
-		my ($key, $value, $quote);
-		if ( $s =~ m/^\s*$/ ) { next; }									# skip any blank line
-		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }		# skip any line starting with '#', ';', q{'}, or '//' as a comment line
-		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ ) { 	# quoted values are allowed with perl quoting semantics
-			$key = $1;
+		my ( $key, $value, $quote );
+		if ( $s =~ m/^\s*$/ )                            { next; }    # skip any blank line
+		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }    # skip any line starting with '#', ';', q{'}, or '//' as a comment line
+		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ )
+		{ ## quoted values are allowed with perl quoting semantics
+			$key   = $1;
 			$quote = $2;
 			$value = $3;
-			if (exists $config{$key}) {
-				if ($quote eq $double_q ) {
-					# decode perl qq{} semantics (except \<unknown> is left as \<unknown> instead of <unknown>)
-					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/'"'.$1.'"'/eego; 	# safely eval qq character escapes
-					}
-				$config{$key} = $value;
+			if ( exists $config{$key} )
+			{
+				if ( $quote eq $double_q )
+				{ ## decode perl qq{} semantics (except \<unknown> is left as \<unknown> instead of <unknown>)
+					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/'"'.$1.'"'/eego; ## safely eval qq character escapes
 				}
-			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
+				$config{$key} = $value;
 			}
-		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
+			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
 		}
-    close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; 	## no critic ( RequireCarping )
+		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
 	}
+	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
+}
 
-if (!$config{'module_name'}) { die '$config{module_name} must be defined'."\n"; };	## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-my $specific_os_msg = "$config{module_name} is designed to be used for ".($config{'specific_os'} ? $config{'specific_os'} : '<any>')." systems only - installation aborted\n";
+my $specific_os_msg = "$config{module_name} is designed to be used for " . ( $config{'specific_os'} ? $config{'specific_os'} : '<any>' ) . " systems only - installation aborted\n";
 
-if (defined($config{'specific_os'}) && $^O ne $config{'specific_os'}) { die $specific_os_msg; };		## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
+if ( defined( $config{'specific_os'} ) && $^O ne $config{'specific_os'} ) { die $specific_os_msg; } ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
-my $lib_directory = 'lib/'.join(q{\\}, split(/::/xms, ($config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{})));
+my $lib_directory = 'lib/' . join( q{\\}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) );
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
-my $build = $class->new
-  (
-	module_name         => $config{'module_name'},
-	dist_author         => 'Roy Ivy III <rivy[at]cpan.org>',
-	license             => 'perl',
-	requires => {
-			},
+my $build = $class->new(
+	module_name    => $config{'module_name'},
+	dist_author    => 'Roy Ivy III <rivy[at]cpan.org>',
+	license        => 'perl',
+	requires       => {},
 	build_requires => {
-			'version' => 0,
-			'File::Which' => 0,
-			},
-	sign => 1,
-	script_files => [ map {glob} qw{ scripts/* } ],
-	xs_files => { map { $_ => $lib_directory.q{\\}.$_ } (map {glob} qw{ *.xs }) },
+		'version'     => 0,
+		'File::Which' => 0,
+	},
+	sign                 => 1,
+	script_files         => [ map { glob } qw{ scripts/* } ],
+	xs_files             => { map { $_ => $lib_directory . q{\\} . $_ } ( map { glob } qw{ *.xs } ) },
 	recursive_test_files => 1,
-	create_readme => 1, # create README from module pod
-	create_makefile_pl => 'traditional',
-	PL_files => {},
-	add_to_cleanup => [
-			(map { join(q{-}, split(/::/xms)).q{-*} } $config{'module_name'}),
-			(map { join(q{-}, split(/::/xms)).'.ppd' } $config{'module_name'}),
-			'MANIFEST.bak',
-			'Build.bat',
-			'Makefile',
-			'Makefile.old',
-			'pm_to_blib',
-			],
-	);
+	create_readme        => 1,                                                                                                                                                                                                                               # create README from module pod
+	create_makefile_pl   => 'traditional',
+	PL_files             => {},
+	add_to_cleanup       => [ ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ), 'MANIFEST.bak', 'Build.bat', 'Makefile', 'Makefile.old', 'pm_to_blib', ],
+);
 
 $build->create_build_script;
 
 ####
 
-sub rivy_builder_code{
-## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
-my $code = q{
+sub rivy_builder_code
+{## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
+	my $code = q{
 	# change PPM name to trailing '-PPM' (instead of the default leading 'PPM-')
 	sub ppm_name{
 		my $self = shift;
@@ -294,10 +288,12 @@ my $code = q{
 			my $fh;
 			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
 		};
-	if (defined($config{'specific_os'})) { $code .= qq{
+	if ( defined( $config{'specific_os'} ) )
+	{
+		$code .= qq{
 			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
 		};
-		}
+	}
 	$code .= q{
 			$fh->close();
 			\}
