@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.0.37138976 ( r24:52f0722cd546 [mercurial] ) 2008/11/13 19:08:27 rivy $
+#$Id: Build.PL,v 0.1.0.37208004 ( r25:6e4190b4e637 [mercurial] ) 2008/11/14 14:18:55 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -8,9 +8,8 @@ use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
-## TODO: change 3rd dot in version to underscore if beta version (<minor> is ODD)
-#use version qw(); our $VERSION = version::qv( qw( default-v 0.1.0 $Version: 0.1.0.37138976 $)[-2] ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
-use version qw(); $_ = qw( default-v 0.1.0 $Version: 0.1.0.37138976 $)[-2]; $_ =~ /(\d+)\.(\d+)\.(\d+)\.(.*)/; $_ = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); our $VERSION = version::qv( $_ ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+#use version qw(); our $VERSION = version::qv( qw( default-v 0.1.0 $Version: 0.1.0.37208004 $)[-2] ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = qw( default-v 0.1.0 $Version: 0.1.0.37208004 $ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
 
 
 ##- config
@@ -63,6 +62,64 @@ if ( -e $config{'rc_filename'} )
 	}
 	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
 }
+
+# include configuration options, if the file exists
+# config file format:
+# <var_name1> => <value>...
+# ...
+# <var_nameN> => <value>...
+#
+# where each "<varName> => <value>" follows perl hash entry definition semantics (including embedded comments)
+# NOTYET: <value> can be multiline, terminated by EOF or next '<var_nameM> => ...' line
+
+#my $v;
+#my $val;
+#$v = 'TEST_VAL';
+#$val = "'this is a string'";
+#$val = " qw( this is an arrayref ) ";
+##$val = "[ this => is , a => hashref ]";
+#my $ev = '$config'."{$v} = $val";
+#{#no warnings 'all';
+#my $e = 0; my $w = 0;
+#$SIG{'__WARN__'} = sub { if (!$w) {chomp($w = $_[0]);} };
+#$e = !eval "$ev; 1";
+##print "w = $w\n";
+#$SIG{'__WARN__'} = undef;
+#if ($w || $e) {warn "malformed config ($w)";}
+#}
+##do '$config{TEST_VAL} = 10';
+##$config{$v} = eval { my %c; $c{'x'} = $val; return $c{'x'}; };
+#print "C{val} = $config{TEST_VAL}\n";
+#
+## all "<var_nameN> => value" line sets are then joined with ',' and pushed into the $config hash with a do
+#$config{'rc_filename'} .= '.HASH';
+#if ( -e $config{'rc_filename'} )
+#{
+#	my $comment_chars = q{#};
+#
+#	my $fh            = undef;
+#	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
+#	my $line = 0;
+#	my $entry_start = $line;
+#	my $exec_code = '';
+#	my $hash_entry = '';
+#
+#	my $s;
+#
+#	$line = 1;
+#	$s = <$fh>;
+#	do
+#	{
+#
+#	}
+#	while ( $line++, $s = <$fh> )
+#}
+
+##
+##
+
+
+
 
 if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
@@ -316,6 +373,9 @@ sub rivy_builder_code
 	  }
 	sub ACTION_install {
 		my ($self) = @_;
+
+		# add distmeta dependency
+		$self->depends_on('distmeta');
 
 		if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
 

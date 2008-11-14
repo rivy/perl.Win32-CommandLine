@@ -1152,6 +1152,10 @@ None reported.
 
 Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 
+GOTCHA: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must still be double-quoted. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before any process can get a look at the command line.
+
+GOTCHA: Some programs expect their arguments to maintain their surrounding quotes (eg, C<<perl -e 'print "x";'>> doesn't work as expected).
+
 No bugs have been reported.
 
 
