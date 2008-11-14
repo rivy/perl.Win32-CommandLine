@@ -1,4 +1,4 @@
-# $Id$
+# $Id: QNX.pm,v 1.2 2008/10/27 20:31:21 drhyde Exp $
 
 package Devel::AssertOS::QNX;
 

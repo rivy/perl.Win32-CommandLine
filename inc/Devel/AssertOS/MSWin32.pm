@@ -1,4 +1,4 @@
-# $Id$
+# $Id: MSWin32.pm,v 1.4 2008/11/05 22:52:34 drhyde Exp $
 
 package Devel::AssertOS::MSWin32;
 

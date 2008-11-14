@@ -1,4 +1,4 @@
-# $Id$
+# $Id: Haiku.pm,v 1.1 2008/11/05 22:53:21 drhyde Exp $
 
 package Devel::AssertOS::Haiku;
 
