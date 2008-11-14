@@ -1,4 +1,8 @@
+$^# SKIPLIST for MANIFEST
+$^# each line is a regular expression which will exclude any matching files from entry into the MANIFEST
+
 # Win32::CommandLine
+# TODO::add a generic RE which matches certain files based on enclosing directory [eg, "^.*/(.*)/\1-[^\/]*$" and "^.*/(.*)/\1.ppd$"]
 \bWin32-CommandLine-.*$
 \bWin32-CommandLine.ppd$
 \blib/Win32/CommandLine.xs$
@@ -8,12 +12,12 @@
 #DDS\.pm
 #^dds\w+\.pl
 
-# Avoid Module::Build generated and utility files.
+$^# Avoid Module::Build generated and utility files.
 \bBuild$
 \bBuild.bat$
 \b_build/
 
-# Avoid Makemaker generated and utility files.
+$^# Avoid Makemaker generated and utility files.
 \bMANIFEST\.bak
 \bMakefile$
 \bblib/
@@ -22,7 +26,7 @@
 \bpm_to_blib$
 \bblibdirs\.ts$         # 6.18 through 6.25 generated this
 
-# Avoid version control files.
+$^# Avoid version control files.
 \bRCS\b
 \bCVS\b
 \bSCCS\b
@@ -32,7 +36,7 @@
 \.hgignore\b
 .hg\b
 
-# Avoid temp and backup files.
+$^# Avoid temp and backup files.
 ~$
 \.old$
 \#$
@@ -40,6 +44,11 @@
 \.bak$
 \.tmp$
 
-# Avoid Devel::Cover files.
+$^# Avoid Devel::Cover files.
 \bcover_db\b
 
+$^# Avoid mercurial files
+\.hgtags$
+
+$^# Avoid wierd file detrus
+\bnull\b

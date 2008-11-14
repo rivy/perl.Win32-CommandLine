@@ -14,9 +14,10 @@ use warnings;
 #use diagnostics;	# invoke blabbermouth warning mode
 #use 5.006;
 
-# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
+# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
 # NOTE: maximum build number = <unsigned int max (usually 32-bit) = 4,294,967,295> { as seconds => approx 49710 days or > 136 years }
-use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+#use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+use version qw(); $_ = qw( default-v 0.1.0 $Version$)[-2]; $_ =~ /(\d+)\.(\d+)\.(\d+)\.(.*)/; $_ = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); our $VERSION = version::qv( $_ ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
 
 # Module Summary
 
@@ -230,7 +231,7 @@ sub	_ltrim {
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last argument only if it's a HASH reference (assumed to be options for our function)
 	if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' for function ".$me; return; } } }
-	if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me."($_) instead?)"; return; }
+	if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me.'($_) instead?)'; return; }
 	if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
 
 	my $t = $opt{trim_re};
@@ -1024,6 +1025,44 @@ C<argv()> returns the reparsed command line as an array.
 =head2 parse( $ )
 
 C<parse()> returns the parsed argument string as an array.
+
+=head1 RATIONALE
+
+Attempts were made using Win32::API and Inline::C.
+
+Win32::API
+
+@rem = '--*-Perl-*--
+@echo off
+if "%OS%" == "Windows_NT" goto WinNT
+perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+goto endofperl
+:WinNT
+perl -x -S %0 %*
+if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+goto endofperl
+@rem ';
+#!/usr/bin/perl -w
+#line 15
+
+use Win32::API;
+
+Win32::API->Import("kernel32", "LPTSTR GetCommandLine()");
+
+my $string = pack("Z*", GetCommandLine());
+
+print "string[".length($string)."] = '$string'\n";
+
+# ------ padding --------------------------------------------------------------------------------------
+
+__END__
+:endofperl
+
+Unfortunately, Win32::API causes a GPF and Inline::C is very brittle on Win32 systems (not compensating for paths with embedded strings).
+
+See URLref: http://www.perlmonks.org/?node_id=625182 for a more full explanation of the problem and initial attempts at a solution.
 
 =head1 IMPLEMENTATION and INTERNALS
 

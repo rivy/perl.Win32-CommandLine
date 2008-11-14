@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.0.37085451 ( r22:9500264bccc2 [mercurial] ) 2008/11/13 04:14:51 rivy $
+#$Id: Build.PL,v 0.1.0.37138976 ( r24:52f0722cd546 [mercurial] ) 2008/11/13 19:08:27 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -7,13 +7,18 @@ use strict;
 use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
-# VERSION: x.y[.date[.build]]  { y is odd = beta/experimental; y is even = release }
-use version qw(); our $VERSION = version::qv( qw( default-v 0.1 $Version: 0.1.0.37085451 $) [-2] ); ## no critic ( ProhibitCallsToUnexportedSubs )	[NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
+## TODO: change 3rd dot in version to underscore if beta version (<minor> is ODD)
+#use version qw(); our $VERSION = version::qv( qw( default-v 0.1.0 $Version: 0.1.0.37138976 $)[-2] ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+use version qw(); $_ = qw( default-v 0.1.0 $Version: 0.1.0.37138976 $)[-2]; $_ =~ /(\d+)\.(\d+)\.(\d+)\.(.*)/; $_ = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); our $VERSION = version::qv( $_ ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+
 
 ##- config
 my %config;
 $config{'module_name'} = undef;
 $config{'specific_os'} = undef; ##	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
+$config{'os_req'} = undef; ##	# TESTING: limit to specific OS's (eg, 'MSWin32') [default: undef == no OS limitation]
+
 #
 # config may be done via local config file (allows Build.PL to be used without change between modules)
 $config{'rc_filename'} = 'Build.PL.config'; ##	# configuration file name (in .NET style)
@@ -61,7 +66,14 @@ if ( -e $config{'rc_filename'} )
 
 if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-my $specific_os_msg = "$config{module_name} is designed to be used for " . ( $config{'specific_os'} ? $config{'specific_os'} : '<any>' ) . " systems only - installation aborted\n";
+#use Data::Dumper;
+#print Dumper( $config{'module_name'} );
+#print Dumper( $config{'os_req'} );
+#use lib 'inc';
+#my $XXX = 'MSWin32';
+#require Devel::AssertOS; import Devel::AssertOS ( $XXX );
+
+my $specific_os_msg = "OS unsupported : $config{module_name} is designed to be used for " . ( $config{'specific_os'} ? $config{'specific_os'} : '<any>' ) . " systems only - installation aborted\n";
 
 if ( defined( $config{'specific_os'} ) && $^O ne $config{'specific_os'} ) { die $specific_os_msg; } ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
@@ -81,10 +93,10 @@ my $build = $class->new(
 	script_files         => [ map { glob } qw{ scripts/* } ],
 	xs_files             => { map { $_ => $lib_directory . q{\\} . $_ } ( map { glob } qw{ *.xs } ) },
 	recursive_test_files => 1,
-	create_readme        => 1,                                                                                                                                                                                                                               # create README from module pod
+	create_readme        => 1, ##	# create README from module pod
 	create_makefile_pl   => 'traditional',
 	PL_files             => {},
-	add_to_cleanup       => [ ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ), 'MANIFEST.bak', 'Build.bat', 'Makefile', 'Makefile.old', 'pm_to_blib', ],
+	add_to_cleanup       => [ ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ), 'MANIFEST', 'MANIFEST.bak', 'Makefile', 'Makefile.PL', 'Makefile.old', 'pm_to_blib', 'README' ],
 );
 
 $build->create_build_script;
@@ -92,8 +104,94 @@ $build->create_build_script;
 ####
 
 sub rivy_builder_code
-{## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
+{ ## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
 	my $code = q{
+	use File::Basename;
+	use File::Spec;
+	use IO::File;
+
+	sub new{
+		#my $self = shift()->_construct(@_);
+		#
+		#$self->{invoked_action} = $self->{action} ||= 'Build_PL';
+		#$self->cull_args(@ARGV);
+		#
+		#die "Too early to specify a build action '$self->{action}'.  Do 'perl Build.PL' instead.\n"
+		#if $self->{action} && $self->{action} ne 'Build_PL';
+		#
+		#$self->check_manifest;
+		#$self->check_prereq;
+		#$self->check_autofeatures;
+		#
+		#$self->dist_name;
+		#$self->dist_version;
+		#
+		#$self->_set_install_paths;
+		#$self->_find_nested_builds;
+		#
+		#return $self;
+		my $self = shift;
+		my ($args, $action) = $self->read_args(@ARGV);
+		if ($action) { die "Too early to specify a build action '$action'.  Do 'perl Build.PL' instead.\n"; }
+		return $self->SUPER::new(@_);
+		}
+	sub ACTION_realclean {
+		## BUG in Module::Build v0.30 : Win32 is case-insensitive => so comparisons should be case insensitive => '$basename eq $self->build_script' should be 'lc($basename) eq lc($self->build_script)'
+		## and 'Vodoo' is misspelled
+		#my ($self) = @_;
+		#
+		#$self->SUPER::ACTION_realclean();
+		#
+		#my $basename = basename($0);
+		#$basename =~ s/(?:\.bat)?$//i;
+		#
+		#if ( $basename eq $self->build_script ) {
+		#	if ( $self->build_bat ) {
+		#		my $full_progname = $0;
+		#		$full_progname =~ s/(?:\.bat)?$/.bat/i;
+		#
+		#		# Vodoo required to have a batch file delete itself without error;
+		#		# Syntax differs between 9x & NT: the later requires a null arg (???)
+		#		require Win32;
+		#		my $null_arg = (Win32::IsWinNT()) ? '""' : '';
+		#		my $cmd = qq(start $null_arg /min "\%comspec\%" /c del "$full_progname");
+		#
+		#		my $fh = IO::File->new(">> $basename.bat")
+		#		or die "Can't create $basename.bat: $!";
+		#		print $fh $cmd;
+		#		close $fh ;
+		#	} else {
+		#		$self->delete_filetree($self->build_script . '.bat');
+		#	}
+		#	}
+		my ($self) = @_;
+
+		$self->SUPER::ACTION_realclean();
+
+		my $basename = basename($0);
+		$basename =~ s/(?:\.bat)?$//i;
+
+		if ( lc($basename) eq lc($self->build_script) ) {
+			if ( $self->build_bat ) {
+				my $full_progname = $0;
+				$full_progname =~ s/(?:\.bat)?$/.bat/i;
+
+				# Voodoo required to have a batch file delete itself without error;
+				# Syntax differs between 9x & NT: the later requires a null arg (???)
+				require Win32;
+				my $null_arg = (Win32::IsWinNT()) ? '""' : '';
+				my $cmd = qq(start $null_arg /min "\%comspec\%" /c del "$full_progname");
+
+				my $fh = IO::File->new(">> $basename.bat")
+				or die "Can't create $basename.bat: $!";
+				print $fh $cmd;
+				close $fh ;
+				}
+			else {
+				$self->delete_filetree($self->build_script . '.bat');
+				}
+			}
+		}
 	# change PPM name to trailing '-PPM' (instead of the default leading 'PPM-')
 	sub ppm_name{
 		my $self = shift;
