@@ -17,6 +17,7 @@ use warnings;
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
 # NOTE: maximum build number = <unsigned int max (usually 32-bit) = 4,294,967,295> { as seconds => approx 49710 days or > 136 years }
 #use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+
 use version qw(); $_ = qw( default-v 0.1.0 $Version$)[-2]; $_ =~ /(\d+)\.(\d+)\.(\d+)\.(.*)/; $_ = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); our $VERSION = version::qv( $_ ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
 
 # Module Summary
