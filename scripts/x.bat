@@ -13,6 +13,8 @@ goto endofperl
 #!perl -w   -*- tab-width: 4; mode: perl -*-
 #line 15
 
+# $Id$
+
 # x <command> <arg(s)>
 # execute <command> with parsed <arg(s)>
 # a .bat file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see documentation for pl2bat [ADVANTAGES, specifically Method 5] for further explanation)

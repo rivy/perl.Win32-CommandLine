@@ -13,8 +13,18 @@ goto endofperl
 #!perl -w   -*- tab-width: 4; mode: perl -*-
 #line 15
 
-# x <command> <arg(s)>
-# execute <command> with parsed <arg(s)>
+# $Id$
+
+# args <command> <arg(s)>
+# showed command line and parsed <arg(s)> (currently the <arg(s)> ready to be pushed off to CreateProcess() for execution, change when options are implemented)
+
+# TODO: command line options
+#
+#	-a:<int(s)>	show args (optional list of ints listing arg numbers to show [0] = command name, ... [ranges are possible and no errors are generated for missing arg(s) at intN]
+#	-c 	show command_line
+#	-p	show final <arg(s)> just before handoff to CreateProcess() (currently the default, change when options are implemented)
+#	-v	verbose = label output "command_line() = ..." and "$ARGV[0] = ..."
+
 # a .bat file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see documentation for pl2bat [ADVANTAGES, specifically Method 5] for further explanation)
 # see linux 'xargs' command for something similar
 # FIXED (for echo): note: command line args are dequoted so commands taking string arguments and expecting them quoted might not work exactly the same (eg, echo 'a s' => 'a s' vs x echo 'a s' => "a s")
@@ -28,9 +38,6 @@ use warnings;
 use version qw(); our $VERSION = version::qv(qw( default-v 0.3 $Version: 0.3.20071001.20342 $ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
 
 @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
-
-#exec { $ARGV[0] } @ARGV;	# doesn't see "echo" as a command
-#print "argv = `@ARGV`\n";
 
 my $cl = Win32::CommandLine::command_line();
 print 'command_line()'." = '$cl'\n";
@@ -48,7 +55,6 @@ if (!-e $ARGV[0] || !$ARGV[0] =~ m/^echo(.|\s)/)
 	}
 
 for (my $i = 0; $i < @ARGV; $i++) { print '$ARGV'."[$i] = '$ARGV[$i]'\n"; }
-print "====\n";
 
 #system { $ARGV[0] } @ARGV;		# doesn't see "echo" as a command (?? problem for all CMD built-ins?)
 #system @ARGV;
