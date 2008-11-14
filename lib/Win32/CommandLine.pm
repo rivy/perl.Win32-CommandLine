@@ -16,7 +16,7 @@ use warnings;
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
 #use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
-use version qw(); $_ = qw( default-v 0.1.0 $Version$)[-2]; $_ =~ /(\d+)\.(\d+)\.(\d+)\.(.*)/; $_ = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); our $VERSION = version::qv( $_ ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = qw( default-v 0.1.0 $Version$ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
 
 # Module Summary
 
