@@ -26,6 +26,8 @@ isnt( MM->parse_version($_), undef, "$_ has ExtUtils::MakeMaker parsable version
 
 #-----------------------------------------------------------------------------
 
+## from Perl::Critic::Utils
+
 #Readonly::Array my @skip_dir => qw( CVS RCS .svn _darcs {arch} .bzr _build blib );
 #Readonly::Hash my %skip_dir => hashify( @skip_dir );
 my @skip_dir = qw( CVS RCS .svn _darcs {arch} .bzr _build blib );

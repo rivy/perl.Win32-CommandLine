@@ -27,7 +27,11 @@ goto endofperl
 use strict;
 use warnings;
 
-use version qw(); our $VERSION = version::qv(qw( default-v 0.3 $Version: 0.3.20071001.20342 $ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
+# generate VERSION from $Version$ SCS tag
+# $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
+# $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = "true"; $VERSION = qw( $defaultVERSION $Version$ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes )
 
 @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
 
@@ -44,8 +48,10 @@ use version qw(); our $VERSION = version::qv(qw( default-v 0.3 $Version: 0.3.200
 # so, protect the ARGs from CreateProcess() reparsing destruction
 # echo is a special case (it must get it's command line directly, skipping the ARGV reparsed arguments of CreateProcess()... so check and don't re-escape quotes) for 'echo'
 ## checking for echo is a bit complicated any command starting with echo followed by a . or whitespace is treated as an internal echo command unless a file exists which matches the entire 1st argument, then it is executed instead
+## TODO: have to NOT quote options
 if (!-e $ARGV[0] || !$ARGV[0] =~ m/^echo(.|\s)/)
 	{ ## protect internal ARGV double quotes by escaping them and surrounding the ARGV with another set of double quotes
+	# CHANGE: if internal whitespace or quotes do this...
 	for (1..$#ARGV) {$ARGV[$_] =~ s/\"/\\\"/g; $ARGV[$_] = '"'.$ARGV[$_].'"'} 
 	}
 

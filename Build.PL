@@ -3,22 +3,24 @@
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
-## TODO: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META>yml
+## TODO?: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META.yml
+## TODO?: .. or just remove VERSION code generating the alpha '_' within the version? does it matter? does the '_' interfere with version comparisons on CPAN?
 
 use strict;
 use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
-#use version qw(); our $VERSION = version::qv( qw( default-v 0.1.0 $Version: 0.1.0.37208004 $)[-2] ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
-use version qw(); our $VERSION = qw( default-v 0.1.0 $Version: 0.1.0.37208004 $ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
-
+# generate VERSION from $Version$ SCS tag
+# $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
+# $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = "true"; $VERSION = qw( $defaultVERSION $Version: 0.1.0.37208004 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes )
 
 ##- config
 my %config;
 $config{'module_name'} = undef;
 $config{'specific_os'} = undef; ##	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
-$config{'os_req'} = undef; ##	# TESTING: limit to specific OS's (eg, 'MSWin32') [default: undef == no OS limitation]
+$config{'os_req'} = undef; ##		# TESTING: limit to specific OS's (eg, 'MSWin32') [default: undef == no OS limitation]
 
 #
 # config may be done via local config file (allows Build.PL to be used without change between modules)
@@ -28,42 +30,42 @@ $config{'rc_filename'} = 'Build.PL.config'; ##	# configuration file name (in .NE
 use Module::Build;
 use English qw( -no_match_vars ); ##	# '-no_match_vars' avoids regex performance penalty
 
-# include configuration options, if the file exists
-if ( -e $config{'rc_filename'} )
-{
-	my $single_q      = q{'};                    # single-quote (')
-	my $double_q      = q{"};                    # double-quote (")
-	my $quote_chars   = $single_q . $double_q;
-	my $comment_chars = q{#;} . $single_q;
-	my $fh            = undef;
-	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
-	my $line = 0;
-	while ( my $s = <$fh> )
-	{
-		$line++;
-		#eval $s;
-		my ( $key, $value, $quote );
-		if ( $s =~ m/^\s*$/ )                            { next; }    # skip any blank line
-		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }    # skip any line starting with '#', ';', q{'}, or '//' as a comment line
-		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ )
-		{ ## quoted values are allowed with perl quoting semantics
-			$key   = $1;
-			$quote = $2;
-			$value = $3;
-			if ( exists $config{$key} )
-			{
-				if ( $quote eq $double_q )
-				{ ## decode perl qq{} semantics (except \<unknown> is left as \<unknown> instead of <unknown>)
-					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/'"'.$1.'"'/eego; ## safely eval qq character escapes
-				}
-				$config{$key} = $value;
-			}
-			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
-		}
-		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
-	}
-	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
-}
+## include configuration options, if the file exists
+#if ( -e $config{'rc_filename'} )
+#{
+#	my $single_q      = q{'};                    # single-quote (')
+#	my $double_q      = q{"};                    # double-quote (")
+#	my $quote_chars   = $single_q . $double_q;
+#	my $comment_chars = q{#;} . $single_q;
+#	my $fh            = undef;
+#	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
+#	my $line = 0;
+#	while ( my $s = <$fh> )
+#	{
+#		$line++;
+#		#eval $s;
+#		my ( $key, $value, $quote );
+#		if ( $s =~ m/^\s*$/ )                            { next; }    # skip any blank line
+#		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }    # skip any line starting with '#', ';', q{'}, or '//' as a comment line
+#		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ )
+#		{ ## quoted values are allowed with perl quoting semantics
+#			$key   = $1;
+#			$quote = $2;
+#			$value = $3;
+#			if ( exists $config{$key} )
+#			{
+#				if ( $quote eq $double_q )
+#				{ ## decode perl qq{} semantics (except \<unknown> is left as \<unknown> instead of <unknown>)
+#					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/'"'.$1.'"'/eego; ## safely eval qq character escapes
+#				}
+#				$config{$key} = $value;
+#			}
+#			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
+#		}
+#		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
+#	}
+#	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
+#}
 
 # include configuration options, if the file exists
 # config file format:
@@ -74,8 +76,8 @@ if ( -e $config{'rc_filename'} )
 # where each "<varName> => <value>" follows perl hash entry definition semantics (including embedded comments)
 # NOTYET: <value> can be multiline, terminated by EOF or next '<var_nameM> => ...' line
 
-#my $v;
-#my $val;
+my $v;
+my $val;
 #$v = 'TEST_VAL';
 #$val = "'this is a string'";
 #$val = " qw( this is an arrayref ) ";
@@ -93,44 +95,56 @@ if ( -e $config{'rc_filename'} )
 ##$config{$v} = eval { my %c; $c{'x'} = $val; return $c{'x'}; };
 #print "C{val} = $config{TEST_VAL}\n";
 #
-## all "<var_nameN> => value" line sets are then joined with ',' and pushed into the $config hash with a do
-#$config{'rc_filename'} .= '.HASH';
-#if ( -e $config{'rc_filename'} )
-#{
-#	my $comment_chars = q{#};
-#
-#	my $fh            = undef;
-#	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
-#	my $line = 0;
-#	my $entry_start = $line;
-#	my $exec_code = '';
-#	my $hash_entry = '';
-#
-#	my $s;
-#
-#	$line = 1;
-#	$s = <$fh>;
-#	do
-#	{
-#
-#	}
-#	while ( $line++, $s = <$fh> )
-#}
+## NOTYET: all "<var_nameN> => value" line sets are then joined with ',' and pushed into the $config hash
+# include configuration options, if the file exists
+if ( -e $config{'rc_filename'} )
+{
+	my $comment_chars = q{#};
+	my $fh            = undef;
+	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
+	my $line = 0;
+	while ( my $s = <$fh> )
+	{
+		$line++;
+		#eval $s;
+		my ( $key, $value );
+		if ( $s =~ m/^\s*$/ )                            { next; }    # skip any blank line
+		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }    # skip any line starting with '#', ';', q{'}, or '//' as a comment line
+		if ( $s =~ m/^\s*(.*?)\s*=>\s*(.*)$/ )
+		{ ## quoted values are allowed with perl quoting semantics
+			$key   = $1;
+			$value = $2;
+			if ( exists $config{$key} )
+			{ ## eval $value into $config{}
+				{#no warnings 'all';
+				my $ev = '$config'."{$key} = $value";
+				my $e = 0; my $w = 0;
+				$SIG{'__WARN__'} = sub { if (!$w) {chomp($w = $_[0]);} };
+				$e = !eval "$ev; 1";
+				#print "w = $w\n";
+				$SIG{'__WARN__'} = undef;
+				if ($w || $e) {warn "malformed config ($w)";}
+				}
+			}
+			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
+		}
+		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
+	}
+	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
+}
+
+#use Data::Dumper;
+#print Dumper( %config );
+#print Dumper( $config{'module_name'} );
+#print Dumper( $config{'os_req'} );
 
 ##
 ##
-
-
-
 
 if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-#use Data::Dumper;
-#print Dumper( $config{'module_name'} );
-#print Dumper( $config{'os_req'} );
-#use lib 'inc';
-#my $XXX = 'MSWin32';
-#require Devel::AssertOS; import Devel::AssertOS ( $XXX );
+use lib 'inc';
+require Devel::AssertOS; import Devel::AssertOS ( (ref $config{'os_req'} ? @{$config{'os_req'}} : $config{'os_req'}) );
 
 my $specific_os_msg = "OS unsupported : $config{module_name} is designed to be used for " . ( $config{'specific_os'} ? $config{'specific_os'} : '<any>' ) . " systems only - installation aborted\n";
 
@@ -465,3 +479,33 @@ sub rivy_builder_code
 		};
 	return $code;
 }
+
+
+# FROM: ExtUtils::Manifest
+## returns an anonymous sub that decides if an argument matches
+#sub maniskip {
+#    my @skip ;
+#    my $mfile = shift || "$MANIFEST.SKIP";
+#    _check_mskip_directives($mfile) if -f $mfile;
+#    local(*M, $_);
+#    open M, "< $mfile" or open M, "< $DEFAULT_MSKIP" or return sub {0};
+#    while (<M>){
+#	chomp;
+#	s/\r//;
+#	next if /^#/;
+#	next if /^\s*$/;
+#        s/^'//;
+#        s/'$//;
+#	push @skip, _macify($_);
+#    }
+#    close M;
+#    return sub {0} unless (scalar @skip > 0);
+#
+#    my $opts = $Is_VMS ? '(?i)' : '';
+#
+#    # Make sure each entry is isolated in its own parentheses, in case
+#    # any of them contain alternations
+#    my $regex = join '|', map "(?:$_)", @skip;
+#
+#    return sub { $_[0] =~ qr{$opts$regex} };
+#}

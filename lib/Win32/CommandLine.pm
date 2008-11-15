@@ -7,7 +7,7 @@ package Win32::CommandLine;
 ## ---- policies to REVISIT later
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
-# TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
+# WORKS NOW? (2008-11-14) -> ADD some tests [use TEST_EXPENSIVE vs TEST_EXHAUSTIVE]: TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
 
 use strict;
 use warnings;
@@ -15,8 +15,10 @@ use warnings;
 #use 5.006;
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
-#use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
-use version qw(); our $VERSION = qw( default-v 0.1.0 $Version$ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+# generate VERSION from $Version$ SCS tag
+# $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
+# $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = "true"; $VERSION = qw( $defaultVERSION $Version$ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes )
 
 # Module Summary
 
@@ -969,7 +971,11 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	Write a full description of the module and its features here.
 	Use subsections (=head2, =head3) as appropriate.
 
-This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line.
+This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing. With the use of the companion script (x.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any command.
+
+doskey type=x type $*
+type [a-c]*.pl
+
 
 =for readme continue
 

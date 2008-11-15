@@ -35,7 +35,11 @@ goto endofperl
 use strict;
 use warnings;
 
-use version qw(); our $VERSION = version::qv(qw( default-v 0.3 $Version: 0.3.20071001.20342 $ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
+# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
+# generate VERSION from $Version$ SCS tag
+# $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
+# $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = "true"; $VERSION = qw( $defaultVERSION $Version$ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes )
 
 @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
 
