@@ -5,6 +5,8 @@
 use strict;
 use warnings;
 
+use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
+
 use Test::More;
 
 my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
@@ -20,8 +22,8 @@ plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$ha
 
 plan tests => scalar( @files ) * 2 ;
 
-isequal( version_mmr(version_non_alpha_form(MM->parse_version($_))), version_mmr(version_non_alpha_form(parse_default_version($_))), "'$_' has equal ExtUtils::MakeMaker and default versions [MMR]") for @files;
-isequal( is_alpha_form(MM->parse_version($_), is_alpha_form(parse_default_version($_), "'$_' has correct correspondance of alpha/release versions") for @files;
+is( version_mmr(version_non_alpha_form(MM->parse_version($_))), version_mmr(version_non_alpha_form(parse_default_version($_))), "'$_' has equal ExtUtils::MakeMaker and default versions [MMR]") for @files;
+is( is_alpha_version(MM->parse_version($_)), is_alpha_version(parse_default_version($_)), "'$_' has correct correspondance of alpha/release versions") for @files;
 
 #-----------------------------------------------------------------------------
 
@@ -38,10 +40,10 @@ sub parse_default_version
 	my $comment_only_re = qr{^\s*#};
 	my $extutils_version_re = qr{(?<!\\)([\$*])(([\w\:\']*)\bVERSION)\b.*\=};							# from ExtUtils::MM_Unix.pm	(v6.48)
 	my $default_equals_re = qr{\s*\$defaultVERSION\s*=\s*['"]?([0-9._]+?)["']?\s*;};
-	my $default_inarray_re = qr{\s*\$VERSION\s*=\s*qw\s*\(.*?['"]?([0-9._]+)["']?.*?\)\s*\[\s*\S+\s*\]\s*;};
+	my $default_inarray_re = qr{\s*\$VERSION\s*=\s*qw\s*\(.*?['"]?([0-9._]+)["']?.*?\)\s*\[\s*\S+\s*\]\s*;};	## no critic (ProhibitComplexRegexes)
 	my $VERSION_equals_re = qr{\s*\$VERSION\s*=\s*['"]([0-9._]+)["']\s*;};
 
-	open( my $fh, '<', $file ) or die "Can't open '$file': $OS_ERROR\n"; ## no critic ( RequireCarping )
+	open( my $fh, '<', $file ) or die "Can't open '$file': $OS_ERROR\n"; ## no critic ( RequireCarping RequireBriefOpen)
 	while ( my $s = <$fh> ) {
 		next if $s =~ $comment_only_re;
 		next if not $s =~ $extutils_version_re;

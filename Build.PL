@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.0.37208004 ( r25:6e4190b4e637 [mercurial] ) 2008/11/14 14:18:55 rivy $
+#$Id: Build.PL,v 0.1.0.37322384 ( r26:6edf06442acf [mercurial] ) 2008/11/15 22:05:15 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -10,11 +10,13 @@ use strict;
 use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
+use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
+
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
-# generate VERSION from $Version$ SCS tag
+# generate VERSION from $Version: 0.1.0.37322384 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = "true"; $VERSION = qw( $defaultVERSION $Version: 0.1.0.37208004 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes )
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = qw( $defaultVERSION $Version: 0.1.0.37322384 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -28,7 +30,6 @@ $config{'rc_filename'} = 'Build.PL.config'; ##	# configuration file name (in .NE
 ##
 
 use Module::Build;
-use English qw( -no_match_vars ); ##	# '-no_match_vars' avoids regex performance penalty
 
 ## include configuration options, if the file exists
 #if ( -e $config{'rc_filename'} )

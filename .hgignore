@@ -1,4 +1,5 @@
 t/lib/*/*
+inc/*
 Build
 Build.bat
 _build/*

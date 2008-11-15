@@ -16,7 +16,7 @@ $# :: assumes that the package directory has the same name as the distribution p
 #(^|/)(.*)/\1\.ppd$
 $# :: other possible/optional generated PACKAGE FILES to avoid
 #(^|/)(.*)(-.*)?/lib/\1/.*\.xs$						# package .xs files copied into lib directory
-(^|/)lib/.*\.(bs|c|def|obj|o|pdb)$
+(^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
 :: temporary until full path MANIFEST generation is implemented
 #\.tar\.gz$
 #\.tgz$
