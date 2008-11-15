@@ -11,4 +11,5 @@ vc80.pdb
 MANIFEST
 MANIFEST.bak
 Makefile.PL
+Makefile
 README

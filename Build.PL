@@ -3,13 +3,15 @@
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
+## TODO: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META>yml
+
 use strict;
 use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
 #use version qw(); our $VERSION = version::qv( qw( default-v 0.1.0 $Version: 0.1.0.37208004 $)[-2] ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
-use version qw(); our $VERSION = qw( default-v 0.1.0 $Version: 0.1.0.37208004 $ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = qw( default-v 0.1.0 $Version: 0.1.0.37208004 $ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
 
 
 ##- config
@@ -150,8 +152,8 @@ my $build = $class->new(
 	script_files         => [ map { glob } qw{ scripts/* } ],
 	xs_files             => { map { $_ => $lib_directory . q{\\} . $_ } ( map { glob } qw{ *.xs } ) },
 	recursive_test_files => 1,
-	create_readme        => 1, ##	# create README from module pod
-	create_makefile_pl   => 'traditional',
+	create_readme        => 1, ##				# create README from module pod
+	create_makefile_pl   => 'passthrough',	##	# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
 	PL_files             => {},
 	add_to_cleanup       => [ ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ), 'MANIFEST', 'MANIFEST.bak', 'Makefile', 'Makefile.PL', 'Makefile.old', 'pm_to_blib', 'README' ],
 );
@@ -374,8 +376,8 @@ sub rivy_builder_code
 	sub ACTION_install {
 		my ($self) = @_;
 
-		# add distmeta dependency
-		$self->depends_on('distmeta');
+        #[ADD] update all distmeta info when installing
+        $self->depends_on('distmeta');
 
 		if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
 
@@ -389,7 +391,9 @@ sub rivy_builder_code
 		my $ppd_name = join('-', split(/::/, $self->dist_name)).'.ppd';
 
 		$self->SUPER::log_info("Installing using ppm (using $ppd_name)\n");
-		`ppm install $ppd_name`;
+		## TODO: capture ppm output and print it
+		my $output = `ppm install $ppd_name`;
+		print $output;
 	  }
 	sub ACTION_fakeinstall {
 		my ($self) = @_;
@@ -433,6 +437,9 @@ sub rivy_builder_code
 
         #[ADD] build dependency (to make sure we're testing the most recent incarnation of the package)
         $self->depends_on('build');
+
+        #[ADD] update the distmeta info when testing (for up-to-date AUTHOR tests)
+        $self->depends_on('distmeta');
 
         return $self->SUPER::ACTION_test;
       }

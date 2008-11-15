@@ -16,7 +16,7 @@ use warnings;
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
 #use version qw(); our $VERSION = version::qv(qw( default-v 0.1 $Version$ )[-2]);	## no critic ( ProhibitCallsToUnexportedSubs ) ## [NOTE: "default-v 0.1" makes the code resilient vs missing keyword expansion]
-use version qw(); our $VERSION = qw( default-v 0.1.0 $Version$ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):''); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
+use version qw(); our $VERSION = qw( default-v 0.1.0 $Version$ )[-2]; $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ) ##	# [NOTE: "default-v 0.1.0" makes the code resilient vs missing keyword expansion]
 
 # Module Summary
 
@@ -230,7 +230,7 @@ sub	_ltrim {
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last argument only if it's a HASH reference (assumed to be options for our function)
 	if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' for function ".$me; return; } } }
-	if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me.'($_) instead?)'; return; }
+	if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me.'($_) instead?)'; return; } ## no critic ( RequireInterpolationOfMetachars ) #
 	if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
 
 	my $t = $opt{trim_re};
@@ -982,6 +982,17 @@ To install this module, run the following commands:
 	./Build test
 	./Build install
 
+Or, if you're on a platform (like DOS or Windows) that doesn't require the "./" notation, you can do this:
+
+	perl Build.PL
+	Build
+	Build test
+	Build install
+
+The standard make idiom ( "perl Makefile.PL" -> "make" -> "make test" -> "make install") is also available (using a Makefile.PL passthrough script). Module::Build is ultimately required for installation. However, the Makefile.PL script will work just as well (offering to download and install Module::Build if it is missing from your current installation).
+
+=for readme stop
+
 Alternatively, using the standard make idiom (if you do not have Module::Build installed):
 
 	perl Makefile.PL
@@ -990,6 +1001,8 @@ Alternatively, using the standard make idiom (if you do not have Module::Build i
 	make install
 
 (On Windows platforms you should use C<nmake> instead.)
+
+=for readme continue
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
 
@@ -1168,11 +1181,11 @@ L<http://rt.cpan.org>.
 
 =head1 AUTHOR
 
-Roy Ivy III <rivy[at]cpan.org>
+Roy Ivy III <rivy[at]cpan[dot]org>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2007, Roy Ivy III <rivy[at]cpan.org>.
+Copyright (c) 2007-2008, Roy Ivy III <rivy[at]cpan[dot]org>.
 All rights reserved.
 
 This module is free software; you can redistribute it and/or
