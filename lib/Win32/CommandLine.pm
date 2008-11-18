@@ -61,8 +61,8 @@ sub command_line{
 }
 
 sub argv{
-	# argv(): returns @
-	return parse( command_line() ); 	# get commandline and reparse it returning the new ARGV array
+	# argv( $ [,\%] ): returns @
+	return parse( command_line(), @_ ); 	# get commandline and reparse it returning the new ARGV array
 }
 
 sub parse{
@@ -422,7 +422,7 @@ sub	_argv_NEW{
   ##$argv2{'glob_ok'} =	$argv2{'glob_ok'}[ $p+1..$n	];
 
 	# check	for	unbalanced quotes and croak	if so...
-	if ($_G{'unbalanced_quotes'}) {	Carp::croak	'Unbalanced	command	line quotes	(at	token `'.$argv2{'argv'}[-1].'`)'; }
+	if ($_G{'unbalanced_quotes'}) {	Carp::croak	'Unbalanced command line quotes (at token `'.$argv2{'argv'}[-1].'`)'; }
 
 	# do globbing
 	my @argv2_g	= _argv_do_glob( \%argv2 );
@@ -451,7 +451,7 @@ sub	_quote_gc_meta{
 sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# _argv( $command_line )
 
-	# [seperated for testing]
+	# [seperated from argv() for testing]
 	# '...'		=> literal (no escapes and no globbing within quotes)
 	# $'...'	=> ANSI	C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other	\<x> =>\<x>), no globbing within quotes
 	##NOT# "..." =>	literal	(no	escapes	but	allows internal	globbing) [differs from	bash]
@@ -830,6 +830,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 # instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
 # must do the slash changes for user expectations ( "\\machine\dir\"* should work as expected on Win32 machines )
 # TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
+# TODO: note in LImITATIONS section
+
+# TODO: add 'doslike' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
 
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
 #		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE;

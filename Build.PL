@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.0.37322384 ( r26:6edf06442acf [mercurial] ) 2008/11/15 22:05:15 rivy $
+#$Id: Build.PL,v 0.1.1.12 ( r27:b6f530341406 [mercurial] ) 2008/11/18 01:32:57 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -12,61 +12,42 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
-# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
-# generate VERSION from $Version: 0.1.0.37322384 $ SCS tag
+# VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
+# generate VERSION from $Version: 0.1.1.12 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = qw( $defaultVERSION $Version: 0.1.0.37322384 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = qw( $defaultVERSION $Version: 0.1.1.12 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
-$config{'module_name'} = undef;
-$config{'specific_os'} = undef; ##	# limit to a single specific OS (eg, 'MSWin32') [default: undef == no OS limitation]
-$config{'os_req'} = undef; ##		# TESTING: limit to specific OS's (eg, 'MSWin32') [default: undef == no OS limitation]
 
-#
-# config may be done via local config file (allows Build.PL to be used without change between modules)
+# config may be done via a local config file [OPTIONAL] 	## allows Build.PL to be maintained seperately and used without changes between modules)
 $config{'rc_filename'} = 'Build.PL.config'; ##	# configuration file name (in .NET style)
+
+# Module::Build DEFAULTS [ ** DO NOT CHANGE, use the Build.PL.config to set the values ]
+$config{'module_name'} = undef;
+$config{'dist_author'} = undef;
+$config{'license'} = undef;							# must be chosen by the author of the module/distribution
+$config{'requires_href'} = {};						# module requirements (no obvious default)
+$config{'build_requires_href'} = { 'version' => 0, 'File::Which' => 0 };	# basic module requirements for Build.PL
+$config{'sign'} = 'true';							# always sign the module, if possible
+$config{'create_readme'} = 'true';					# create README from module pod
+$config{'create_makefile_pl'} = 'passthrough';		# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
+$config{'recursive_test_files'} = undef;			# scan the ./t directory recursively for *.t perl files to execute during testing (no obvious default)
+$config{'script_files_aref'} = [];					# alternate script/executable file locations
+$config{'pm_files_href'} = {};						# alternate PM file locations [to help with MakeMaker transitions]
+$config{'pod_files_href'} = {};						# alternate POD file locations [to help with MakeMaker transitions]
+$config{'xs_files_href'} = {};						# alternate XS file locations [to help with MakeMaker transitions]
+$config{'PL_files_href'} = {};						# perl files to execute during processing (usually to generated .PL files from templates)
+$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.PL', 'Makefile.old', 'pm_to_blib' ];	# extra files to clean up during "build clean"
+$config{'assert_os_aref'} = undef; 					# limit distribution to specific OS's (eg, 'MSWin32') [default: undef == no OS limitation]
+
+# helper variables
+$config{'lib_path'} = undef;						# generated during .config file parsing
+
 ##
 
 use Module::Build;
-
-## include configuration options, if the file exists
-#if ( -e $config{'rc_filename'} )
-#{
-#	my $single_q      = q{'};                    # single-quote (')
-#	my $double_q      = q{"};                    # double-quote (")
-#	my $quote_chars   = $single_q . $double_q;
-#	my $comment_chars = q{#;} . $single_q;
-#	my $fh            = undef;
-#	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
-#	my $line = 0;
-#	while ( my $s = <$fh> )
-#	{
-#		$line++;
-#		#eval $s;
-#		my ( $key, $value, $quote );
-#		if ( $s =~ m/^\s*$/ )                            { next; }    # skip any blank line
-#		if ( $s =~ m/^\s*(?:[$comment_chars]|\/\/).*$/ ) { next; }    # skip any line starting with '#', ';', q{'}, or '//' as a comment line
-#		if ( $s =~ m/^\s*(.*?)\s*=\s*([$quote_chars])?(.*)\2\s*$/ )
-#		{ ## quoted values are allowed with perl quoting semantics
-#			$key   = $1;
-#			$quote = $2;
-#			$value = $3;
-#			if ( exists $config{$key} )
-#			{
-#				if ( $quote eq $double_q )
-#				{ ## decode perl qq{} semantics (except \<unknown> is left as \<unknown> instead of <unknown>)
-#					$value =~ s/(\\(?:[tnrfbae\\]|c(?:.)|x(?:[0-9a-f]{2}|\{[0-9a-f]+\})))/'"'.$1.'"'/eego; ## safely eval qq character escapes
-#				}
-#				$config{$key} = $value;
-#			}
-#			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
-#		}
-#		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
-#	}
-#	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
-#}
 
 # include configuration options, if the file exists
 # config file format:
@@ -77,27 +58,6 @@ use Module::Build;
 # where each "<varName> => <value>" follows perl hash entry definition semantics (including embedded comments)
 # NOTYET: <value> can be multiline, terminated by EOF or next '<var_nameM> => ...' line
 
-my $v;
-my $val;
-#$v = 'TEST_VAL';
-#$val = "'this is a string'";
-#$val = " qw( this is an arrayref ) ";
-##$val = "[ this => is , a => hashref ]";
-#my $ev = '$config'."{$v} = $val";
-#{#no warnings 'all';
-#my $e = 0; my $w = 0;
-#$SIG{'__WARN__'} = sub { if (!$w) {chomp($w = $_[0]);} };
-#$e = !eval "$ev; 1";
-##print "w = $w\n";
-#$SIG{'__WARN__'} = undef;
-#if ($w || $e) {warn "malformed config ($w)";}
-#}
-##do '$config{TEST_VAL} = 10';
-##$config{$v} = eval { my %c; $c{'x'} = $val; return $c{'x'}; };
-#print "C{val} = $config{TEST_VAL}\n";
-#
-## NOTYET: all "<var_nameN> => value" line sets are then joined with ',' and pushed into the $config hash
-# include configuration options, if the file exists
 if ( -e $config{'rc_filename'} )
 {
 	my $comment_chars = q{#};
@@ -117,7 +77,7 @@ if ( -e $config{'rc_filename'} )
 			$value = $2;
 			if ( exists $config{$key} )
 			{ ## eval $value into $config{}
-				{#no warnings 'all';
+				{
 				my $ev = '$config'."{$key} = $value";
 				my $e = 0; my $w = 0;
 				$SIG{'__WARN__'} = sub { if (!$w) {chomp($w = $_[0]);} };
@@ -143,34 +103,40 @@ if ( -e $config{'rc_filename'} )
 ##
 
 if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'dist_author'} ) { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'license'} ) 	   { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-use lib 'inc';
-require Devel::AssertOS; import Devel::AssertOS ( (ref $config{'os_req'} ? @{$config{'os_req'}} : $config{'os_req'}) );
+#use lib 'inc';
+#require Devel::AssertOS; import Devel::AssertOS ( @{$config{'assert_os_aref'}} );
 
-my $specific_os_msg = "OS unsupported : $config{module_name} is designed to be used for " . ( $config{'specific_os'} ? $config{'specific_os'} : '<any>' ) . " systems only - installation aborted\n";
+if (defined($config{'assert_os_aref'})) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O eq $os; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n"; }; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
-if ( defined( $config{'specific_os'} ) && $^O ne $config{'specific_os'} ) { die $specific_os_msg; } ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
-
-my $lib_directory = 'lib/' . join( q{\\}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) );
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
+my %optional_args = ();		# build optional args, if they are non-empty (otherwise, direct inclusion of these as an empty list/hash in new() is a directive to Module::Build that the specified [and needed] files are missing)
+if ( @{$config{'script_files_aref'}} )   { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
+if ( keys %{$config{'pm_files_href'}} )  { %optional_args = ( %optional_args, pm_files =>  { %{$config{'pm_files_href'}} }); }
+if ( keys %{$config{'pod_files_href'}} ) { %optional_args = ( %optional_args, pod_files => { %{$config{'pod_files_href'}} }); }
+if ( keys %{$config{'xs_files_href'}} )  { %optional_args = ( %optional_args, xs_files =>  { %{$config{'xs_files_href'}} }); }
 my $build = $class->new(
 	module_name    => $config{'module_name'},
-	dist_author    => 'Roy Ivy III <rivy[at]cpan.org>',
-	license        => 'perl',
-	requires       => {},
-	build_requires => {
-		'version'     => 0,
-		'File::Which' => 0,
-	},
-	sign                 => 1,
-	script_files         => [ map { glob } qw{ scripts/* } ],
-	xs_files             => { map { $_ => $lib_directory . q{\\} . $_ } ( map { glob } qw{ *.xs } ) },
-	recursive_test_files => 1,
-	create_readme        => 1, ##				# create README from module pod
-	create_makefile_pl   => 'passthrough',	##	# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
-	PL_files             => {},
-	add_to_cleanup       => [ ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ), 'MANIFEST', 'MANIFEST.bak', 'Makefile', 'Makefile.PL', 'Makefile.old', 'pm_to_blib', 'README' ],
+	dist_author    => $config{'dist_author'},
+	license        => $config{'license'},
+
+	requires       => { %{$config{'requires_href'}} },
+
+	build_requires => { %{$config{'build_requires_href'}} },
+
+	sign                 => $config{'sign'},
+	recursive_test_files => $config{'recursive_test_files'},
+	create_readme        => $config{'create_readme'},
+	create_makefile_pl   => $config{'create_makefile_pl'},
+
+	%optional_args,
+
+	PL_files             => { %{$config{'PL_files_href'}} },
+
+	add_to_cleanup       => [ @{$config{'add_to_cleanup_aref'}}, ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ) ],
 );
 
 $build->create_build_script;
@@ -207,6 +173,7 @@ sub rivy_builder_code
 		my $self = shift;
 		my ($args, $action) = $self->read_args(@ARGV);
 		if ($action) { die "Too early to specify a build action '$action'.  Do 'perl Build.PL' instead.\n"; }
+
 		return $self->SUPER::new(@_);
 		}
 	sub ACTION_realclean {
@@ -405,7 +372,7 @@ sub rivy_builder_code
 
 		my $ppd_name = join('-', split(/::/, $self->dist_name)).'.ppd';
 
-		$self->SUPER::log_info("Installing using ppm (using $ppd_name)\n");
+		$self->SUPER::log_info("Installing via ppm (using $ppd_name)\n");
 		## TODO: capture ppm output and print it
 		my $output = `ppm install $ppd_name`;
 		print $output;
@@ -424,7 +391,7 @@ sub rivy_builder_code
 
 		my $ppd_name = join('-', split(/::/, $self->dist_name)).'.ppd';
 
-		$self->SUPER::log_info("Installing using ppm (using $ppd_name)\n");
+		$self->SUPER::log_info("Installing via ppm (using $ppd_name)\n");
 		#`ppm $ppd_name`;
 	  }
 	sub _has_ppm {
@@ -458,6 +425,77 @@ sub rivy_builder_code
 
         return $self->SUPER::ACTION_test;
       }
+    ## FROM: ExtUtils::Manifest (v1.54)
+	sub my_maniskip {
+		#print "HERE in my_maniskip()\n";
+		my @skip ;
+		my $mfile = shift || "$ExtUtils::Manifest::MANIFEST.SKIP";
+		ExtUtils::Manifest::_check_mskip_directives($mfile) if -f $mfile;
+		local(*M, $_);
+		open M, "< $mfile" or open M, "< $ExtUtils::Manifest::DEFAULT_MSKIP" or return sub {0};
+		while (<M>){
+		chomp;
+		s/\r//;
+		next if /^#/;
+		next if /^\s*$/;
+			s/^'//;
+			s/'$//;
+		push @skip, ExtUtils::Manifest::_macify($_);
+		}
+		close M;
+		#print 'skip['.scalar(@skip)."]\n";
+		return sub {0} unless (scalar @skip > 0);
+
+		# extinguish only used once warnings
+		my $dummy; $dummy = $ExtUtils::Manifest::Is_VMS; $dummy = $ExtUtils::Manifest::MANIFEST; $dummy = $ExtUtils::Manifest::DEFAULT_MSKIP;
+
+		my $opts = $ExtUtils::Manifest::Is_VMS ? '(?i)' : '';
+
+		# Make sure each entry is isolated in its own parentheses, in case
+		# any of them contain alternations
+		my $regex = join '|', map "(?:$_)", @skip;
+
+#		return sub {
+#			my $f = File::Spec->rel2abs($_[0]);
+#			if ($^O eq 'MSWin32') {$f =~ s:\\\\:/:g;};
+#			#print "[$_[0]=>$f]\n";
+#			return ($f =~ qr{$opts$regex});
+#			};
+		return sub {
+			# check each regex against the full filename
+			# this is not noticibly slower than the single regex against the relative/shortened filename
+			my $f = File::Spec->rel2abs($_[0]);
+			if ($^O eq 'MSWin32') {$f =~ s:\\\\:/:g;};		# unixify path for Win32
+			my $found = 0;
+			#print "[$_[0]=>$f]\n";
+			for my $re (@skip) { if ($f =~ qr{$opts$re}) { $found = 1; last; } };
+			return $found;
+			};
+	  }
+	sub ACTION_manifest {
+		my ($self) = @_;
+
+		require ExtUtils::Manifest; #ExtUtils::Manifest->import();
+		my $codeRef = \&my_maniskip;
+		my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
+		#local *ExtUtils::Manifest::_maniskip = &my_maniskip;
+		*ExtUtils::Manifest::_maniskip = $codeRef;
+
+        return $self->SUPER::ACTION_manifest;
+	  }
+
+	##?? add Sub::Override for maniskip here?? for all subs in the new Build
+	require ExtUtils::Manifest;
+	use Sub::Override;
+	my $codeRef = \&my_maniskip;
+	my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
+	#my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => \&my_maniskip );
+	#override->restore;
+	#*ExtUtils::Manifest::_maniskip = \&my_maniskip;
+
+	# ... might be brittle:: Module::Signature overrides it as well ( but only for ExtUtils::Manifest->VERSION < 1.41 ), probably ok
+	# ... petition ExtUtils::Manifest maintainers for a hook? changing the original code might break some folks MANIFEST.SKIPs
+
 	};
 	$code .= q{
 		sub do_create_makefile_pl \{
@@ -468,19 +506,69 @@ sub rivy_builder_code
 			my $fh;
 			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
 		};
-	if ( defined( $config{'specific_os'} ) )
-	{
-		$code .= qq{
-			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
-		};
-	}
+#	if ( defined( $config{'specific_os'} ) )
+#	{
+#		$code .= qq{
+#			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
+#		};
+# 	}
 	$code .= q{
 			$fh->close();
 			\}
 		};
+
 	return $code;
 }
 
+
+## FROM: Module::Build::Base
+#sub ACTION_manifest {
+#  my ($self) = @_;
+#
+#  my $maniskip = 'MANIFEST.SKIP';
+#  unless ( -e 'MANIFEST' || -e $maniskip ) {
+#    $self->log_warn("File '$maniskip' does not exist: Creating a default '$maniskip'\n");
+#    $self->_write_default_maniskip($maniskip);
+#  }
+#
+#  require ExtUtils::Manifest;  # ExtUtils::Manifest is not warnings clean.
+#  local ($^W, $ExtUtils::Manifest::Quiet) = (0,1);
+#  use Sub::Override;
+#  my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => &my_maniskip );
+#  ExtUtils::Manifest::mkmanifest('ExtUtils::Manifest::maniskip');
+#  override->restore;
+#}
+
+# FROM: Module::Build::Base
+#sub ACTION_manifest {
+#  my ($self) = @_;
+#
+#  my $maniskip = 'MANIFEST.SKIP';
+#  unless ( -e 'MANIFEST' || -e $maniskip ) {
+#    $self->log_warn("File '$maniskip' does not exist: Creating a default '$maniskip'\n");
+#    $self->_write_default_maniskip($maniskip);
+#  }
+#
+#  require ExtUtils::Manifest;  # ExtUtils::Manifest is not warnings clean.
+#  local ($^W, $ExtUtils::Manifest::Quiet) = (0,1);
+#  ExtUtils::Manifest::mkmanifest();
+#}
+
+
+# FROM: Module::Build::Base
+#sub ACTION_manifest {
+#  my ($self) = @_;
+#
+#  my $maniskip = 'MANIFEST.SKIP';
+#  unless ( -e 'MANIFEST' || -e $maniskip ) {
+#    $self->log_warn("File '$maniskip' does not exist: Creating a default '$maniskip'\n");
+#    $self->_write_default_maniskip($maniskip);
+#  }
+#
+#  require ExtUtils::Manifest;  # ExtUtils::Manifest is not warnings clean.
+#  local ($^W, $ExtUtils::Manifest::Quiet) = (0,1);
+#  ExtUtils::Manifest::mkmanifest();
+#}
 
 # FROM: ExtUtils::Manifest
 ## returns an anonymous sub that decides if an argument matches

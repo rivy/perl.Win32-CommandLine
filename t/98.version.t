@@ -1,8 +1,6 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
 
 # check for CPAN/PAUSE parsable VERSIONs ( URLref: http://cpan.org/modules/04pause.html )
-#
-#
 
 use strict;
 use warnings;
@@ -14,15 +12,27 @@ use ExtUtils::MakeMaker;
 
 my @files = ( '.\lib\Win32\CommandLine.pm' );
 
+#my @all_files = all_perl_files( '.' );
+#my @files = @all_files;
+#
+#my @skip_re = ( '(^/)inc/.*' );
+#for (@all_files)
+#	{
+#
+#	}
+
+#print @files;
+
 #print cwd();
 
 plan skip_all => '(ExtUtils::MakeMaker) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR};
 
 plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$haveExtUtilsMakeMaker;
 
-plan tests => scalar( @files );
+plan tests => scalar( @files + 1 );
 
-isnt( MM->parse_version($_), undef, "$_ has ExtUtils::MakeMaker parsable version") for @files;
+isnt( (scalar(@files) > 0), 0, "Found ".scalar(@files)." files to check");
+isnt( MM->parse_version($_), 'undef', "'$_' has ExtUtils::MakeMaker parsable version") for @files;
 
 #-----------------------------------------------------------------------------
 
@@ -33,11 +43,12 @@ isnt( MM->parse_version($_), undef, "$_ has ExtUtils::MakeMaker parsable version
 my @skip_dir = qw( CVS RCS .svn _darcs {arch} .bzr _build blib );
 my %skip_dir = hashify( @skip_dir );
 
-sub hashify {  ##no critic (ArgUnpacking)
+sub hashify {  ## no critic (ArgUnpacking)
     return map { $_ => 1 } @_;
 }
 
-sub all_perl_files {
+sub all_perl_files
+{#
 
     # Recursively searches a list of directories and returns the paths
     # to files that seem to be Perl source code.  This subroutine was

@@ -41,6 +41,7 @@ sub parse_default_version
 	my $extutils_version_re = qr{(?<!\\)([\$*])(([\w\:\']*)\bVERSION)\b.*\=};							# from ExtUtils::MM_Unix.pm	(v6.48)
 	my $default_equals_re = qr{\s*\$defaultVERSION\s*=\s*['"]?([0-9._]+?)["']?\s*;};
 	my $default_inarray_re = qr{\s*\$VERSION\s*=\s*qw\s*\(.*?['"]?([0-9._]+)["']?.*?\)\s*\[\s*\S+\s*\]\s*;};	## no critic (ProhibitComplexRegexes)
+#	my $VERSION_equals_re = qr{\s*\$VERSION\s*=\s*['"](v|V)?([0-9._]+)["']\s*;}; 	# ?? does this need a leading possible v for completeness (and possible capitalization)
 	my $VERSION_equals_re = qr{\s*\$VERSION\s*=\s*['"]([0-9._]+)["']\s*;};
 
 	open( my $fh, '<', $file ) or die "Can't open '$file': $OS_ERROR\n"; ## no critic ( RequireCarping RequireBriefOpen)

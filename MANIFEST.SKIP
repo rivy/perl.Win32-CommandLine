@@ -1,76 +1,58 @@
-$# Skip List RegExps for MANIFEST
-$# each line is a regular expression which will exclude any matching files from entry into the MANIFEST
+# Skip List RegExps for MANIFEST
+# each line is a regular expression which will exclude any matching files from entry into the MANIFEST
 
-$# NOTE: regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
-$# NOTE: some regexps assume paths have canonical path format with '/' characters as path dividers
-$# NOTE: regexps all assume no embedded newlines
+# NOTE: regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
+# NOTE: some regexps assume paths have canonical path format with '/' characters as path dividers
+# NOTE: regexps all assume no embedded newlines
 
-$# REMINDER: \w == "word character" == (alphanumeric + '_'); (^|/) == boundary between word characters
+# REMINDER: \w == "word character" == (alphanumeric + '_'); \b == boundary between word characters
 
-$# TODO: Submit bug report regarding regexps starting with (^|/) used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest
+# TODO: Submit bug report(?) regarding regexps starting with \b used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest
 
-$# Avoid PACKAGE DISTRIBUTION FILES.
-$# :: assumes that the package directory has the same name as the distribution prefix (i.e. MyNamespace-MyPackage is the containing directory for MyNamespace-MyPackage-0.1.0.tar.gz)
-#(^|/)(.*)/\1.*\.tar\.gz$
-#(^|/)(.*)/\1.*\.tgz$
-#(^|/)(.*)/\1\.ppd$
-$# :: other possible/optional generated PACKAGE FILES to avoid
-#(^|/)(.*)(-.*)?/lib/\1/.*\.xs$						# package .xs files copied into lib directory
-(^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
-:: temporary until full path MANIFEST generation is implemented
-#\.tar\.gz$
-#\.tgz$
-#\.ppd$
-#\.xs$						# package .xs files copied into lib directory
+# Avoid PACKAGE DISTRIBUTION FILES.
+# :: assumes that the package directory has the same name as the distribution prefix (i.e. MyNamespace-MyPackage is the containing directory for MyNamespace-MyPackage-0.1.0.tar.gz)
+(?:^|/)(.*)/\1-.*\.tar\.gz$
+(?:^|/)(.*)/\1-.*\.tgz$
+(?:^|/)(.*)/\1\.ppd$
+# :: other possible/optional generated PACKAGE FILES to avoid
+(?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$	# compiler detrus in the lib directory
 
+# Avoid Module::Build generated and utility files.
+(?:^|/)Build$
+(?:^|/)Build.bat$
+(?:^|/)_build/
 
-$# Avoid Module::Build generated and utility files.
-(^|/)Build$
-(^|/)Build.bat$
-(^|/)_build/
+# Avoid Makemaker generated and utility files.
+(?:^|/)MANIFEST\.bak$
+(?:^|/)Makefile$
+(?:^|/)blib/
+(?:^|/)MakeMaker-\d
+(?:^|/)pm_to_blib\.ts$
+(?:^|/)pm_to_blib$
+(?:^|/)blibdirs\.ts$         # 6.18 through 6.25 generated this
 
-$# Avoid Makemaker generated and utility files.
-(^|/)MANIFEST\.bak$
-(^|/)Makefile$
-(^|/)blib/
-(^|/)MakeMaker-\d
-(^|/)pm_to_blib\.ts$
-(^|/)pm_to_blib$
-(^|/)blibdirs\.ts$         # 6.18 through 6.25 generated this
-
-$# Avoid version control files.
-(^|/)RCS\b
-(^|/)CVS\b
-(^|/)SCCS\b
+# Avoid version control files.
+(?:^|/)RCS\b
+(?:^|/)CVS\b
+(?:^|/)SCCS\b
 ,v$
-(^|/)\.svn\b
-(^|/)_darcs\b
-$# :: mercurial
-(^|/)\.hg/.*
-(^|/)\.hgtags$
-(^|/)\.hgignore$
+(?:^|/)\.svn\b
+(?:^|/)_darcs\b
+# :: mercurial
+(?:^|/)\.hg/.*
+(?:^|/)\.hgtags$
+(?:^|/)\.hgignore$
 
-$# Avoid temp and backup files.
+# Avoid temp and backup files.
 ~$
 \.old$
 \#$
-(^|/)\.#
+(?:^|/)\.#
 \.bak$
 \.tmp$
 
-$# Avoid weird file detrus
-(^|/)null$
+# Avoid weird file detrus
+(?:^|/)null$
 
-$# Avoid Devel::Cover files.
-(^|/)cover_db/
-
-$# Win32::CommandLine
-$# TODO::add a generic RE which matches certain files based on enclosing directory [eg, "^.*/(.*)/\1-[^\/]*$" and "^.*/(.*)/\1.ppd$"]
-$#(^|/)Win32-CommandLine-.*$
-$#(^|/)Win32-CommandLine.ppd$
-$#(^|/)lib/Win32/CommandLine.xs$
-$#\.(bs|c|def|obj|o|pdb)$
-$#\.build\.tmpl$
-$#\.tar\.gz$
-$#DDS\.pm
-$#^dds\w+\.pl
+# Avoid Devel::Cover files.
+(?:^|/)cover_db/

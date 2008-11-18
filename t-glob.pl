@@ -9,7 +9,7 @@ use warnings;
 use lib qw{ lib blib/arch };
 use Win32::CommandLine qw( command_line parse );
 
-use Getopt::Long qw(:config bundling bundling_override gnu_compat);
+use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat);
 
 $| = 1;		# autoflush for warnings to be in sequence with regular output
 
@@ -18,7 +18,7 @@ $| = 1;		# autoflush for warnings to be in sequence with regular output
 # getopt
 my %ARGV = ();
 #GetOptions (\%ARGV, 'filename|f', 'fullpath|F', 'aid|a', 'help|h|?|usage', 'version|v') or pod2usage(2);
-GetOptions (\%ARGV, 'filename|f', 'fullpath|F', 'aid|a', 'help|h|?|usage', 'version|v', 't:s', 's=s', 'd=s%');
+GetOptions (\%ARGV, 'filename|f', 'fullpath|F', 'aid|a', 't:s', 's=s', 'd=s%', 'help|h|?|usage', 'man', 'version|ver|v');
 Getopt::Long::VersionMessage() if $ARGV{version};
 ##pod2usage(1) if $ARGV{'help'};
 ##pod2usage(-verbose => 2) if $ARGV{'man'};
