@@ -50,7 +50,7 @@ use ExtUtils::MakeMaker;
 #-- config
 #my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) );	#"
 
-@ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
+@ARGV = Win32::CommandLine::argv( { dospath => 'true' } ) if eval { require Win32::CommandLine; };
 # TODO:: dospaths == should fix the /X option issues for files
 #@ARGV = Win32::CommandLine::argv( dospaths => 'true' ) if eval { require Win32::CommandLine; };
 
@@ -72,16 +72,16 @@ if ( $ARGV{'args'} )
 	print 'command_line()'." = '$cl'\n";
 	}
 
-# unfortunately the args (which are correct here) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
-# so, protect the ARGs from CreateProcess() reparsing destruction
-# echo is a special case (it must get it's command line directly, skipping the ARGV reparsed arguments of CreateProcess()... so check and don't re-escape quotes) for 'echo'
-## checking for echo is a bit complicated any command starting with echo followed by a . or whitespace is treated as an internal echo command unless a file exists which matches the entire 1st argument, then it is executed instead
-if ((-e $ARGV[0]) || not $ARGV[0] =~ m/^\s*echo(.|\s*)/)
-	{ ## protect internal ARGV whitespace and double quotes by escaping them and surrounding the ARGV with another set of double quotes
-	## ???: do we need to just protect the individual whitespace and quote runs individually instead of a whole ARGV quote surround?
-	## ???: do we need to protect other special characters (such as I/O redirection and continuation characters)?
-	for (1..$#ARGV) {if ($ARGV[$_] =~ /\s/ || $ARGV[$_] =~ /["]/) {$ARGV[$_] =~ s/\"/\\\"/g; $ARGV[$_] = '"'.$ARGV[$_].'"'}; }
-	}
+## unfortunately the args (which are correct here) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
+## so, protect the ARGs from CreateProcess() reparsing destruction
+## echo is a special case (it must get it's command line directly, skipping the ARGV reparsed arguments of CreateProcess()... so check and don't re-escape quotes) for 'echo'
+### checking for echo is a bit complicated any command starting with echo followed by a . or whitespace is treated as an internal echo command unless a file exists which matches the entire 1st argument, then it is executed instead
+#if ((-e $ARGV[0]) || not $ARGV[0] =~ m/^\s*echo(.|\s*)/)
+#	{ ## protect internal ARGV whitespace and double quotes by escaping them and surrounding the ARGV with another set of double quotes
+#	## ???: do we need to just protect the individual whitespace and quote runs individually instead of a whole ARGV quote surround?
+#	## ???: do we need to protect other special characters (such as I/O redirection and continuation characters)?
+#	for (1..$#ARGV) {if ($ARGV[$_] =~ /\s/ || $ARGV[$_] =~ /["]/) {$ARGV[$_] =~ s/\"/\\\"/g; $ARGV[$_] = '"'.$ARGV[$_].'"'}; }
+#	}
 
 if ( $ARGV{'args'} )
 	{

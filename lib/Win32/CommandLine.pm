@@ -466,6 +466,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [%]: an optional hash_ref	containing function	options	as named parameters
 	my %opt	= (
+		dospath => 0,				# = true/false [default = false]	# if true, convert output ARGs to dos CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters
 		nullglob => 0,				# = true/false [default = false]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself
 		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
 		_carp_unbalanced => 1,		# = true/false [default = true]		# <private> if true, carp for unbalanced command line quotes
@@ -832,7 +833,8 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 # TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
 # TODO: note in LImITATIONS section
 
-# TODO: add 'doslike' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
+# DONE=>TODO: add 'dospath' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
+# TODO: find a better name for 'dospath'
 
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
 #		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE;
@@ -866,6 +868,18 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		#print "s	= `$s`\n";
 		#print "pat	= `$pat`\n";
 		#print "#g = @g\n";
+
+		my $dos_special_chars = ':*?"<>|';
+		# if whitespace or special characters, surround with "'s", whole token or just individual problem characters
+		if ($opt{dospath})
+			{
+			my $dc = quotemeta( $dos_special_chars );
+			foreach my $tok (@g) {
+				$tok =~ s:":\\":g;
+				if ($tok =~ qr{(\s|[$dc])}) { $tok = q{"}.$tok.q{"}; };
+				};
+			};
+
 
 		push @argv2_g, @g;
 		}
