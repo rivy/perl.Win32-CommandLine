@@ -963,6 +963,14 @@ foreach my $p (keys %{$profiles}) {
 }
 
 # add All Users / Public
+if ($ENV{PUBLIC}) { $home_paths{public} = $ENV{PUBLIC}; }
+else { $home_paths{public} = $ENV{ALLUSERSPROFILE}; }
+
+# add ability to specify "home_paths" from environment vars
+for my $k (keys %ENV)
+	{
+	if ( $k =~ /^~(\w+)$/ ) { $home_paths{lc($1)} = $ENV{$k}; };
+	}
 
 #for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
 return %home_paths;

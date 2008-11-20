@@ -1,20 +1,26 @@
 @rem = '--*-Perl-*--
 @echo off
-set _x_source_bat=
+:: batch file tricks to allow 'sourcing' of <commands>
+:: 	* sourcing => running commands in the parents environmental context, allowing modification of parents environment and CWD
+set _x_source=
+set _x_source_bat=nul
 if [%1]==[-S] (
-:findTemp
+:findUniqueTemp
+	set _x_source=t
 	set _x_source_bat=%temp%\x.source.%RANDOM%.bat
-	if EXIST %_x_source_bat% ( goto :findTemp )
+	if EXIST %_x_source_bat% ( goto :findUniqueTemp )
 	)
 ::echo _x_source_bat=%_x_source_bat%
 if "%OS%" == "Windows_NT" goto WinNT
-:: arguments
+
+:: gather all arguments
 set _args=%1
 :argLoop
 shift
 if NOT [%1]==[] ( set _args=%_args% %1% )
 if NOT [%1]==[] ( goto :argLoop )
-if %_x_source_bat%==[] (
+
+if [%_x_source%]==[] (
 	perl -x -S "%0" %_args%
 	) ELSE (
 	echo @:: %_xsource_bat% file > %_x_source_bat%
@@ -23,9 +29,12 @@ if %_x_source_bat%==[] (
 	call %_x_source_bat%
 	erase %_x_source_bat% 2>nul
 	)
+set _x_source=
+set _x_source_bat=
 goto endofperl
+
 :WinNT
-if %_x_source_bat%==[] (
+if [%_x_source%]==[] (
 	perl -x -S %0 %*
 	if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
 	if %errorlevel% == 9009 echo You do not have Perl in your PATH.
@@ -40,6 +49,8 @@ if %_x_source_bat%==[] (
 	call %_x_source_bat%
 	erase %_x_source_bat% 2>nul
 	)
+set _x_source=
+set _x_source_bat=
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-

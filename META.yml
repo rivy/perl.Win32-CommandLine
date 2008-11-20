@@ -1,6 +1,6 @@
 ---
 name: Win32-CommandLine
-version: 0.3.2.324978
+version: 0.3.2.499099
 author:
   - 'Roy Ivy III <rivy[at]cpan[dot]org>'
 abstract: Retrieve and reparse the Win32 command line
@@ -11,10 +11,14 @@ build_requires:
   File::Which: 0
   Sub::Override: 0
   version: 0
+recommends:
+  Win32: 0
+  Win32::Security::SID: 0
+  Win32::TieRegistry: 0
 provides:
   Win32::CommandLine:
     file: lib/Win32/CommandLine.pm
-    version: 0.3.2.324978
+    version: 0.3.2.499099
 generated_by: Module::Build version 0.3
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
