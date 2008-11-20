@@ -29,6 +29,7 @@ $config{'module_name'} = undef;
 $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
+$config{'recommends'} = {};							# module recommendations (no obvious default)
 $config{'build_requires_href'} = { 'version' => 0, 'File::Which' => 0 };	# basic module requirements for Build.PL
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
@@ -84,7 +85,7 @@ if ( -e $config{'rc_filename'} )
 				$e = !eval "$ev; 1";
 				#print "w = $w\n";
 				$SIG{'__WARN__'} = undef;
-				if ($w || $e) {warn "malformed config ($w)";}
+				if ($w || $e) {warn "build: warning, malformed configuration entry: $config{'rc_filename'}, line $line\n";}
 				}
 			}
 			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
@@ -111,7 +112,6 @@ if ( !$config{'license'} ) 	   { die '$config{license} must be defined' . "\n"; 
 
 if (defined($config{'assert_os_aref'})) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O eq $os; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n"; }; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
-
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my %optional_args = ();		# build optional args, if they are non-empty (otherwise, direct inclusion of these as an empty list/hash in new() is a directive to Module::Build that the specified [and needed] files are missing)
 if ( @{$config{'script_files_aref'}} )   { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
@@ -124,6 +124,7 @@ my $build = $class->new(
 	license        => $config{'license'},
 
 	requires       => { %{$config{'requires_href'}} },
+	recommends     => { %{$config{'recommends'}} },
 
 	build_requires => { %{$config{'build_requires_href'}} },
 
@@ -438,8 +439,12 @@ sub rivy_builder_code
 		s/\r//;
 		next if /^#/;
 		next if /^\s*$/;
+		s/\s+(#.*)?$//;	# remove trailing whitespace and comments (any whitespace followed by '#') ## BUGFIX: trailing comments were being interpreted into the regexp ## TODO: ExtUtils::Manifest docs say whitespace may be included in regexp if single quoted o/w whitespace and anything following are discarded as comments (see perldoc ExtUtils::Manifest, MANIFEST section)
+		#TODO: leave whitespace within single quotes alone (need a balanced single quote regexp here)
 			s/^'//;
 			s/'$//;
+		#print "skip: regexp = '$_'\n";
+		#TODO: check for bad regexps
 		push @skip, ExtUtils::Manifest::_macify($_);
 		}
 		close M;
@@ -475,6 +480,7 @@ sub rivy_builder_code
 	sub ACTION_manifest {
 		my ($self) = @_;
 
+		use Sub::Override;
 		require ExtUtils::Manifest; #ExtUtils::Manifest->import();
 		my $codeRef = \&my_maniskip;
 		my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
@@ -485,10 +491,10 @@ sub rivy_builder_code
 	  }
 
 	##?? add Sub::Override for maniskip here?? for all subs in the new Build
-	require ExtUtils::Manifest;
-	use Sub::Override;
-	my $codeRef = \&my_maniskip;
-	my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
+	#require ExtUtils::Manifest;
+	#use Sub::Override;
+	#my $codeRef = \&my_maniskip;
+	#my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
 	#my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => \&my_maniskip );
 	#override->restore;
 	#*ExtUtils::Manifest::_maniskip = \&my_maniskip;

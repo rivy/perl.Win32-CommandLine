@@ -1,13 +1,45 @@
 @rem = '--*-Perl-*--
 @echo off
+set _x_source_bat=
+if [%1]==[-S] (
+:findTemp
+	set _x_source_bat=%temp%\x.source.%RANDOM%.bat
+	if EXIST %_x_source_bat% ( goto :findTemp )
+	)
+::echo _x_source_bat=%_x_source_bat%
 if "%OS%" == "Windows_NT" goto WinNT
-perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+:: arguments
+set _args=%1
+:argLoop
+shift
+if NOT [%1]==[] ( set _args=%_args% %1% )
+if NOT [%1]==[] ( goto :argLoop )
+if %_x_source_bat%==[] (
+	perl -x -S "%0" %_args%
+	) ELSE (
+	echo @:: %_xsource_bat% file > %_x_source_bat%
+	echo @echo OFF >> %_x_source_bat%
+	perl -x -S "%0" %_args% >> %_x_source_bat%
+	call %_x_source_bat%
+	erase %_x_source_bat% 2>nul
+	)
 goto endofperl
 :WinNT
-perl -x -S %0 %*
-if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
-if %errorlevel% == 9009 echo You do not have Perl in your PATH.
-if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+if %_x_source_bat%==[] (
+	perl -x -S %0 %*
+	if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+	if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+	if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+	) ELSE (
+	echo @:: %_xsource_bat% file > %_x_source_bat%
+	echo @echo OFF >> %_x_source_bat%
+	perl -x -S %0 %* >> %_x_source_bat%
+	if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+	if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+	if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+	call %_x_source_bat%
+	erase %_x_source_bat% 2>nul
+	)
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
@@ -26,6 +58,12 @@ goto endofperl
 
 # '-a' is the one optional paramater (placed immediately before the <command>) => print expanded args and quit (WITHOUT executing the command)
 
+##TODO (-d and -u options)
+# -d: => dosify [default]
+# -d:all => dosify='all'
+# -u: => unixify
+# -u:all => unixify='all'
+
 # TODO: add option to reverse all canonical forward slashes in options to backslash to avoid interpretation as options by commands
 # TODO: add option to NOT quote a command (such as for echo) and take the special processing out of the code? (what about the echo.bat situation, maybe 'alias echo=x -Q echo $*' or 'alias echo.bat=x echo.bat' or would that not solve it....)
 
@@ -43,30 +81,25 @@ use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_comp
 
 use Carp::Assert;
 
-use FindBin;	## NOCPAN: BEGIN used, so incompatible with any other modules using it; !!!: don't use for any CPAN package/module/script
+use FindBin;	## NOCPAN :: BEGIN used in FindBin, so incompatible with any other modules using it; !!!: don't use for any CPAN package/module
 
 use ExtUtils::MakeMaker;
 
 #-- config
 #my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) );	#"
 
-@ARGV = Win32::CommandLine::argv( { dospath => 'true' } ) if eval { require Win32::CommandLine; };
-# TODO:: dospaths == should fix the /X option issues for files
-#@ARGV = Win32::CommandLine::argv( dospaths => 'true' ) if eval { require Win32::CommandLine; };
-
-#my %ARGV = ();
-#if (lc($ARGV[0]) eq '-a') { $ARGV{'args'} = 'true'; shift @ARGV; }
+@ARGV = Win32::CommandLine::argv( { dosify => 'true' } ) if eval { require Win32::CommandLine; };
 
 # getopt
 my %ARGV = ();
-GetOptions (\%ARGV, 'args|a', 'dospath|dos|d', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
+GetOptions (\%ARGV, 'source|S|e', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
 Getopt::Long::VersionMessage() if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage(-verbose => 2) if $ARGV{'man'};
 
 pod2usage(1) if @ARGV < 1;
 
-if ( $ARGV{'args'} )
+if ( $ARGV{args} )
 	{
 	my $cl = Win32::CommandLine::command_line();
 	print 'command_line()'." = '$cl'\n";
@@ -83,15 +116,16 @@ if ( $ARGV{'args'} )
 #	for (1..$#ARGV) {if ($ARGV[$_] =~ /\s/ || $ARGV[$_] =~ /["]/) {$ARGV[$_] =~ s/\"/\\\"/g; $ARGV[$_] = '"'.$ARGV[$_].'"'}; }
 #	}
 
-if ( $ARGV{'args'} )
+if ( $ARGV{args} )
 	{
 	for (my $i = 0; $i < @ARGV; $i++) { print '$ARGV'."[$i] = '$ARGV[$i]'\n"; }
 	}
 
 #system { $ARGV[0] } @ARGV;		# doesn't see "echo" as a command (?? problem for all CMD built-ins?)
-if ( not $ARGV{'args'} )
+if ( not $ARGV{args} )
 	{
-	system @ARGV;
+	## TODO: is it possible to run the process as an extension of this process (i.e. not as a sub-process, so that it can modify the parent environment?? x.bat is already in the CLI parent environment? is this wise? but otherwise, how would 'cd ~' work?)
+	if ($ARGV{source} ) { print join(" ",@ARGV); } else { system @ARGV; }
 	}
 
 __END__

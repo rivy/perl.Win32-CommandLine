@@ -8,6 +8,8 @@ package Win32::CommandLine;
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
 # WORKS NOW? (2008-11-14) -> ADD some tests [use TEST_EXPENSIVE vs TEST_EXHAUSTIVE]: TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
+# TODO: Check edge cases for network paths (//sethra/C$/* vs \\sethra/C$/*, etc)
+# TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
 use strict;
 use warnings;
@@ -67,22 +69,7 @@ sub argv{
 
 sub parse{
 	# parse( $ [,\%] ): returns @
-	# parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed)
-#	# [%]: an optional hash_ref containing function options as named parameters
-#	#	nullglob = true/false [default = true] # if true, patterns which match no files are expanded to a null string, rather than the pattern itself
-#	#TODO: ?rename (? parse_bash, ...)
-#	 my %opt = (
-##		'nullglob' => 1,
-#		);
-#
-#	# read/expand optional named parameters
-#	 my $me = (caller(0))[3];
-#	 my $opt_ref;
-#	 $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  # pop trailing argument only if it's a HASH reference (assumed to be options for our function)
-#	 if ($opt_ref) { for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' to for function ".$me; } } }
-#
-#	my $s = shift @_;
-#	return _argv( $s, { %opt } );
+	# parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed [ie, no variable substitution is performed])
 	return _argv( @_ );
 }
 
@@ -397,7 +384,7 @@ sub	_argv_NEW{
 	# _argv( $ [,\%] ):	returns	@
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [%]: an optional hash_ref	containing function	options	as named parameters
-	#	nullglob = true/false [default = true]	# if true, patterns	which match	no files are expanded to a null	string,	rather than	the	pattern	itself
+	#	nullglob = true/false [default = false]	# if true, patterns	which match	no files are expanded to a null	string,	rather than	the	pattern	itself
 	my %opt	= (
 		'nullglob' => 0,
 		);
@@ -466,8 +453,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [%]: an optional hash_ref	containing function	options	as named parameters
 	my %opt	= (
-		dospath => 0,				# = true/false [default = false]	# if true, convert output ARGs to dos CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters
-		nullglob => 0,				# = true/false [default = false]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself
+		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files																		# if true, convert output ARGs to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
+		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
+		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
 		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
 		_carp_unbalanced => 1,		# = true/false [default = true]		# <private> if true, carp for unbalanced command line quotes
 		);
@@ -782,6 +770,15 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 #
 	my @argv2_g;
 	my $glob_this;
+
+	my %home_paths = _home_paths();
+	if ($ENV{USERNAME} && $ENV{USERPROFILE}) { $home_paths{q{}} = $ENV{USERPROFILE}; };
+	for my $k (keys %home_paths) { $home_paths{$k} =~ s/\\/\//g; }; # unixify path seperators
+	my $home_path_re =  q{(?i)}.q{^~(}.join(q{|}, keys %home_paths ).q{)(/|$)}; ## no critic (RequireInterpolationOfMetachars)
+
+	#for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
+	#print "home_path_re = $home_path_re\n";
+
 	for	(my $i=0; $i<=$#argv2; $i++)		## no critic (ProhibitCStyleForLoops)
 		{
 		use	File::Glob qw( :glob );
@@ -798,11 +795,24 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		foreach my $r_h ( @{ $argv_3[$n+$i+1] } )
 			{
 			my $t = $r_h->{token};
+			my $prefix = ($s eq q{});
 			$s .= $t;
 			if ($r_h->{glob})
 				{
 				$glob_this = 1;
+				#print "prefix = $prefix\n";
+				#print "t = $t\n";
+				if ($prefix && scalar(keys %home_paths))
+					{
+					$t =~ s/\\/\//g;
+					$t =~ s/$home_path_re/$home_paths{$1}$2/;
+					if (defined $1) { $s = $t; };
+					if ($opt{dosify}) { $s =~ s:\/:\\:g; };
+					}
+				#if ($prefix) { $t =~ s/$home_path_re/$home_paths{$1}/; }
 				$t =~ s/\\/\//g;
+				#print "s = $s\n";
+				#print "t = $t\n";
 				}
 			else
 				{ $t = _quote_gc_meta($t); }
@@ -833,8 +843,8 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 # TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
 # TODO: note in LImITATIONS section
 
-# DONE=>TODO: add 'dospath' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
-# TODO: find a better name for 'dospath'
+# DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
+# DONE=>TODO: find a better name for 'dospath' => 'dosify'
 
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
 #		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE;
@@ -850,7 +860,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 		if ( $glob_this )
 			{
-			$pat =~ s#\\\\#\/#g;		## no critic ( ProhibitUnusualDelimiters )	## replace all backslashes (assumed to be backslash quoted already) with forward slashes
+			$pat =~ s:\\\\:\/:g;		## no critic ( ProhibitUnusualDelimiters )	## replace all backslashes (assumed to be backslash quoted already) with forward slashes
 			if ( $pat =~ /\\[?*]/ )
 				{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
 				@g = ( $s );
@@ -858,6 +868,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			else
 				{
 				@g = bsd_glob( $pat, $glob_flags );
+				#print "s = $s\n";
+				if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
+				elsif ($opt{dosify}) { foreach my $glob (@g) { $glob =~ s:\/:\\:g; } };		# replace / with \ for all globbed tokens if $opt{dosify}
 				}
 			}
 		else
@@ -870,13 +883,18 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		#print "#g = @g\n";
 
 		my $dos_special_chars = ':*?"<>|';
-		# if whitespace or special characters, surround with "'s", whole token or just individual problem characters
-		if ($opt{dospath})
+		# if whitespace or special characters, surround with double-quotes ((whole token or just individual problem characters??))
+		if ($opt{dosify})
 			{
 			my $dc = quotemeta( $dos_special_chars );
 			foreach my $tok (@g) {
-				$tok =~ s:":\\":g;
-				if ($tok =~ qr{(\s|[$dc])}) { $tok = q{"}.$tok.q{"}; };
+				$tok =~ s:":\\":g;	## no critic (ProhibitUnusualDelimiters)
+				if ($tok =~ qr{(\s|[$dc])})
+					{
+					$tok = q{"}.$tok.q{"};
+					#$tok =~ s/^(\/\w+(?:[=:])?)?(.*)$/$1\"$2\"/;
+					};
+#				if ($tok =~ qr{(\s|[$dc])}) { $tok = q{"}.$tok.q{"}; };
 				};
 			};
 
@@ -884,8 +902,73 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		push @argv2_g, @g;
 		}
 
+	# TODO: $opt{dosify} = 'all' => for all args, check file exists and if so change '/' to '\'
+	# TODO: $opt{unixify} = 'all' => for all args, check file exists and if so change '\' to '/'
+
+	if ($opt{dosify} eq 'all') { foreach $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }
+	if ($opt{unixify} eq 'all') { foreach $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }
+
 	return @argv2_g;
 }
+
+sub _home_paths
+{
+# TODO: degrade gracefully if Win32 or Win32::Security::SID or Win32::TieRegistry are missing
+# TODO: memoize the home paths array
+
+## no critic (ProhibitUnlessBlocks)
+# _home_paths(): returns %
+# pull user home paths from registry
+
+# modified from File::HomeDir::Win32 (v0.04)
+use Win32;
+use Win32::Security::SID;
+
+my %registry;
+
+#use Win32::TieRegistry ( TiedHash => \%registry );
+use Win32::TieRegistry qw();
+
+my %home_paths = ();
+
+my $node_name   = Win32::NodeName;
+my $domain_name = Win32::DomainName;
+
+my $profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\'};
+unless ($profiles) {
+	# Windows 98
+	$profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ProfileList\\'};
+	}
+
+#foreach my $p (keys %{$profiles}) { print "profiles{$p} = $profiles->{$p}\n"; }
+
+foreach my $p (keys %{$profiles}) {
+	#print "p = $p\n";
+	if ($p =~ /^(S(?:-\d+)+)\\$/) {
+		my $sid_str = $1;
+		my $sid = Win32::Security::SID::ConvertStringSidToSid($1);
+		my $uid = Win32::Security::SID::ConvertSidToName($sid);
+		my $domain = q{};
+		if ($uid =~ /^(.+)\\(.+)$/) {
+			$domain = $1;
+			$uid    = $2;
+			}
+		if ($domain eq $node_name || $domain eq $domain_name) {
+			my $path = $profiles->{$p}->{ProfileImagePath};
+			$path =~ s/\%(.+)\%/$ENV{$1}/eg;
+			#print $uid."\n";
+			$home_paths{lc($uid)} = $path;		# remove user case
+			}
+	}
+}
+
+# add All Users / Public
+
+#for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
+return %home_paths;
+}
+
+#print '#registry entries = '.scalar( keys %{$Win32::TieRegistry::Registry} )."\n";
 
 1; # Magic true	value required at end of module	(for require)
 
@@ -980,8 +1063,6 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	my $commandline = command_line();
 	...
 
-=for readme stop
-
 =head1 DESCRIPTION
 
 =for author_to_fill_in
@@ -993,8 +1074,39 @@ This module is used to reparse the Win32 command line, automating better quoting
 doskey type=x type $*
 type [a-c]*.pl
 
+Note the bash compatible character expansion and globbing available, including meta-notations a{b,c}* ...
 
-=for readme continue
+Character expansion:
+
+=over 2
+
+'...'		=> literal (no escapes and no globbing within quotes)
+
+$'...'	=> ANSI	C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other	\<x> =>\<x>), no globbing within quotes
+
+"..."	  => literal (no escapes and no	globbing within	quotes)
+
+$"..."  => same as "..."
+
+=back
+
+Globbing:
+
+=over 2
+
+\       Quote the next metacharacter
+
+[]      Character class
+
+{}      Multiple pattern
+
+*       Match any string of characters
+
+?       Match any single character
+
+~       User name home directory		[ ONLY if File::HomeDir::Win32 is installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
+
+=back
 
 =head1 INSTALLATION
 
@@ -1061,6 +1173,8 @@ C<argv()> returns the reparsed command line as an array.
 
 C<parse()> returns the parsed argument string as an array.
 
+=for readme continue
+
 =head1 RATIONALE
 
 Attempts were made using Win32::API and Inline::C.
@@ -1098,6 +1212,8 @@ __END__
 Unfortunately, Win32::API causes a GPF and Inline::C is very brittle on Win32 systems (not compensating for paths with embedded strings).
 
 See URLref: http://www.perlmonks.org/?node_id=625182 for a more full explanation of the problem and initial attempts at a solution.
+
+=for readme stop
 
 =head1 IMPLEMENTATION and INTERNALS
 

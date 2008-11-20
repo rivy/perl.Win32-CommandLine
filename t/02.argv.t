@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use lib 't/lib';
+#use lib 't/lib';
 use Test::More;
 use Test::Differences;
 my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
@@ -37,7 +37,7 @@ add_test( [ qq{ a b c } ], qw( ) );
 
 add_test( [ qq{ a 'b' c } ], qw( ) );
 
-## PROBLEM: add_test( [ qq{$0 '' } ], qw( '' ) );
+add_test( [ qq{$0 a '' } ], ( qq{a}, qq{} ) );
 
 add_test( [ qq{$0 a b c} ], qw( a b c ) );
 
@@ -93,7 +93,7 @@ add_test( [ qq{$0 '/a\a'} ], ( qq{/a\a} ) );
 
 add_test( [ qq{$0 '//foo\\bar'} ], ( q{//foo\\bar} ) );
 
-add_test( [ qq{$0 '/a\a' /foo\\\\bar} ], ( qq{/a\a}, q{/foo//bar} ) ); ## problem
+add_test( [ qq{$0 '/a\a' /foo\\\\bar} ], ( qq{/a\a}, q{/foo\\\\bar} ) );
 
 add_test( [ qq{$0 1 't\\glob-file tests'/*} ], ( 1, glob('t/glob-file\ tests/*') ) );
 
@@ -111,7 +111,35 @@ add_test( [ qq{$0 t 0} ], ( q{t}, q{0} ) );
 
 add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
+add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
+#
+
+##
+## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
+add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
+add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+##
+
+# rule tests
+# non-globbed tokens should stay the same
+add_test( [ qq{$0 1 foo\\bar} ], ( q{foo\\bar} ) );
+add_test( [ qq{$0 2 \\foo/bar} ], ( q{\\foo/bar} ) );
+add_test( [ qq{$0 1 't\\glob-file tests\\'*} ], ( 1, glob('t/glob-file\ tests/*') ) );
+
+# dosify
+add_test( [ qq{$0 foo\\bar} ], ( q{foo\\bar} ) );
+
+
+
+## TODO: check both with and without nullglob, including using %opts for argv()
+add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );
+
 ## do tests
+
+$ENV{nullglob} = 0;	# setup a known environment
 
 #plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
 plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0);
