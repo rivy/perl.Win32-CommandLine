@@ -1,4 +1,5 @@
 @rem = '--*-Perl-*--
+@::# $Id$
 @echo off
 :: batch file tricks to allow 'sourcing' of <commands>
 :: 	* sourcing => running commands in the parents environmental context, allowing modification of parents environment and CWD
@@ -55,8 +56,6 @@ goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
 #line 15
-
-# $Id$
 
 # x [-a] <command> <arg(s)>
 # execute <command> with parsed <arg(s)>

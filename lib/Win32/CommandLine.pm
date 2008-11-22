@@ -963,13 +963,20 @@ foreach my $p (keys %{$profiles}) {
 }
 
 # add All Users / Public
+$home_paths{allusers} = $ENV{ALLUSERSPROFILE};					#?? should this be $ENV{PUBLIC} on Vista?
 if ($ENV{PUBLIC}) { $home_paths{public} = $ENV{PUBLIC}; }
 else { $home_paths{public} = $ENV{ALLUSERSPROFILE}; }
 
 # add ability to specify "home_paths" from environment vars
 for my $k (keys %ENV)
 	{
-	if ( $k =~ /^~(\w+)$/ ) { $home_paths{lc($1)} = $ENV{$k}; };
+	if ( $k =~ /^~(\w+)$/ )
+		{
+		my $username = $1;
+		$ENV{$k} =~ /\s*"?\s*(\S*)\s*"?\s*/;
+		if (defined $1) { $home_paths{lc($username)} = $1; }
+		else { $home_paths{lc($username)} = $ENV{$k}; }
+		}
 	}
 
 #for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
