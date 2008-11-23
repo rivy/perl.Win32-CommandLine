@@ -2,60 +2,78 @@
 @::# $Id$
 @echo off
 :: batch file tricks to allow 'sourcing' of <commands>
-:: 	* sourcing => running commands in the parents environmental context, allowing modification of parents environment and CWD
-set _x_source=
-set _x_source_bat=nul
-if [%1]==[-S] (
+:: :'sourcing' => running commands in the parents environmental context, allowing modification of parents environment and CWD
+
+:: need one GLOBAL var to allow sourcing (should be unique so that we don't tramp on our parent's %ENV
+set _x_a6f4d9b1c3e6a0b7_bat_=nul
+if NOT [%1]==[-S] ( goto :pass_findUniqueTemp )
 :findUniqueTemp
-	set _x_source=t
-	set _x_source_bat=%temp%\x.source.%RANDOM%.bat
-	if EXIST %_x_source_bat% ( goto :findUniqueTemp )
-	)
-::echo _x_source_bat=%_x_source_bat%
-if "%OS%" == "Windows_NT" goto WinNT
+set _x_a6f4d9b1c3e6a0b7_bat_=%temp%\x.source.%RANDOM%.bat
+if EXIST %_x_a6f4d9b1c3e6a0b7_bat_% ( goto :findUniqueTemp )
+:pass_findUniqueTemp
+::echo _x_a6f4d9b1c3e6a0b7_bat_=%_x_a6f4d9b1c3e6a0b7_bat_%
 
-:: gather all arguments
-set _args=%1
-:argLoop
-shift
-if NOT [%1]==[] ( set _args=%_args% %1% )
-if NOT [%1]==[] ( goto :argLoop )
+:: localize all other ENV changes until sourcing is pending
+setlocal
 
-if [%_x_source%]==[] (
-	perl -x -S "%0" %_args%
-	) ELSE (
-	echo @:: %_xsource_bat% file > %_x_source_bat%
-	echo @echo OFF >> %_x_source_bat%
-	perl -x -S "%0" %_args% >> %_x_source_bat%
-	call %_x_source_bat%
-	erase %_x_source_bat% 2>nul
-	)
-set _x_source=
-set _x_source_bat=
-goto endofperl
+:: under 4NT/TCC, DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments)
+if NOT "%_4ver%" == "" ( setdos /x-1 )
 
-:WinNT
-if [%_x_source%]==[] (
-	perl -x -S %0 %*
-	if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
-	if %errorlevel% == 9009 echo You do not have Perl in your PATH.
-	if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
-	) ELSE (
-	echo @:: %_xsource_bat% file > %_x_source_bat%
-	echo @echo OFF >> %_x_source_bat%
-	perl -x -S %0 %* >> %_x_source_bat%
-	if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
-	if %errorlevel% == 9009 echo You do not have Perl in your PATH.
-	if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
-	call %_x_source_bat%
-	erase %_x_source_bat% 2>nul
+:: gather all arguments (work for WinNT [and should work for previous versions as well])
+set "args=%*"
+:::: :unable to just use shifts b/c CMD splits command lines on some non-whitespace characters (such as '=') for interpretation of batch vars (%1, %2, ...)
+::set "args="
+::set "arg="
+::set "line="
+::set line=%*
+::::echo "(preloop) line=%line%"
+:::gatherargs
+::for /f "tokens=1,*" %%a in ("%line%") do (
+::	set "arg=%%a"
+::	set "line=%%b"
+::	)
+::if NOT "%arg%" == "" (
+::	if NOT "%args%" == "" ( set "args=%args% " )
+::	set "args=%args%%arg%"
+::	)
+::if NOT "%line%"=="" ( goto :gatherargs )
+::echo args=%args%
+
+
+if NOT [%_x_a6f4d9b1c3e6a0b7_bat_%]==[nul] ( goto :source_output )
+::perl -x -S %0 %*
+perl -x -S %0 %args%
+if NOT %errorlevel% == 0 (
+	endlocal
+	set "_x_a6f4d9b1c3e6a0b7_bat_="
+	exit /B %errorlevel%
 	)
-set _x_source=
-set _x_source_bat=
+goto :cleanup
+
+:source_output
+echo @:: %_x_a6f4d9b1c3e6a0b7_bat_% file > %_x_a6f4d9b1c3e6a0b7_bat_%
+echo @echo OFF >> %_x_a6f4d9b1c3e6a0b7_bat_%
+::echo "perl output"
+perl -x -S %0 %args% >> %_x_a6f4d9b1c3e6a0b7_bat_%
+::echo "sourcing - started"
+if NOT %errorlevel% == 0 (
+	endlocal
+	set "_x_a6f4d9b1c3e6a0b7_bat_="
+	erase %_x_a6f4d9b1c3e6a0b7_bat_% 1>nul 2>nul
+	exit /B %errorlevel%
+	)
+endlocal
+call %_x_a6f4d9b1c3e6a0b7_bat_%
+::echo "sourcing - done"
+erase %_x_a6f4d9b1c3e6a0b7_bat_% 1>nul 2>nul
+
+:cleanup
+::echo cleanup
+set "_x_a6f4d9b1c3e6a0b7_bat_="
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#line 15
+#line 77
 
 # x [-a] <command> <arg(s)>
 # execute <command> with parsed <arg(s)>

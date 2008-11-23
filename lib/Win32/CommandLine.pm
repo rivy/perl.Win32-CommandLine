@@ -973,9 +973,9 @@ for my $k (keys %ENV)
 	if ( $k =~ /^~(\w+)$/ )
 		{
 		my $username = $1;
-		$ENV{$k} =~ /\s*"?\s*(\S*)\s*"?\s*/;
+		$ENV{$k} =~ /\s*"?\s*(.*)\s*"?\s*/;
 		if (defined $1) { $home_paths{lc($username)} = $1; }
-		else { $home_paths{lc($username)} = $ENV{$k}; }
+			else { $home_paths{lc($username)} = $ENV{$k}; }
 		}
 	}
 

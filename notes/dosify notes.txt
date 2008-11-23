@@ -1,0 +1,17 @@
+rules:
+
+1) token not-glob and matches filename -> change to /'s
+2) token globbed -> change to /'s
+3) nullglob = false
+	globbed tokens without a match => <original token> (** without / changes)
+4) nullglob = true
+	globbed tokens without a match => '' (** EXCEPT special case of ~ or ~<name> => stays as the original token, NO / changes)
+	
+
+** ONLY successfully globbed tokens will have path seperator changes
+** 
+	
+- can use parallel tokens while figuring out globbing
+
+- when dosify'ing
+	special case (for legacy DOS commands which can't take their options quoted) => if leading '/' use 's:^(/\w*)(.*)$:$1\"$2\":' to quote the string

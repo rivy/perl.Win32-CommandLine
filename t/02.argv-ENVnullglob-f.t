@@ -19,6 +19,8 @@ sub add_test;
 sub test_num;
 sub do_tests;
 
+$ENV{nullglob} = 0;	# setup a known environment
+
 # Tests
 
 ## accumulate tests
@@ -138,8 +140,6 @@ add_test( [ qq{$0 foo\\bar} ], ( q{foo\\bar} ) );
 add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );
 
 ## do tests
-
-$ENV{nullglob} = 0;	# setup a known environment
 
 #plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
 plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0);
