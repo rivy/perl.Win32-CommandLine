@@ -226,7 +226,7 @@ sub rivy_builder_code
 
 				my $fh = IO::File->new(">> $basename.bat")
 				or die "Can't create $basename.bat: $!";
-				print $fh $cmd;
+				print $fh "\n".$cmd."\n";						## TODO: calling SUPER::ACTION_realclean() caused a bug repeating the command twice on the same line causing it to fail for PowerShell => add a new line first
 				close $fh ;
 				}
 			else {
