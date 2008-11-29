@@ -807,7 +807,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 					$t =~ s/\\/\//g;
 					$t =~ s/$home_path_re/$home_paths{$1}$2/;
 					if (defined $1) { $s = $t; };
-					if ($opt{dosify}) { $s =~ s:\/:\\:g; };
+					if ($opt{dosify}) { $s =~ s:\/:\\:g; };	## no critic (ProhibitUnusualDelimiters)
 					}
 				#if ($prefix) { $t =~ s/$home_path_re/$home_paths{$1}/; }
 				$t =~ s/\\/\//g;
@@ -870,7 +870,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 				@g = bsd_glob( $pat, $glob_flags );
 				#print "s = $s\n";
 				if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
-				elsif ($opt{dosify}) { foreach my $glob (@g) { $glob =~ s:\/:\\:g; } };		# replace / with \ for all globbed tokens if $opt{dosify}
+				elsif ($opt{dosify}) { foreach my $glob (@g) { $glob =~ s:\/:\\:g; } };		## no critic (ProhibitUnusualDelimiters)	## replace / with \ for all globbed tokens if $opt{dosify}
 				}
 			}
 		else
@@ -905,8 +905,8 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# TODO: $opt{dosify} = 'all' => for all args, check file exists and if so change '/' to '\'
 	# TODO: $opt{unixify} = 'all' => for all args, check file exists and if so change '\' to '/'
 
-	if ($opt{dosify} eq 'all') { foreach $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }
-	if ($opt{unixify} eq 'all') { foreach $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }
+	if ($opt{dosify} eq 'all') { foreach my $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }	## no critic (ProhibitUnusualDelimiters)
+	if ($opt{unixify} eq 'all') { foreach my $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } } ## no critic (ProhibitUnusualDelimiters)
 
 	return @argv2_g;
 }
@@ -924,7 +924,7 @@ sub _home_paths
 use Win32;
 use Win32::Security::SID;
 
-my %registry;
+#my %registry;
 
 #use Win32::TieRegistry ( TiedHash => \%registry );
 use Win32::TieRegistry qw();
@@ -934,10 +934,10 @@ my %home_paths = ();
 my $node_name   = Win32::NodeName;
 my $domain_name = Win32::DomainName;
 
-my $profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\'};
+my $profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
 unless ($profiles) {
 	# Windows 98
-	$profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ProfileList\\'};
+	$profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
 	}
 
 #foreach my $p (keys %{$profiles}) { print "profiles{$p} = $profiles->{$p}\n"; }
