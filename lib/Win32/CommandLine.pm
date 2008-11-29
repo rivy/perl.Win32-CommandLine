@@ -772,7 +772,18 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	my $glob_this;
 
 	my %home_paths = _home_paths();
-	if ($ENV{USERNAME} && $ENV{USERPROFILE}) { $home_paths{q{}} = $ENV{USERPROFILE}; };
+	# add ability to specify "home_paths" from environment vars
+	# if <username> is duplicated in environment vars, it overrides any previous path found in the registry
+	for my $k (keys %ENV)
+		{
+		if ( $k =~ /^~(\w+)$/ )
+			{
+			my $username = $1;
+			$ENV{$k} =~ /\s*"?\s*(.*)\s*"?\s*/;
+			if (defined $1) { $home_paths{lc($username)} = $1; }
+				else { $home_paths{lc($username)} = $ENV{$k}; }
+			}
+		}
 	for my $k (keys %home_paths) { $home_paths{$k} =~ s/\\/\//g; }; # unixify path seperators
 	my $home_path_re =  q{(?i)}.q{^~(}.join(q{|}, keys %home_paths ).q{)(/|$)}; ## no critic (RequireInterpolationOfMetachars)
 
@@ -921,63 +932,57 @@ sub _home_paths
 # pull user home paths from registry
 
 # modified from File::HomeDir::Win32 (v0.04)
-use Win32;
-use Win32::Security::SID;
 
-#my %registry;
+#use Win32;
+#use Win32::Security::SID;
+#use Win32::TieRegistry qw();
 
-#use Win32::TieRegistry ( TiedHash => \%registry );
-use Win32::TieRegistry qw();
+my $have_all_needed_modules = eval { require Win32; require Win32::Security::SID; require Win32::TieRegistry; 1; };
 
 my %home_paths = ();
 
-my $node_name   = Win32::NodeName;
-my $domain_name = Win32::DomainName;
+# initial paths for user from environment vars
+if ($ENV{USERNAME} && $ENV{USERPROFILE}) { $home_paths{q{}} = $home_paths{lc($ENV{USERNAME})} = $ENV{USERPROFILE}; };
 
-my $profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
-unless ($profiles) {
-	# Windows 98
-	$profiles = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
-	}
+my $profiles_href;
 
-#foreach my $p (keys %{$profiles}) { print "profiles{$p} = $profiles->{$p}\n"; }
+if ($have_all_needed_modules) {
+	my $node_name   = Win32::NodeName;
+	my $domain_name = Win32::DomainName;
 
-foreach my $p (keys %{$profiles}) {
-	#print "p = $p\n";
-	if ($p =~ /^(S(?:-\d+)+)\\$/) {
-		my $sid_str = $1;
-		my $sid = Win32::Security::SID::ConvertStringSidToSid($1);
-		my $uid = Win32::Security::SID::ConvertSidToName($sid);
-		my $domain = q{};
-		if ($uid =~ /^(.+)\\(.+)$/) {
-			$domain = $1;
-			$uid    = $2;
+	$profiles_href = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
+	unless ($profiles_href) {
+		# Windows 98
+		$profiles_href = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
+		}
+
+	#foreach my $p (keys %{$profiles}) { print "profiles{$p} = $profiles->{$p}\n"; }
+
+	foreach my $p (keys %{$profiles_href}) {
+		#print "p = $p\n";
+		if ($p =~ /^(S(?:-\d+)+)\\$/) {
+			my $sid_str = $1;
+			my $sid = Win32::Security::SID::ConvertStringSidToSid($1);
+			my $uid = Win32::Security::SID::ConvertSidToName($sid);
+			my $domain = q{};
+			if ($uid =~ /^(.+)\\(.+)$/) {
+				$domain = $1;
+				$uid    = $2;
+				}
+			if ($domain eq $node_name || $domain eq $domain_name) {
+				my $path = $profiles_href->{$p}->{ProfileImagePath};
+				$path =~ s/\%(.+)\%/$ENV{$1}/eg;
+				#print $uid."\n";
+				$home_paths{lc($uid)} = $path;		# remove/ignore user case
+				}
 			}
-		if ($domain eq $node_name || $domain eq $domain_name) {
-			my $path = $profiles->{$p}->{ProfileImagePath};
-			$path =~ s/\%(.+)\%/$ENV{$1}/eg;
-			#print $uid."\n";
-			$home_paths{lc($uid)} = $path;		# remove user case
-			}
+		}
 	}
-}
 
 # add All Users / Public
 $home_paths{allusers} = $ENV{ALLUSERSPROFILE};					#?? should this be $ENV{PUBLIC} on Vista?
 if ($ENV{PUBLIC}) { $home_paths{public} = $ENV{PUBLIC}; }
 else { $home_paths{public} = $ENV{ALLUSERSPROFILE}; }
-
-# add ability to specify "home_paths" from environment vars
-for my $k (keys %ENV)
-	{
-	if ( $k =~ /^~(\w+)$/ )
-		{
-		my $username = $1;
-		$ENV{$k} =~ /\s*"?\s*(.*)\s*"?\s*/;
-		if (defined $1) { $home_paths{lc($username)} = $1; }
-			else { $home_paths{lc($username)} = $ENV{$k}; }
-		}
-	}
 
 #for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
 return %home_paths;
