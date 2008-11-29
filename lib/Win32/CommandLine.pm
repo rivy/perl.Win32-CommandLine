@@ -7,7 +7,7 @@ package Win32::CommandLine;
 ## ---- policies to REVISIT later
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
-# WORKS NOW? (2008-11-14) -> ADD some tests [use TEST_EXPENSIVE vs TEST_EXHAUSTIVE]: TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
+# WORKS NOW (2008-11-14) => ADD some tests for this... [use TEST_EXPENSIVE vs TEST_EXHAUSTIVE]: TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
 # TODO: Check edge cases for network paths (//sethra/C$/* vs \\sethra/C$/*, etc)
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
@@ -924,7 +924,6 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 sub _home_paths
 {
-# TODO: degrade gracefully if Win32 or Win32::Security::SID or Win32::TieRegistry are missing
 # TODO: memoize the home paths array
 
 ## no critic (ProhibitUnlessBlocks)
@@ -932,10 +931,6 @@ sub _home_paths
 # pull user home paths from registry
 
 # modified from File::HomeDir::Win32 (v0.04)
-
-#use Win32;
-#use Win32::Security::SID;
-#use Win32::TieRegistry qw();
 
 my $have_all_needed_modules = eval { require Win32; require Win32::Security::SID; require Win32::TieRegistry; 1; };
 

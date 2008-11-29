@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.1.12 ( r27:b6f530341406 [mercurial] ) 2008/11/18 01:32:57 rivy $
+#$Id: Build.PL,v 0.1.1.962778 ( r31:44b9b5eb01f2 [mercurial] ) 2008/11/29 05:00:18 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -13,10 +13,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
-# generate VERSION from $Version: 0.1.1.12 $ SCS tag
+# generate VERSION from $Version: 0.1.1.962778 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = qw( $defaultVERSION $Version: 0.1.1.12 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = qw( $defaultVERSION $Version: 0.1.1.962778 $ )[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -30,7 +30,7 @@ $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends'} = {};							# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'version' => 0, 'File::Which' => 0 };	# basic module requirements for Build.PL
+$config{'build_requires_href'} = { 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0 };	# basic module requirements for Build.PL
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
 $config{'create_makefile_pl'} = 'passthrough';		# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
@@ -40,8 +40,9 @@ $config{'pm_files_href'} = {};						# alternate PM file locations [to help with 
 $config{'pod_files_href'} = {};						# alternate POD file locations [to help with MakeMaker transitions]
 $config{'xs_files_href'} = {};						# alternate XS file locations [to help with MakeMaker transitions]
 $config{'PL_files_href'} = {};						# perl files to execute during processing (usually to generated .PL files from templates)
-$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.PL', 'Makefile.old', 'pm_to_blib' ];	# extra files to clean up during "build clean"
-$config{'assert_os_aref'} = undef; 					# limit distribution to specific OS's (eg, 'MSWin32') [default: undef == no OS limitation]
+$config{'config_href'} = {};						# modify Config.pm values for the build
+$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];	# extra files to clean up during "build clean"
+$config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS)
 
 # helper variables
 $config{'lib_path'} = undef;						# generated during .config file parsing
@@ -49,6 +50,9 @@ $config{'lib_path'} = undef;						# generated during .config file parsing
 ##
 
 use Module::Build;
+
+use File::Spec::Functions qw( rel2abs );
+use File::Basename qw( dirname );
 
 # include configuration options, if the file exists
 # config file format:
@@ -59,11 +63,13 @@ use Module::Build;
 # where each "<varName> => <value>" follows perl hash entry definition semantics (including embedded comments)
 # NOTYET: <value> can be multiline, terminated by EOF or next '<var_nameM> => ...' line
 
-if ( -e $config{'rc_filename'} )
+my $config_filename = rel2abs($config{'rc_filename'}, dirname(rel2abs($0)));
+#print "config => ".$config_filename;
+if ( -e $config_filename )
 {
 	my $comment_chars = q{#};
 	my $fh            = undef;
-	open( $fh, '<', $config{'rc_filename'} ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
+	open( $fh, '<', $config_filename ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
 	my $line = 0;
 	while ( my $s = <$fh> )
 	{
@@ -88,9 +94,9 @@ if ( -e $config{'rc_filename'} )
 				if ($w || $e) {warn "build: warning, malformed configuration entry: $config{'rc_filename'}, line $line\n";}
 				}
 			}
-			else { warn "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
+			else { die "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
 		}
-		else { warn "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
+		else { die "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
 	}
 	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
 }
@@ -110,10 +116,10 @@ if ( !$config{'license'} ) 	   { die '$config{license} must be defined' . "\n"; 
 #use lib 'inc';
 #require Devel::AssertOS; import Devel::AssertOS ( @{$config{'assert_os_aref'}} );
 
-if (defined($config{'assert_os_aref'})) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O eq $os; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n"; }; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
+if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O eq $os; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n"; }; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
-my %optional_args = ();		# build optional args, if they are non-empty (otherwise, direct inclusion of these as an empty list/hash in new() is a directive to Module::Build that the specified [and needed] files are missing)
+my %optional_args = ();		# Module::Build::new() optional args (only included if they are non-empty; otherwise, if included as empty list(s)/hash(es) in new(), Module::Build carps that the specified [and needed] files are missing)
 if ( @{$config{'script_files_aref'}} )   { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
 if ( keys %{$config{'pm_files_href'}} )  { %optional_args = ( %optional_args, pm_files =>  { %{$config{'pm_files_href'}} }); }
 if ( keys %{$config{'pod_files_href'}} ) { %optional_args = ( %optional_args, pod_files => { %{$config{'pod_files_href'}} }); }
@@ -135,6 +141,8 @@ my $build = $class->new(
 
 	%optional_args,
 
+	config        		 => { %{$config{'config_href'}} },
+
 	PL_files             => { %{$config{'PL_files_href'}} },
 
 	add_to_cleanup       => [ @{$config{'add_to_cleanup_aref'}}, ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ) ],
@@ -149,6 +157,7 @@ sub rivy_builder_code
 	my $code = q{
 	use File::Basename;
 	use File::Spec;
+	use File::Spec::Functions;
 	use IO::File;
 
 	sub new{
@@ -217,12 +226,14 @@ sub rivy_builder_code
 			if ( $self->build_bat ) {
 				my $full_progname = $0;
 				$full_progname =~ s/(?:\.bat)?$/.bat/i;
+				$full_progname = File::Spec::Functions::rel2abs($full_progname);
 
 				# Voodoo required to have a batch file delete itself without error;
 				# Syntax differs between 9x & NT: the later requires a null arg (???)
+				## TODO: discuss race condition that occurs here: if other process completes 1st (which should almost never occur) the deletion will still be successful just a possible error message might occur = "The batch file cannot be found." & user may notice that the .bat file is still existant for a couple of seconds until the other process starts/inits/completes the deletion
 				require Win32;
 				my $null_arg = (Win32::IsWinNT()) ? '""' : '';
-				my $cmd = qq(start $null_arg /min "\%comspec\%" /c del "$full_progname");
+				my $cmd = qq(start $null_arg /min "%comspec%" /c del "$full_progname");
 
 				my $fh = IO::File->new(">> $basename.bat")
 				or die "Can't create $basename.bat: $!";
@@ -508,18 +519,16 @@ sub rivy_builder_code
 			my $self = shift;
 
 			$self->SUPER::do_create_makefile_pl;
-
-			my $fh;
-			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
 		};
 #	if ( defined( $config{'specific_os'} ) )
-#	{
+#		{
 #		$code .= qq{
+#			my $fh;
+#			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
 #			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
-#		};
-# 	}
+#			$fh->close();
+#			};
 	$code .= q{
-			$fh->close();
 			\}
 		};
 
