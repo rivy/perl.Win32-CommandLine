@@ -64,7 +64,7 @@ sub command_line{
 
 sub argv{
 	# argv( $ [,\%] ): returns @
-	return parse( command_line(), @_ ); 	# get commandline and reparse it returning the new ARGV array
+	return parse( command_line(), @_ );		# get commandline and reparse it returning the new ARGV array
 }
 
 sub parse{
@@ -816,7 +816,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 				if ($prefix && scalar(keys %home_paths))
 					{
 					$t =~ s/\\/\//g;
-					$t =~ s/$home_path_re/$home_paths{$1}$2/;
+					$t =~ s/$home_path_re/$home_paths{lc($1)}$2/;
 					if (defined $1) { $s = $t; };
 					if ($opt{dosify}) { $s =~ s:\/:\\:g; };	## no critic (ProhibitUnusualDelimiters)
 					}
@@ -849,13 +849,14 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 
 # NOT!: bash-like globbing EXCEPT no backslash quoting within the glob; this makes "\\" => "\\" instead of "\" so that "\\machine\dir" works
-# instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
+# DONE/instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
 # must do the slash changes for user expectations ( "\\machine\dir\"* should work as expected on Win32 machines )
 # TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
 # TODO: note in LImITATIONS section
 
 # DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
 # DONE=>TODO: find a better name for 'dospath' => 'dosify'
+# TODO: TEST 'dosify' and 'unixify'
 
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
 #		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE;
@@ -916,8 +917,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# TODO: $opt{dosify} = 'all' => for all args, check file exists and if so change '/' to '\'
 	# TODO: $opt{unixify} = 'all' => for all args, check file exists and if so change '\' to '/'
 
+	## TODO: TEST these...
 	if ($opt{dosify} eq 'all') { foreach my $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }	## no critic (ProhibitUnusualDelimiters)
-	if ($opt{unixify} eq 'all') { foreach my $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } } ## no critic (ProhibitUnusualDelimiters)
+	if ($opt{unixify} eq 'all') { foreach my $a (@argv2_g) { if (-e $a) {$a =~ s:\\:\/:g; } } } ## no critic (ProhibitUnusualDelimiters)
 
 	return @argv2_g;
 }

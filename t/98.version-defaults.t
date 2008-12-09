@@ -16,7 +16,7 @@ my @files = ( '.\lib\Win32\CommandLine.pm' );
 
 #print cwd();
 
-plan skip_all => '(ExtUtils::MakeMaker) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR};
+plan skip_all => '(ExtUtils::MakeMaker) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$haveExtUtilsMakeMaker;
 

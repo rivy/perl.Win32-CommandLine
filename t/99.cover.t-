@@ -1,0 +1,19 @@
+#!perl -w   -*- tab-width: 4; mode: perl -*-
+
+# :: check test coverage
+
+use strict;
+use warnings;
+
+my $haveTestStrict = eval { require Test::Strict; import Test::Strict; 1; };
+my $haveDevelCover = eval { require Devel::Cover; import Devel::Cover; 1; };
+
+plan skip_all => '(Devel::Cover) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+
+plan skip_all => 'Test::Strict required to check coverage' if !$haveTestStrict;
+plan skip_all => 'Devel::Cover required to check coverage' if !$haveDevelCover;
+
+#all_perl_files_ok( @mydirs );
+#all_perl_files_ok( 'lib' );
+all_cover_ok( 80 );
+  

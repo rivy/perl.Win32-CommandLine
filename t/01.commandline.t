@@ -3,12 +3,19 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More;
+
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
 if ( !$ENV{HARNESS_ACTIVE} ) {
 	# not executing under Test::Harness
-	use lib qw{ lib };		# for ease of testing from command line and testing immediacy, use the 'lib' version (so 'blib/arch' version doesn't have to be updated 1st)
+	use lib qw{ blib/arch };	# only needed for dynamic module loads (eg, compiled XS) [ remove if no XS ]
+	use lib qw{ lib };			# use the 'lib' version (for ease of testing from command line and testing immediacy; so 'blib/arch' version doesn't have to be built/updated 1st)
 	}
+
+#
+
+plan tests => 3 + ($haveTestNoWarnings ? 1 : 0);
 
 # Tests
 

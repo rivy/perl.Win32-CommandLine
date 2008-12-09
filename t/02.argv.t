@@ -3,14 +3,15 @@
 use strict;
 use warnings;
 
-#use lib 't/lib';
-use Test::More;
-use Test::Differences;
+use Test::More;				# included with perl
+use Test::Differences;		# included with perl
+
 my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
 if ( !$ENV{HARNESS_ACTIVE} ) {
 	# not executing under Test::Harness
-	use lib qw{ lib };		# for ease of testing from command line and testing immediacy, use the 'lib' version (so 'blib/arch' version doesn't have to be updated 1st)
+	use lib qw{ blib/arch };	# only needed for dynamic module loads (eg, compiled XS) [ remove if no XS ]
+	use lib qw{ lib };			# use the 'lib' version (for ease of testing from command line and testing immediacy; so 'blib/arch' version doesn't have to be built/updated 1st)
 	}
 
 use Win32::CommandLine;
@@ -41,13 +42,29 @@ add_test( [ qq{$0 a '' } ], ( qq{a}, qq{} ) );
 
 add_test( [ qq{$0 a b c} ], qw( a b c ) );
 
-add_test( [ qq{$0 "a b" c} ], ( "a b", "c" ) );
+add_test( [ qq{$0 "a b" c} ], ( 'a b', 'c' ) );
 
 add_test( [ qq{$0 'a b' c'' } ], ( "a b", "c" ) );
 
 add_test( [ qq{$0 "a b" c"" } ], ( "a b", "c" ) );
 
 add_test( [ qq{$0 "a b" c""d } ], ( "a b", "cd" ) );
+
+add_test( [ qq{$0 'a'b c''d } ], ( 'ab', 'cd' ) );
+
+add_test( [ qq{$0 a'b'c''d } ], ( 'abcd' ) );
+
+add_test( [ qq{$0 "a"b c""d } ], ( 'ab', 'cd' ) );
+
+add_test( [ qq{$0 a"b"c""d } ], ( 'abcd' ) );
+
+add_test( [ qq{$0 "a"b c''d } ], ( 'ab', 'cd' ) );
+
+add_test( [ qq{$0 a"b"c''d } ], ( 'abcd' ) );
+
+add_test( [ qq{$0 'a'b c""d } ], ( 'ab', 'cd' ) );
+
+add_test( [ qq{$0 a'b'c""d } ], ( 'abcd' ) );
 
 add_test( [ qq{$0 'a b" c'} ], ( qq{a b" c} ) );
 
@@ -114,14 +131,21 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
 #
 
-##
-## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
-add_test( [ qq{$0 ~*} ], ( q{~*} ) );
-add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
-add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
-##
+# TODO BUG: "\\loish\Shared Documents"\* => "\\loish\Shared Documents" and glob of '\*'
+# TODO: create tests for above
+# TODO: create tests for "\\127.0.0.1\"...
+
+## now in 02.argv-tilde.t
+## ?? change to include here surrounded by $ENV{TEST_FRAGILE} check? or do skipped tests need to be in a specific file by themselves?
+### TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
+### use TEST_FRAGILE
+#add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+#add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
+#add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+#add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+#add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+###
+
 
 # rule tests
 # non-globbed tokens should stay the same

@@ -75,6 +75,11 @@ goto endofperl
 #!perl -w   -*- tab-width: 4; mode: perl -*-
 #line 77
 
+## TODO: check this... problem that x -e "a"bc""d != abcd	== NOTE: this is a problem with 'x' b/c rerunning x.bat with %* args causes shell interpretation of quotes... anyway around this?
+##		** if x doesn't have to deal with redirection/I/O, maybe just turning it back into a .pl file and using Win32::CommandLine... will work instead
+##		NOTE: .pl files get automagically changed into .bat files for MSWin32 during build... hmm... do we have to implement this as XS somehow?
+## TODO: add normal .pl utility documentation/POD, etc
+
 # x [-a] <command> <arg(s)>
 # execute <command> with parsed <arg(s)>
 # a .bat file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see documentation for pl2bat [ADVANTAGES, specifically Method 5] for further explanation)
@@ -109,7 +114,7 @@ use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_comp
 
 use Carp::Assert;
 
-use FindBin;	## NOCPAN :: BEGIN used in FindBin, so incompatible with any other modules using it; !!!: don't use for any CPAN package/module
+use FindBin;	## NOCPAN :: BEGIN used in FindBin, so incompatible with any other modules using it; !!!: don't use for any CPAN package/module (does another way exist using File::Spec rel2abs()??)
 
 use ExtUtils::MakeMaker;
 

@@ -17,7 +17,7 @@ $config{-verbose} = '[%l:%c]: (%p; Severity: %s) %m. %e. ';
 
 my $haveTestPerlCritic = eval { require Test::Perl::Critic; import Test::Perl::Critic ( %config ); 1; };
 
-plan skip_all => '(Perl::Critic) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR};
+plan skip_all => '(Perl::Critic) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 #plan skip_all => 'Test::Perl::Critic required to criticize code' if $@;
 plan skip_all => 'Test::Perl::Critic required to criticize code' if !$haveTestPerlCritic;

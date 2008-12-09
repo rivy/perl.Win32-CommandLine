@@ -7,7 +7,7 @@ use Test::More;
 
 my $haveTestKwalitee = eval { require Test::Kwalitee; 1; };
 
-plan skip_all => 'Test::Kwalitee only run for author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR};
+plan skip_all => 'Test::Kwalitee only run for author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 plan skip_all => 'Test::Kwalitee not installed; skipping CPANTS kwalitee tests' if !$haveTestKwalitee;
 

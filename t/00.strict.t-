@@ -1,7 +1,0 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
-
-# t/00.strict.t - check that all perl files 'use strict'
-
-use Test::Strict;
-all_perl_files_ok( @mydirs );
-  

@@ -1,0 +1,21 @@
+#!perl -w   -*- tab-width: 4; mode: perl -*-
+
+# :: check that all perl files 'use strict'
+
+use strict;
+use warnings;
+
+use Test::More qw(no_plan);
+
+my $haveTestStrict = eval { require Test::Strict; import Test::Strict; 1; };
+
+plan skip_all => '(Test::Strict) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+
+plan skip_all => 'Test::Strict required to check strictness' if !$haveTestStrict;
+
+$Test::Strict::TEST_WARNINGS = $Test::Strict::TEST_WARNINGS = 1;	# ENABLE testing of warnings as well [ wierd construct to block 'used only once' warning ]
+
+#all_perl_files_ok( @mydirs );
+all_perl_files_ok( 'lib', 'bin' );
+#all_perl_files_ok( );
+

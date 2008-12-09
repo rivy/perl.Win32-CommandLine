@@ -1,10 +1,12 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.1.964122 ( r32:5e983fff6040 [mercurial] ) 2008/11/29 05:22:42 rivy $
+#$Id: Build.PL,v 0.1.1.1268626 ( r34:d55444e9f1a7 [mercurial] ) 2008/12/02 17:57:46 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
 ## TODO?: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META.yml
 ## TODO?: .. or just remove VERSION code generating the alpha '_' within the version? does it matter? does the '_' interfere with version comparisons on CPAN?
+
+## TODO: check on the broken install for ppm for perl 5.10 => <ARCHITECTURE NAME="MSWin32-x86-multi-thread-118.53" /> instead of the correct <ARCHITECTURE NAME="MSWin32-x86-multi-thread-5.10" />
 
 use strict;
 use warnings;
@@ -13,10 +15,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
-# generate VERSION from $Version: 0.1.1.964122 $ SCS tag
+# generate VERSION from $Version: 0.1.1.1268626 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.1.964122 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.1.1268626 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -40,6 +42,7 @@ $config{'pm_files_href'} = {};						# alternate PM file locations [to help with 
 $config{'pod_files_href'} = {};						# alternate POD file locations [to help with MakeMaker transitions]
 $config{'xs_files_href'} = {};						# alternate XS file locations [to help with MakeMaker transitions]
 $config{'PL_files_href'} = {};						# perl files to execute during processing (usually to generated .PL files from templates)
+$config{'c_source'} = undef;						# c source files to compile
 $config{'config_href'} = {};						# modify Config.pm values for the build
 $config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];	# extra files to clean up during "build clean"
 $config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS)
@@ -500,7 +503,6 @@ sub rivy_builder_code
 
         return $self->SUPER::ACTION_manifest;
 	  }
-
 	##?? add Sub::Override for maniskip here?? for all subs in the new Build
 	#require ExtUtils::Manifest;
 	#use Sub::Override;
@@ -512,6 +514,35 @@ sub rivy_builder_code
 
 	# ... might be brittle:: Module::Signature overrides it as well ( but only for ExtUtils::Manifest->VERSION < 1.41 ), probably ok
 	# ... petition ExtUtils::Manifest maintainers for a hook? changing the original code might break some folks MANIFEST.SKIPs
+
+	##BUGBYPASS: [for Module::Build v0.3 and perl v5.10+ $^V version string change] repairs incorrect version interpretation for perl v5.10+ (still works for 5.8 and earlier, as well)
+	sub my_varchname {  # Copied from PPMMaker.pm
+	  	my ($self, $config) = @_;
+	  	my $varchname = $config->{archname};
+	  	# Append "-5.8" to architecture name for Perl 5.8 and later
+	  	#if (defined($^V) && ord(substr($^V,1)) >= 8) {
+	  	  #$varchname .= sprintf("-%d.%d", ord($^V), ord(substr($^V,1)));
+	  	#}
+	  	## BUGFIX: send to Module::Build::PPMMaker and PPM
+	  	if (defined($^V)) {
+			my @v = split(/\./, sprintf(qq{%vd},$^V));
+			if ($v[1] >= 8) {
+	  		  	$varchname .= '-'.$v[0].'.'.$v[1];
+	  		  	}
+      	}
+	  	return $varchname;
+	  }
+	# copied from Mobule::Build - Base.pm (v0.3)
+	sub ACTION_ppd {
+	  	my ($self) = @_;
+	  	require Module::Build::PPMMaker;
+	  	my $ppd = Module::Build::PPMMaker->new();
+		use Sub::Override;
+		my $codeRef = \&my_varchname;
+		my $override = Sub::Override->new( 'Module::Build::PPMMaker::_varchname' => $codeRef );
+	  	my $file = $ppd->make_ppd(%{$self->{args}}, build => $self);
+	  	$self->add_to_cleanup($file);
+	  }
 
 	};
 	$code .= q{
