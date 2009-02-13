@@ -7,8 +7,10 @@ use warnings;
 
 use Test::More;
 
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+
 my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
-use ExtUtils::MakeMaker;
+#use ExtUtils::MakeMaker;
 
 my @files = ( '.\lib\Win32\CommandLine.pm' );
 
@@ -24,8 +26,6 @@ my @files = ( '.\lib\Win32\CommandLine.pm' );
 #print @files;
 
 #print cwd();
-
-plan skip_all => '(ExtUtils::MakeMaker) Author tests, not required for installation [To run test(s): set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$haveExtUtilsMakeMaker;
 

@@ -38,6 +38,12 @@ add_test( [ qq{$0 ~ ~ADMINistrator} ], ( q{C:/Documents and Settings/Administrat
 add_test( [ qq{$0 ~ ~ADMINISTRATOR} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
 ##
 
+## TODO: check for correct expansion of ~ to "%USERPROFILE" { note: this could be fragile, if ~ is defined as something else or if there is some asynchrony between %userprofile% and the registry (( can this happen? or is %userprofile% set from the registry? prob could happen if the registry is changed after the shell is started... ))
+	## unset ~ before checking
+
+## TODO: add ENV variable "~x" and check for correct expansion
+
+
 
 ## TODO: check both with and without nullglob, including using %opts for argv()
 add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );

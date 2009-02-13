@@ -5,13 +5,13 @@
 :: :'sourcing' => running commands in the parents environmental context, allowing modification of parents environment and CWD
 
 :: need one GLOBAL var to allow sourcing (should be unique so that we don't tramp on our parent's %ENV
-set _x_a6f4d9b1c3e6a0b7_bat_=nul
+set _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=nul
 if NOT [%1]==[-S] ( goto :pass_findUniqueTemp )
 :findUniqueTemp
-set _x_a6f4d9b1c3e6a0b7_bat_=%temp%\x.source.%RANDOM%.bat
-if EXIST %_x_a6f4d9b1c3e6a0b7_bat_% ( goto :findUniqueTemp )
+set _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=%temp%\x.source.%RANDOM%.bat
+if EXIST %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% ( goto :findUniqueTemp )
 :pass_findUniqueTemp
-::echo _x_a6f4d9b1c3e6a0b7_bat_=%_x_a6f4d9b1c3e6a0b7_bat_%
+::echo _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=%_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 
 :: localize all other ENV changes until sourcing is pending
 setlocal
@@ -20,7 +20,10 @@ setlocal
 if NOT "%_4ver%" == "" ( setdos /x-1 )
 
 :: gather all arguments (work for WinNT [and should work for previous versions as well])
+:: CMD quirk
 set "args=%*"
+:: 4NT/TCC quirk
+if NOT "%_4ver%" == "" ( set args=%* )
 :::: :unable to just use shifts b/c CMD splits command lines on some non-whitespace characters (such as '=') for interpretation of batch vars (%1, %2, ...)
 ::set "args="
 ::set "arg="
@@ -40,36 +43,36 @@ set "args=%*"
 ::echo args=%args%
 
 
-if NOT [%_x_a6f4d9b1c3e6a0b7_bat_%]==[nul] ( goto :source_output )
+if NOT [%_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%]==[nul] ( goto :source_output )
 ::perl -x -S %0 %*
 perl -x -S %0 %args%
 if NOT %errorlevel% == 0 (
 	endlocal
-	set "_x_a6f4d9b1c3e6a0b7_bat_="
+	set "_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_="
 	exit /B %errorlevel%
 	)
 goto :cleanup
 
 :source_output
-echo @:: %_x_a6f4d9b1c3e6a0b7_bat_% file > %_x_a6f4d9b1c3e6a0b7_bat_%
-echo @echo OFF >> %_x_a6f4d9b1c3e6a0b7_bat_%
+echo @:: %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% file > %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
+echo @echo OFF >> %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 ::echo "perl output"
-perl -x -S %0 %args% >> %_x_a6f4d9b1c3e6a0b7_bat_%
+perl -x -S %0 %args% >> %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 ::echo "sourcing - started"
 if NOT %errorlevel% == 0 (
 	endlocal
-	set "_x_a6f4d9b1c3e6a0b7_bat_="
-	erase %_x_a6f4d9b1c3e6a0b7_bat_% 1>nul 2>nul
+	set "_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_="
+	erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul
 	exit /B %errorlevel%
 	)
 endlocal
-call %_x_a6f4d9b1c3e6a0b7_bat_%
+call %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 ::echo "sourcing - done"
-erase %_x_a6f4d9b1c3e6a0b7_bat_% 1>nul 2>nul
+erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul
 
 :cleanup
 ::echo cleanup
-set "_x_a6f4d9b1c3e6a0b7_bat_="
+set "_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_="
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
@@ -77,6 +80,7 @@ goto endofperl
 
 ## TODO: check this... problem that x -e "a"bc""d != abcd	== NOTE: this is a problem with 'x' b/c rerunning x.bat with %* args causes shell interpretation of quotes... anyway around this?
 ##		** if x doesn't have to deal with redirection/I/O, maybe just turning it back into a .pl file and using Win32::CommandLine... will work instead
+##		** [2009-02-10] FIXED??
 ##		NOTE: .pl files get automagically changed into .bat files for MSWin32 during build... hmm... do we have to implement this as XS somehow?
 ## TODO: add normal .pl utility documentation/POD, etc
 

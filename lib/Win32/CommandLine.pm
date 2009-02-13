@@ -1332,6 +1332,31 @@ Please report any bugs or feature requests to
 C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>.
 
+=head1 SUPPORT
+
+=for author_to_fill_in
+	Added from example for 'Touch' on CPAN. Possibly use a modified form.
+
+#EX from 'Touch'
+#You can find documentation for this module with the perldoc command.
+#
+#    perldoc Touch
+#
+#
+#You can also look for information at:
+#
+#* AnnoCPAN: Annotated CPAN documentation
+#
+#    http://annocpan.org/dist/Touch
+#* CPAN Ratings
+#
+#    http://cpanratings.perl.org/d/Touch
+#* RT: CPAN's request tracker
+#
+#    http://rt.cpan.org/NoAuth/Bugs.html?Dist=Touch
+#* Search CPAN
+#
+#    http://search.cpan.org/dist/Touch
 
 =for readme continue
 
