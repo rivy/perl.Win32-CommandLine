@@ -189,6 +189,48 @@ sub rivy_builder_code
 
 		return $self->SUPER::new(@_);
 		}
+	#[ADD] New ACTIONs
+	#[ADD] distall - makes all distributions
+	sub ACTION_distall {
+		my ($self) = @_;
+
+		$self->depends_on('pardist');
+		$self->depends_on('ppmdist');
+		$self->depends_on('dist');
+	  }
+	#[ADD] distppm - makes ppm distribution
+	sub ACTION_distppm {
+		my ($self) = @_;
+
+		$self->depends_on('ppmdist');
+	  }
+	#[ADD] distpar - makes par distribution
+	sub ACTION_distpar {
+		my ($self) = @_;
+
+		$self->depends_on('pardist');
+	  }
+=head1 ACTIONS
+
+Additional custom actions.
+
+=over 4
+
+=item distall
+
+Build all distributions.
+
+=item distpar
+
+Build the PAR distribution.
+
+=item distppm
+
+Build the PPM distribution.
+
+=back
+
+=cut
 	sub ACTION_realclean {
 		## BUG in Module::Build v0.30 : Win32 is case-insensitive => so comparisons should be case insensitive => '$basename eq $self->build_script' should be 'lc($basename) eq lc($self->build_script)'
 		## and 'Vodoo' is misspelled
@@ -234,9 +276,10 @@ sub rivy_builder_code
 				# Voodoo required to have a batch file delete itself without error;
 				# Syntax differs between 9x & NT: the later requires a null arg (???)
 				## TODO: discuss race condition that occurs here: if other process completes 1st (which should almost never occur) the deletion will still be successful just a possible error message might occur = "The batch file cannot be found." & user may notice that the .bat file is still existant for a couple of seconds until the other process starts/inits/completes the deletion
+				## use /d to avoid AutoRUN as well (we only need a basic shell, no addons)
 				require Win32;
 				my $null_arg = (Win32::IsWinNT()) ? '""' : '';
-				my $cmd = qq(start $null_arg /min "%comspec%" /c del "$full_progname");
+				my $cmd = qq(start $null_arg /min "%comspec%" /d /c del "$full_progname");
 
 				my $fh = IO::File->new(">> $basename.bat")
 				or die "Can't create $basename.bat: $!";
@@ -388,7 +431,6 @@ sub rivy_builder_code
 		my $ppd_name = join('-', split(/::/, $self->dist_name)).'.ppd';
 
 		$self->SUPER::log_info("Installing via ppm (using $ppd_name)\n");
-		## TODO: capture ppm output and print it
 		my $output = `ppm install $ppd_name`;
 		print $output;
 	  }
@@ -407,7 +449,7 @@ sub rivy_builder_code
 		my $ppd_name = join('-', split(/::/, $self->dist_name)).'.ppd';
 
 		$self->SUPER::log_info("Installing via ppm (using $ppd_name)\n");
-		#`ppm $ppd_name`;
+		#`ppm install $ppd_name`;
 	  }
 	sub _has_ppm {
 		use File::Which;

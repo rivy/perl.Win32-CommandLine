@@ -22,7 +22,7 @@ if NOT "%_4ver%" == "" ( setdos /x-1 )
 :: gather all arguments (work for WinNT [and should work for previous versions as well])
 :: CMD quirk
 set "args=%*"
-:: 4NT/TCC quirk
+:: 4NT/TCC/TCMD quirk
 if NOT "%_4ver%" == "" ( set args=%* )
 :::: :unable to just use shifts b/c CMD splits command lines on some non-whitespace characters (such as '=') for interpretation of batch vars (%1, %2, ...)
 ::set "args="
