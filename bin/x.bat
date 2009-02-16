@@ -12,17 +12,17 @@
 :: localize ENV changes until sourcing is pending
 setlocal
 
-set _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=nul
+set _x_bat=nul
 
 if NOT [%1]==[-S] ( goto :pass_findUniqueTemp )
 
 :: find bat file for sourcing and instantiate it with 1st line of text
 :findUniqueTemp
-set _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=%temp%\x.source.%RANDOM%.bat
-if EXIST %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% ( goto :findUniqueTemp )
-echo @:: %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% file > %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
+set _x_bat=%temp%\x.bat.source.%RANDOM%.bat
+if EXIST %_x_bat% ( goto :findUniqueTemp )
+echo @:: %_x_bat% file > %_x_bat%
 :pass_findUniqueTemp
-::echo _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=%_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
+::echo _x_bat=%_x_bat%
 
 :: under 4NT/TCC, DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments) and over-interpretation of % characters
 if NOT [%_4ver%]==[] ( setdos /x-14 )
@@ -35,7 +35,7 @@ if NOT [%_4ver%]==[] ( set args=%* )
 
 ::echo args=%args%
 
-if NOT [%_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%]==[nul] ( goto :source_output )
+if NOT [%_x_bat%]==[nul] ( goto :source_output )
 ::perl -x -S %0 %*
 perl -x -S %0 %args%
 if NOT %errorlevel% == 0 (
@@ -45,15 +45,16 @@ endlocal
 goto :done
 
 :source_output
-echo @echo OFF >> %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
+echo @echo OFF >> %_x_bat%
 ::echo "perl output"
-perl -x -S %0 %args% >> %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
+perl -x -S %0 %args% >> %_x_bat%
 ::echo "sourcing - started"
 if NOT %errorlevel% == 0 (
-	endlocal & erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul & exit /B %errorlevel%
+	erase %_x_bat% 1>nul 2>nul
+	endlocal &  exit /B %errorlevel%
 	)
 ::echo "sourcing & cleanup..."
-endlocal & call %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% & erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul
+endlocal & call %_x_bat% & erase %_x_bat% 1>nul 2>nul
 
 :done
 goto endofperl
