@@ -1,78 +1,61 @@
 @rem = '--*-Perl-*--
 @::# $Id$
 @echo off
-:: batch file tricks to allow 'sourcing' of <commands>
+:: eXpand command line arguments
+:: similar to linux xargs
+:: ToDO: clean up documentation/comments
+:: contains batch file tricks to allow 'sourcing' of target executable output
 :: :'sourcing' => running commands in the parents environmental context, allowing modification of parents environment and CWD
 
-:: need one GLOBAL var to allow sourcing (should be unique so that we don't tramp on our parent's %ENV
+:: NOTE: 4nt/TCC/TCMD quirk => use %% for %, whereas cmd.exe % => as long as it doesn't introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
+
+:: localize ENV changes until sourcing is pending
+setlocal
+
 set _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=nul
+
 if NOT [%1]==[-S] ( goto :pass_findUniqueTemp )
+
+:: find bat file for sourcing and instantiate it with 1st line of text
 :findUniqueTemp
 set _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=%temp%\x.source.%RANDOM%.bat
 if EXIST %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% ( goto :findUniqueTemp )
+echo @:: %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% file > %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 :pass_findUniqueTemp
 ::echo _x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_=%_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 
-:: localize all other ENV changes until sourcing is pending
-setlocal
-
-:: under 4NT/TCC, DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments)
-if NOT "%_4ver%" == "" ( setdos /x-1 )
+:: under 4NT/TCC, DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments) and over-interpretation of % characters
+if NOT [%_4ver%]==[] ( setdos /x-14 )
 
 :: gather all arguments (work for WinNT [and should work for previous versions as well])
 :: CMD quirk
 set "args=%*"
 :: 4NT/TCC/TCMD quirk
-if NOT "%_4ver%" == "" ( set args=%* )
-:::: :unable to just use shifts b/c CMD splits command lines on some non-whitespace characters (such as '=') for interpretation of batch vars (%1, %2, ...)
-::set "args="
-::set "arg="
-::set "line="
-::set line=%*
-::::echo "(preloop) line=%line%"
-:::gatherargs
-::for /f "tokens=1,*" %%a in ("%line%") do (
-::	set "arg=%%a"
-::	set "line=%%b"
-::	)
-::if NOT "%arg%" == "" (
-::	if NOT "%args%" == "" ( set "args=%args% " )
-::	set "args=%args%%arg%"
-::	)
-::if NOT "%line%"=="" ( goto :gatherargs )
-::echo args=%args%
+if NOT [%_4ver%]==[] ( set args=%* )
 
+::echo args=%args%
 
 if NOT [%_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%]==[nul] ( goto :source_output )
 ::perl -x -S %0 %*
 perl -x -S %0 %args%
 if NOT %errorlevel% == 0 (
-	endlocal
-	set "_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_="
-	exit /B %errorlevel%
+	endlocal & exit /B %errorlevel%
 	)
-goto :cleanup
+endlocal
+goto :done
 
 :source_output
-echo @:: %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% file > %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 echo @echo OFF >> %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 ::echo "perl output"
 perl -x -S %0 %args% >> %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
 ::echo "sourcing - started"
 if NOT %errorlevel% == 0 (
-	endlocal
-	set "_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_="
-	erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul
-	exit /B %errorlevel%
+	endlocal & erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul & exit /B %errorlevel%
 	)
-endlocal
-call %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_%
-::echo "sourcing - done"
-erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul
+::echo "sourcing & cleanup..."
+endlocal & call %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% & erase %_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_% 1>nul 2>nul
 
-:cleanup
-::echo cleanup
-set "_x_7bf0aa84_5c2e_49a5_b081_dddefe47708b_bat_="
+:done
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
@@ -118,7 +101,7 @@ use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_comp
 
 use Carp::Assert;
 
-use FindBin;	## NOCPAN :: BEGIN used in FindBin, so incompatible with any other modules using it; !!!: don't use for any CPAN package/module (does another way exist using File::Spec rel2abs()??)
+use FindBin;	## NOCPAN :: BEGIN used in FindBin, so incompatible with any other modules using it; !!!: don't use for any CPAN package/module (does another way exist using File::Spec rel2abs()??); ??? any problem with this since it's not loaded and only calls outside executables
 
 use ExtUtils::MakeMaker;
 

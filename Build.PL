@@ -431,6 +431,7 @@ Build the PPM distribution.
 		my $ppd_name = join('-', split(/::/, $self->dist_name)).'.ppd';
 
 		$self->SUPER::log_info("Installing via ppm (using $ppd_name)\n");
+		# TODO: move this note to the appropriate place :: ?Win32-CommandLine... :: note: installation failures involving inability to rename may be either permission problems or, more likely, trying to rename a file which is in use (locking it with a file handle)
 		my $output = `ppm install $ppd_name`;
 		print $output;
 	  }
