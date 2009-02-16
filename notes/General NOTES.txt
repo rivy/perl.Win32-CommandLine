@@ -1,0 +1,36 @@
+BUILDs
+
+use 'b' for builds (calls build+nant) to make sure build.pl is up to date.
+
+INSTALLATION
+
+ADD NOTE to installation that any perl alias using x.bat must be deleted/unaliased before installation of Win32-CommandLine to allow x.bat to be updated (should be rare).
+I don't see any way around this as x.bat will be wrapping any perl call ... would need a hand off to a non-wrapped execution with termination of the current process before the unwrapped execution gets to changing x.bat.
+
+if perl is aliased to 'x perl ...' then installs will fail with:
+	"ppm install failed: Can't rename as C:/Perl/site/bin/x.bat.ppmbak: Permission denied"
+because x.bat is in use and can't be renamed
+ppm is a batch file which uses perl internally ... so an alias to 'x perl ...' will keep x.bat in use while executing the install command
+
+workaround: unalias perl
+re-run "build install" or "ppm install Win32-Command..."
+
+* ADD this notation to the suggestion to alias perl to ... 
+	- maybe, in the future, perl could be compiled with this module in mind to avoid the need to alias it...
+
+4NT/TCC/TCMD
+
+Note % issue:
+
+for cmd.exe: 	%<any> => %<any> if it doesn't match a variable; %% => %%
+for 4NT: 		%<any> => <null> if it doesn't match a variable; %% => %
+
+x.bat is designed not to reinterpret 4NT %'s otherwise %%%% would be required for each % in the final command line
+	
+
+EXAMPLES
+
+::cmd.exe
+doskey to=x -S cd ~$*
+::4nt/tcc/tcmd
+alias to=x -S cd ~%%$

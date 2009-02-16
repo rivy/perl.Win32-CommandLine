@@ -1,0 +1,121 @@
+Powershell parses the command line prior to handing off to CMD for commands and this can cause abnormal parsing behavior:
+
+	"mycmd.pl '..\X'*" is parsed as "mycmd.pl '..\X' *" seperating the wildcard into a seperate argument.
+	This is caused by pre-parsing in powershell... 
+		? change powershell handling? is there a way to detect this within the command?
+		
+	* strangely, this happens only for perl files x.pl whether executed as perl x.pl or just x.pl (eg, "x.bat -a '..\X'*" works just fine)
+	
+	
+NOTES/TESTs
+
+[THIS WORKS...]
+..\perl\Win32-CommandLine\notes\powershell-bug
+=>x -a '\'*
+command_line() = 'perl -x -S "c:\Perl\site\bin\x.bat" -a '\'*'
+$ARGV[0] = '\@downloads'
+$ARGV[1] = '\@local'
+$ARGV[2] = '"\@LOISH - d820 [XP, 2GHz C2Duo, 2GB].txt"'
+$ARGV[3] = '\AUTOEXEC.BAT'
+$ARGV[4] = '\boot.ini'
+$ARGV[5] = '\CONFIG.SYS'
+$ARGV[6] = '\cygwin'
+$ARGV[7] = '\dell'
+$ARGV[8] = '\dell.sdr'
+$ARGV[9] = '\dev-cpp'
+$ARGV[10] = '"\Documents and Settings"'
+$ARGV[11] = '\drivers'
+$ARGV[12] = '\GTK'
+$ARGV[13] = '\hiberfil.sys'
+$ARGV[14] = '\i386'
+$ARGV[15] = '\Inetpub'
+$ARGV[16] = '\INFCACHE.1'
+$ARGV[17] = '\IO.SYS'
+$ARGV[18] = '\MSDOS.SYS'
+$ARGV[19] = '\MSOCache'
+$ARGV[20] = '\msys'
+$ARGV[21] = '\ndsvc.log'
+$ARGV[22] = '\NTDETECT.COM'
+$ARGV[23] = '\ntldr'
+$ARGV[24] = '\pagefile.sys'
+$ARGV[25] = '\Perl'
+$ARGV[26] = '"\Program Files"'
+$ARGV[27] = '\Python25'
+$ARGV[28] = '\RECYCLER'
+$ARGV[29] = '\ruby'
+$ARGV[30] = '"\System Volume Information"'
+$ARGV[31] = '\Tcl'
+$ARGV[32] = '"\TrueImage NOTES.txt"'
+$ARGV[33] = '\Users'
+$ARGV[34] = '\WINDOWS'
+$ARGV[35] = '\xampp'
+
+
+[BUT...]
+..\perl\Win32-CommandLine\notes\powershell-bug
+=>write-output 'a'b c'd' e'f'g
+a
+b
+cd
+efg
+
+..\perl\Win32-CommandLine\notes\powershell-bug
+=>write-output "a"b c"d" e"f"g
+a
+b
+cd
+efg
+
+..\perl\Win32-CommandLine\notes\powershell-bug
+=>c:\perl\site\bin\x.bat -a '\'*
+command_line() = 'perl -x -S "C:\perl\site\bin\x.bat" -a \ *'
+$ARGV[0] = '\'
+$ARGV[1] = 't-echo-CL.pl'
+$ARGV[2] = 't-echo.bat'
+$ARGV[3] = 't-echo.pl'
+
+..\perl\Win32-CommandLine\notes\powershell-bug
+=>c:\perl\site\bin\x -a '\'*
+command_line() = 'perl -x -S "c:\perl\site\bin\x.bat" -a \ *'
+$ARGV[0] = '\'
+$ARGV[1] = 't-echo-CL.pl'
+$ARGV[2] = 't-echo.bat'
+$ARGV[3] = 't-echo.pl'
+
+..\perl\Win32-CommandLine\notes\powershell-bug
+=>x.bat -a '\'*
+command_line() = 'perl -x -S "c:\Perl\site\bin\x.bat" -a \ *'
+$ARGV[0] = '\'
+$ARGV[1] = 't-echo-CL.pl'
+$ARGV[2] = 't-echo.bat'
+$ARGV[3] = 't-echo.pl'
+
+
+**** THOUGHTS about a workaround
+
+POWERSHELL PROBLEMS
+
+Has it's own quirky parser
+	eg:
+		"c:\"* => "c\:" *
+		c:\D` &` S\* => "C:\D & S\*" 
+		"" => <nothing>
+		$'test\t' => $test\t
+		
+[???]
+Use _CMDLINE if parent is not command.com, cmd.com, tcc.exe, 4nt.exe (? command, cmd, tcc, 4nt == no extensions)
+	- consume it? -- can't consume parent version
+	- there's a problem if not set by that command processor (? use a config argument to shut it down?)
+		- sanity checking to make sure command is the current one executing
+		- any sanity checking on args?
+		
+		
+REBUILD commandline ...
+
+
+POWERSHELL Workaround
+
+Use ImprovedTab TabExpansion to automatically prefix launcher for "legacy" applications
+launcher = x
+	REBUILD commandline & launch it
+	
