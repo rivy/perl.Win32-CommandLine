@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!-- NANT Build file -->
+<project name="Win32-CommandLine" default="build">
+   	<!--echo message="starting folder ... ${directory::get-current-directory()}" /-->
+    <target name="build">
+        <nant buildfile="../.build" />
+    	<foreach item="File" property="filename">
+    		<in>
+				<items>
+					<include name="extras/exout.bat" />
+				</items>
+    		</in>
+    		<do>
+    			<if test="${not file::up-to-date('..\..\bat\advanced\exout.bat', filename)}">
+			    	<!--echo message="copying ${filename}" /-->
+	    			<copy file="..\..\bat\advanced\exout.bat" tofile="${filename}" />
+			    	<!--echo message="${filename}: DONE" /-->
+	    		</if>
+		    </do>
+		</foreach>
+    </target>
+</project>
