@@ -75,10 +75,25 @@ to finance
 
 TESTS
 
-to test x
+in order to test x.bat:
 
 x -S cd ~
 x -S cd ~1
 x perl -e "use Env::Path qw(PATH); print join(qq{\n},PATH->Whence('wh*'));"
-[SHOULD FAIL] 		perl -e 'print 10'
-[SUCCEEDS with X] 	x perl -e 'print 10'
+[SHOULD FAIL <unless aliased>] 		perl -e 'print 10'
+[SUCCEEDS with X] 					x perl -e 'print 10'
+[ADD redirection character tests] 	
+	x echo test">"this
+	x echo test ">" * 'true"test'
+
+to ~
+to 1
+to p
+to
+to administrator
+to ~roy
+
+
+ADD unit tests for anything in bin/ and eg/ if possible.
+ADD hg versioning for anything in bin/ and eg/.
+ADD nant build steps for anything in extras/ with copy from original dirs and fail/error if not found (either source or target).

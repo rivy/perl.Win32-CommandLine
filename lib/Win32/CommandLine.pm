@@ -647,6 +647,25 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		$glob_this_token = 1;
 		my $i =	scalar(@argv_3);
 
+		# Check for $(<...>), where <...> may contain strings with escapes
+		if ($s =~ /^(\$\()(.*$)/)
+			{# found $(<...>
+			# read until unquoted ) is found and then replace it
+			# $1 = $(
+			# $2 = rest	of string
+			my $two = $2;
+			my $instring='';
+			my $i = 0;
+			while ( ($i < length($two)-1) && ((substr($two, $i, 1) ne ')') || $instring)
+				{
+				#if instring { if ch == instring {instring = ''} }
+				#else if ch is a quote {instring=ch;}
+				$i++;
+				}
+
+			# CHECK for unbalanced ?what should it be called (not exactly quote...)
+			}
+
 		if ($s =~ /^([^\s$q]+)(\s.*$|$)/)
 			{# simple leading full token with no quote delimeter characters
 			# $1 = non-whitespace/non-quote	token
@@ -1081,7 +1100,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 sub _home_paths
 {
-# TODO: memoize the home paths array
+# TODO:? memoize the home paths array
 
 ## no critic (ProhibitUnlessBlocks)
 # _home_paths(): returns %

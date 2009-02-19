@@ -1,6 +1,5 @@
 :: exout.bat :: exout.bat <COMMAND> <ARGS>
-:: $Id$
-:: 2009-16-02; Roy Ivy III
+:: $Id: exout.bat,v 0.1.0 ( r1 ) 2009/02/19 11:24:45 rivy $
 ::
 :: EXecute OUTput of <COMMAND> in the current process context
 :: ::Processes the STDOUT of <COMMAND> as command(s) to the current shell (i.e., as if typed directly at current command line)
@@ -18,7 +17,7 @@
 setlocal
 
 :: under 4NT/TCC, DISABLE nested variable interpretation (prevents overinterpretation of % characters)
-if NOT [%_4ver%]==[] ( setdos /x-4 )
+if 01 == 1.0 ( setdos /x-4 )
 
 :findUniqueTempFile
 set _exout_bat="%temp%\exout.script.%RANDOM%.bat"
