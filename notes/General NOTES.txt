@@ -71,3 +71,14 @@ to p
 to administrator
 to finance
 
+
+
+TESTS
+
+to test x
+
+x -S cd ~
+x -S cd ~1
+x perl -e "use Env::Path qw(PATH); print join(qq{\n},PATH->Whence('wh*'));"
+[SHOULD FAIL] 		perl -e 'print 10'
+[SUCCEEDS with X] 	x perl -e 'print 10'

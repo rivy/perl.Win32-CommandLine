@@ -29,13 +29,13 @@ echo @:: %_x_bat% file > %_x_bat%
 
 :: 4NT/TCC
 ::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
-if NOT [%_4ver%]==[] ( setdos /x-1467 )
+if 01 == 1.0 ( setdos /x-1467 )
 
 :: gather all arguments (work for WinNT [and should work for previous versions as well])
 :: CMD quirk
 set args=%*
 :: 4NT/TCC/TCMD quirk
-::if NOT [%_4ver%]==[] ( set args=%* )
+::if 01 == 1.0 ( set args=%* )
 
 ::echo args=%args%
 
@@ -50,7 +50,7 @@ endlocal
 goto :done
 
 :source_output
-if NOT [%_4ver%]==[] ( setdos /x0 )
+if if 01 == 1.0 ( setdos /x0 )
 echo @echo OFF >> %_x_bat%
 ::echo "perl output"
 perl -x -S %0 %args% >> %_x_bat%

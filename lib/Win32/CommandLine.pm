@@ -112,8 +112,7 @@ my %_G = ( # package globals
 	unbalanced_quotes	=> 0,
 	);
 
-sub _getparentname
-{
+sub _getparentname {
 	# _getparentname( <null> ): returns $
 	# find parent process ID and return the exe name
 	my $have_Win32_API = eval { require Win32::API; 1; };
@@ -308,7 +307,6 @@ sub	_decode_qq {
 
 	my $c = quotemeta('"'.$_G{escape_char});
 	for (@_ ? @_ : $_) { s/\\([$c])/$1/g };	# replace \"'s with "'s
-
 
 	return wantarray ? @_ : "@_";
 	}
@@ -1484,7 +1482,7 @@ None reported.
 
 Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 
-GOTCHA: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must still be double-quoted. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before any process can get a look at the command line.
+GOTCHA: ** Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must still be **double-quoted**. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before any process can get a look at the command line.
 
 GOTCHA: Some programs expect their arguments to maintain their surrounding quotes (eg, C<<perl -e 'print "x";'>> doesn't work as expected).
 
