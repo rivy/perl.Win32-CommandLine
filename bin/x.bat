@@ -15,6 +15,8 @@ setlocal
 
 set _x_bat=nul
 
+::echo *=%*
+
 if NOT [%1]==[-S] ( goto :pass_findUniqueTemp )
 
 :: find bat file for sourcing and instantiate it with 1st line of text
@@ -26,20 +28,19 @@ echo @:: %_x_bat% file > %_x_bat%
 ::echo _x_bat=%_x_bat%
 
 :: 4NT/TCC
-if NOT [%_4ver%]==[] (
-	::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments); over-interpretation of % characters; backquote removal from commands
-	setdos /x-147
-	)
+::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
+if NOT [%_4ver%]==[] ( setdos /x-1467 )
 
 :: gather all arguments (work for WinNT [and should work for previous versions as well])
 :: CMD quirk
-set "args=%*"
+set args=%*
 :: 4NT/TCC/TCMD quirk
-if NOT [%_4ver%]==[] ( set args=%* )
+::if NOT [%_4ver%]==[] ( set args=%* )
 
 ::echo args=%args%
 
 if NOT [%_x_bat%]==[nul] ( goto :source_output )
+::echo "perl output"
 ::perl -x -S %0 %*
 perl -x -S %0 %args%
 if NOT %errorlevel% == 0 (
@@ -49,6 +50,7 @@ endlocal
 goto :done
 
 :source_output
+if NOT [%_4ver%]==[] ( setdos /x0 )
 echo @echo OFF >> %_x_bat%
 ::echo "perl output"
 perl -x -S %0 %args% >> %_x_bat%
@@ -64,7 +66,7 @@ endlocal & call %_x_bat% & erase %_x_bat% 1>nul 2>nul
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#line 77
+#line 68
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
 
@@ -192,7 +194,7 @@ pod2usage(1) if @ARGV < 1;
 if ( $ARGV{args} )
 	{
 	my $cl = Win32::CommandLine::command_line();
-	#print ' $ENV{CMDLINE}'." = `$ENV{CMDLINE}`\n";
+	print ' $ENV{CMDLINE}'." = `".($ENV{CMDLINE}?$ENV{CMDLINE}:'<null>')."`\n";
 	print 'command_line()'." = `$cl`\n";
 	}
 

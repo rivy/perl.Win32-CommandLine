@@ -7,6 +7,7 @@ POSSIBLE x.bat name change
 
 ? xcl.bat
 ? xc.bat
+? xx.bat (eXpand and eXecute)
 
 
 TODO for BUILD

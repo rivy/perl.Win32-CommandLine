@@ -591,6 +591,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
 		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
+		glob => 1,					# = 0/<true> [default = true]		# when true, globbing is performed
 		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
 		_carp_unbalanced => 1,		# = true/false [default = true]		# <private> if true, carp for unbalanced command line quotes
 		);
@@ -1026,7 +1027,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			$glob_flags	|= GLOB_NOCHECK;
 			}
 
-		if ( $glob_this )
+		if ( $opt{glob} && $glob_this )
 			{
 			$pat =~ s:\\\\:\/:g;		## no critic ( ProhibitUnusualDelimiters )	## replace all backslashes (assumed to be backslash quoted already) with forward slashes
 			if ( $pat =~ /\\[?*]/ )
