@@ -50,7 +50,7 @@ endlocal
 goto :done
 
 :source_output
-if if 01 == 1.0 ( setdos /x0 )
+if 01 == 1.0 ( setdos /x0 )
 echo @echo OFF >> %_x_bat%
 ::echo "perl output"
 perl -x -S %0 %args% >> %_x_bat%
