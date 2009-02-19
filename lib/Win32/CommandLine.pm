@@ -10,6 +10,7 @@ package Win32::CommandLine;
 # WORKS NOW (2008-11-14) => ADD some tests for this... [use TEST_EXPENSIVE vs TEST_EXHAUSTIVE]: TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
 # TODO: Check edge cases for network paths (//sethra/C$/* vs \\sethra/C$/*, etc)
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
+# TODO: add $( <COMMAND> ) bash command replacement
 
 use strict;
 use warnings;
@@ -59,7 +60,20 @@ bootstrap Win32::CommandLine $VERSION;
 
 sub command_line{
 	# command_line(): returns $
-	return _wrap_GetCommandLine();
+##	return _wrap_GetCommandLine();
+	my $retVal = _wrap_GetCommandLine();
+	## PROBLEM: CMDLINE is not set/reset by TCC, et al when directly calling the program with `command` syntax
+##	if ($ENV{COMSPEC}) {
+##		my $file;
+##		( undef, undef, $file ) = File::Spec->splitpath($ENV{COMSPEC});
+##		#4nt, tcc, tcmd
+##		if (($file =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
+##		}
+
+	my $parentEXE = _getparentname();
+	if (($parentEXE =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
+
+	return $retVal;
 }
 
 sub argv{
@@ -84,7 +98,7 @@ use	Carp::Assert qw();
 use	File::Spec qw();
 use	File::Which qw();
 
-use	Data::Dumper::Simple;
+#use	Data::Dumper::Simple;
 
 my %_G = ( # package globals
 	 q					=> q{'},					# '
@@ -97,6 +111,103 @@ my %_G = ( # package globals
 	glob_char			=> '?*[]{}',				# glob signal characters (no '~' for Win32)
 	unbalanced_quotes	=> 0,
 	);
+
+sub _getparentname
+{
+	# _getparentname( <null> ): returns $
+	# find parent process ID and return the exe name
+	my $have_Win32_API = eval { require Win32::API; 1; };
+	if ($have_Win32_API) {
+		my $CreateToolhelp32Snapshot;		# define API calls
+		my $Process32First;
+		my $Process32Next;
+		my $CloseHandle;
+
+		if (not defined $CreateToolhelp32Snapshot) {
+			#$CreateToolhelp32Snapshot = new Win32::API ('kernel32','CreateToolhelp32Snapshot', 'II', 'N') or die "import CreateToolhelp32Snapshot: $!($^E)";
+			#$Process32First = new Win32::API ('kernel32', 'Process32First','IP', 'N') or die "import Process32First: $!($^E)";
+			#$Process32Next = new Win32::API ('kernel32', 'Process32Next', 'IP','N') or die "import Process32Next: $!($^E)";
+			#$CloseHandle = new Win32::API ('kernel32', 'CloseHandle', 'I', 'N') or die "import CloseHandle: $!($^E)";
+			$CreateToolhelp32Snapshot = new Win32::API ('kernel32','CreateToolhelp32Snapshot', 'II', 'N') or return undef;
+			$Process32First = new Win32::API ('kernel32', 'Process32First','IP', 'N') or return undef;
+			$Process32Next = new Win32::API ('kernel32', 'Process32Next', 'IP','N') or return undef;
+			$CloseHandle = new Win32::API ('kernel32', 'CloseHandle', 'I', 'N') or return undef;
+		}
+
+		use constant TH32CS_SNAPPROCESS =>  0x00000002;
+		use constant INVALID_HANDLE_VALUE =>  -1;
+		use constant MAX_PATH =>  260;
+
+		# Take a snapshot of all processes in the system.
+
+		my $hProcessSnap = $CreateToolhelp32Snapshot-> Call(TH32CS_SNAPPROCESS, 0);
+		#die "CreateToolhelp32Snapshot: $!($^E)" if $hProcessSnap == INVALID_HANDLE_VALUE;
+		return (undef) if $hProcessSnap == INVALID_HANDLE_VALUE;
+
+		#	Struct PROCESSENTRY32:
+		# 	DWORD dwSize;			#  0 for 4
+		# 	DWORD cntUsage;			#  4 for 4
+		# 	DWORD th32ProcessID;		#  8 for 4
+		# 	DWORD th32DefaultHeapID;	# 12 for 4
+		# 	DWORD th32ModuleID;		# 16 for 4
+		# 	DWORD cntThreads;		# 20 for 4
+		# 	DWORD th32ParentProcessID;	# 24 for 4
+		# 	LONG  pcPriClassBase;		# 28 for 4
+		# 	DWORD dwFlags;			# 32 for 4
+		# 	char szExeFile[MAX_PATH];	# 36 for 260
+
+		# Set the size of the structure before using it.
+
+		my $dwSize = MAX_PATH + 36;
+		my $pe32 = pack 'I9C260', $dwSize, 0 x 8, '0' x MAX_PATH;
+		my $lppe32 = pack 'P', $pe32;
+
+		# Retrieve information about the first process, and exit if unsuccessful
+		my %exes;
+		my %ppids;
+		my $ret = $Process32First-> Call($hProcessSnap, $pe32);
+		do {
+			if (not $ret) {
+				$CloseHandle-> Call($hProcessSnap);
+				warn "Process32First: ret=$ret, $!($^E)";
+				#last;
+				return undef;
+			}
+
+			# return ppid if pid == my pid
+
+			my $th32ProcessID = unpack 'I', substr $pe32, 8, 4;
+			my $th32ParentProcessID = unpack 'I', substr $pe32, 24, 4;
+			my $szEXE = '';
+			my $i = 36;
+			my $c = unpack 'C', substr $pe32, $i, 1;
+			while ($c) { $szEXE .= chr($c); $i++; $c = unpack 'C', substr $pe32, $i, 1; }
+			$ppids{$th32ProcessID} = $th32ParentProcessID;
+			$exes{$th32ProcessID} = $szEXE;
+		#	if ($$ == $th32ProcessID)
+		#		{
+		#		print "thisEXE = $szEXE\n";
+		#		print "parentPID = $th32ParentProcessID\n";
+		#		return $th32ParentProcessID;
+		#		}
+			#return unpack ('I', substr $pe32, 24, 4) if $$ == $th32ProcessID;
+
+		} while ($Process32Next-> Call($hProcessSnap, $pe32));
+
+		$CloseHandle-> Call($hProcessSnap);
+
+		if ($ppids{$$}) {
+			#print "ENV{CMDLINE} = $ENV{CMDLINE}\n";
+			#print "thisEXE = $exes{$$}\n";
+			#print "parentEXE = $exes{$ppids{$$}}\n";
+			#return $ppids{$$};
+			##$parentEXE = $exes{$ppids{$$}};
+			return $exes{$ppids{$$}};
+			}
+		return undef;
+		}
+}
+
 
 {
 sub _decode; # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
@@ -161,12 +272,12 @@ $table{$_G{'escape_char'}} = $_G{escape_char};		# backslash-escape
 
 #octal
 #	for (my $i = 0; $i < oct('1000'); $i++) { $table{sprintf("%3o",$i)} = chr($i); }
-for my $i (0..oct('777')) { $table{sprintf('%3o',$i)} = chr($i); }
+for my $i (0..oct('777')) { $table{sprintf('%0.3o',$i)} = chr($i); }
 
 #hex
 #	for (my $i = 0; $i < 0x10; $i++) { $table{"x".sprintf("%1x",$i)} = chr($i); $table{"X".sprintf("%1x",$i)} = chr($i); $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)} = chr($i); }
 #	for (my $i = 0x10; $i < 0x100; $i++) { $table{"x".sprintf("%2x",$i)} = chr($i); $table{"X".sprintf("%2x",$i)} = chr($i); }
-for my $i (0..0xf) { $table{'x'.sprintf('%1x',$i)} = chr($i); $table{'X'.sprintf('%1x',$i)} = chr($i); $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }		## no critic ( ProhibitMagicNumbers ) ##
+for my $i (0..0xf) { $table{'x'.sprintf('%1x',$i)} = chr($i); $table{'X'.sprintf('%1x',$i)} = chr($i); $table{'x'.sprintf('%0.2x',$i)} = chr($i); $table{'X'.sprintf('%0.2x',$i)} = chr($i); }		## no critic ( ProhibitMagicNumbers ) ##
 for my $i (0x10..0xff) { $table{'x'.sprintf('%2x',$i)} = chr($i); $table{'X'.sprintf('%2x',$i)} = chr($i); }																					## no critic ( ProhibitMagicNumbers ) ##
 
 #control characters
@@ -180,12 +291,27 @@ sub	_decode {
 	# decode ANSI C string
 	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
-	my $c = '0abefnrtv'.$_G{'escape_char'}.$_G{single_q}.$_G{double_q};
-	for (@_ ? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g }
+#	my $c = quotemeta('0abefnrtv'.$_G{escape_char}.$_G{single_q}.$_G{double_q});
+	my $c = quotemeta('abefnrtv'.$_G{escape_char}.$_G{single_q}.$_G{double_q});		# \0 is covered by octal matches
+	#for my $k (sort keys %table) { print "table{:$k:} = $table{$k}\n";}
+#	for (@_ ? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/:$1:/g }
+	for (@_ ? @_ : $_) { s/\\([0-7]{1,3}|[$c]|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g }
 
 	return wantarray ? @_ : "@_";
 	}
 }
+
+sub	_decode_qq {
+	# _decode_qq( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# decode double quoted string (replace internal \" with ")
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+
+	my $c = quotemeta('"'.$_G{escape_char});
+	for (@_ ? @_ : $_) { s/\\([$c])/$1/g };	# replace \"'s with "'s
+
+
+	return wantarray ? @_ : "@_";
+	}
 
 sub	_is_const { my $is_const = !eval { ($_[0]) = $_[0]; 1; }; return $is_const; }
 
@@ -196,7 +322,7 @@ sub	_ltrim {
 	#		so, by the Principle of Least Surprise, f() in void context is disallowed instead of being an alias of "f($_)" so that f(@array) doesn't silently perform f($_) when @array has zero elements
 	#		use "f($_)" instead of "f()" when needed
 	#		carp on both
-	# NOTE: alternatively, could use _ltrim( <null>|$|\@[,\%] ), carping onaamore than one argument
+	# NOTE: alternatively, could use _ltrim( <null>|$|\@[,\%] ), carping on more than one argument
 	# NOTE: alternatively, could use _ltrim( <null>|$|@|\@[,\%] ), carping on more than one argument
 	# NOTE: after thinking and reading PBP (specifically Dollar-Underscore (p85) and Interator Variables (p105)), I think disallowing zero arguments is for the best.
 	#		making operation on $_ require explicit coding breeds more maintainable code with little extra effort
@@ -317,8 +443,10 @@ sub	_dequote{
 
 sub	_zero_position {
 	use	English	qw(	-no_match_vars ) ;	# '-no_match_vars' avoids regex	performance	penalty
+
 	my $q =	shift @_;
 	my @args = @_;
+
 	my $pos;
 	# find $0 in the ARGV array
 	#print "0 =	$0\n";
@@ -409,7 +537,7 @@ sub	_argv_NEW{
   ##$argv2{'glob_ok'} =	$argv2{'glob_ok'}[ $p+1..$n	];
 
 	# check	for	unbalanced quotes and croak	if so...
-	if ($_G{'unbalanced_quotes'}) {	Carp::croak	'Unbalanced command line quotes (at token `'.$argv2{'argv'}[-1].'`)'; }
+	if ($_G{'unbalanced_quotes'}) {	Carp::croak	'Unbalanced command line quotes [#2] (at token `'.$argv2{'argv'}[-1].'` from command line `'.$command_line.'`)'; }
 
 	# do globbing
 	my @argv2_g	= _argv_do_glob( \%argv2 );
@@ -443,8 +571,15 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# $'...'	=> ANSI	C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other	\<x> =>\<x>), no globbing within quotes
 	##NOT# "..." =>	literal	(no	escapes	but	allows internal	globbing) [differs from	bash]
 	# "..."	  => literal (no escapes and no	globbing within	quotes)
+	# DONE[2009-02-18]:TODO: "..."	  => literal (no escapes [EXCEPT \" and \\] and no globbing within quotes) [works the same in bash and needed for cmd.exe compatibility]
 	# $"..."  => same as "..."
 	# globbing is only done	for	non-quoted glob	characters
+
+	# TODO: add $(<COMMAND>) intepretation, inserting the resultant STDOUT output into the command line in place of the $(<COMMAND>) with trailing NEWLINE removed (internal NEWLINEs are preserved)
+	#	$(<COMMAND>) => defined as opening '$(' (no whitespace) followed by <COMMAND> = everything up to the next unquoted ')' character
+	#	NOTE: at this point [2009-02-17], no redirection is allowed as the shell grabs the line and redirects before allowing interpretation which would break the command line internal to the $()
+	#			?? can we somehow meta-quote the string to protect and then allow redirection??
+	#   ?? what about errors? how to propogate?
 
 	# TODO:	Change semantics so	that "..." has no internal globbing	(? unless has at least one non-quoted glob character, vs what to do	with combination quoted	and	non-quoted glob	characters)
 	#		only glob bare (non-quoted)	characters
@@ -453,7 +588,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [%]: an optional hash_ref	containing function	options	as named parameters
 	my %opt	= (
-		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files																		# if true, convert output ARGs to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
+		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
 		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
 		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
@@ -472,9 +607,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 	my @argv_3;					# [] of	[](token =>	<token_portion>, glob => glob_this)
 
-	my $sq = $_G{single_q};			   # single	quote (')
-	my $dq = $_G{double_q};			   # double	quote (")
-	my $quotes = $sq.$dq;					# quote	chars ('")
+	my $sq = $_G{single_q};			# single quote (')
+	my $dq = $_G{double_q};			# double quote (")
+	my $quotes = $sq.$dq;			# quote chars ('")
 	my $q =	quotemeta $quotes;
 
 	my $gc = quotemeta ( $_G{glob_char} );  #	glob signal	characters
@@ -483,10 +618,11 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 	my $_unbalanced_command_line_quotes	= 0;
 
-	my $re_q_escok = _gen_delimeted_regexp(	$sq, $escape );	# regexp for single	quoted string with internal	escaped	characters allowed
-	my $re_q	= _gen_delimeted_regexp( $sq );				# regexp for single	quoted string (no internal escaped characters)
-	my $re_qq	= _gen_delimeted_regexp( $dq );				# regexp for double	quoted string (no internal escaped characters)
-	my $re_qqq	= _gen_delimeted_regexp($quotes);			# regexp for any-quoted	string (no internal	escaped	characters)
+	my $re_q_escok = _gen_delimeted_regexp(	$sq, $escape );		# regexp for single	quoted string with internal	escaped	characters allowed
+	my $re_qq_escok = _gen_delimeted_regexp( $dq, $escape );	# regexp for double quoted string with internal	escaped	characters allowed
+	my $re_q	= _gen_delimeted_regexp( $sq );					# regexp for single	quoted string (no internal escaped characters)
+	my $re_qq	= _gen_delimeted_regexp( $dq );					# regexp for double	quoted string (no internal escaped characters)
+	my $re_qqq	= _gen_delimeted_regexp($quotes);				# regexp for any-quoted	string (no internal	escaped	characters)
 
 	#print "re_esc = $re_q_escok\n";
 	#print "re_qq =	$re_qq\n";
@@ -496,7 +632,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	#my	$re_superescape	= _gen_delimeted_regexp($quotes, "\\#");
 	#print "re_superescape = $re_superescape\n";
 
-	my $command_line = shift @_;	# "extract_..."	is destructive of the original string
+	my $command_line = shift @_;	# copy command line [if used, "extract_..." functions are destructive of the original string]
 	my $s =	$command_line;
 	my $glob_this_token	= 1;
 	while ($s ne q{})
@@ -532,12 +668,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			Carp::Assert::assert( $s =~	/[$q]/ );
 			#my	$t = q{};
 			while ($s =~ /^[^\s]/)
-				{# parse full token	containing quote delimeters
-				# $s contains non-whitespace characters	and	starts with	non-whitespace
+				{# parse full token containing quote delimeters
+				# $s contains non-whitespace characters and starts with non-whitespace
 				if ($s =~ /^((?:[^\s$q\$]|\$[^$q])*)((?:(\$([$q]))|[$q])?(.*))$/)
-					{
+					{# complex token with internal quotes and leading non-quote/non-whitespace characters
 					# initial non-quotes now seperated
-					# $1 = initial non-quote/non-whitespace	characters (excepting any '$<quote-char>')
+					# $1 = initial non-quote/non-whitespace characters (except any $<quote-char>)
 					# $2 = rest	of string after	non-quote characters (including	possible $<quote-char><...>)
 					# $3 = $<quote-char> [if exists]
 					# $4 = <quote-char>	(of	'$<quote-char>') [if exists]
@@ -573,17 +709,23 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							push @{	$argv_3[ $i	] }, { token =>	_dequote($d_one), glob => 0, id	=> 'complex:re_q_escok'	};
 							next;
 							}
-						if ($s =~ /^($re_qq)(.*)$/)
+						##if ($s =~ /^($re_qq)(.*)$/)
+						if ($s =~ /^($re_qq_escok)(.*)$/)
 							{# $"..."
 							#my	$one = $1;
 							#my	$two = $2;
 							#if	($one =~ /[$gc]/) {	$glob_this_token = 0; }	# globbing within ""'s is ok
 							#$t	.= $one;
 							#$s	= $two;
-							$t .= $1;
+							##$t .= _dequote($1);
+							##$s = $2;
+							my $d_one = _decode_qq($1);
+							$t .= _dequote($d_one);
 							$s = $2;
-							#print "1-push (complex:re_qq): token => $1, glob => $opt{_glob_within_qq}\n";
-							push @{	$argv_3[ $i	] }, { token =>	$1,	glob =>	$opt{_glob_within_qq}, id => 'complex:re_qq' };
+							###print "1-push (complex:re_qq): token => $1, glob => $opt{_glob_within_qq}\n";
+							#print "1-push (complex:re_qq_escok [within \$]): token => $1, glob => $opt{_glob_within_qq}\n";
+							##push @{	$argv_3[ $i	] }, { token =>	_dequote($1), glob => $opt{_glob_within_qq}, id => 'complex:re_qq' };
+							push @{	$argv_3[ $i	] }, { token =>	_dequote($d_one), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
 							next;
 							}
 						$t .= q{$}.$s;
@@ -591,13 +733,27 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 						$s = q{};
 						last;
 						}
-					if ($s =~ /^(?:($re_qqq)(.*))|(.*)$/)
-						{
+					if ($s =~ /^($re_qq_escok)(.*)$/)
+						{# double-quoted token (possible internal escapes)
 						## no critic ( ProhibitDeepNests )
 						#print "2.1	= `$1`\n" if $1;
 						#print "2.2	= `$2`\n" if $2;
-						#print "2.3	= `$3`\n" if $3;
-						#print	"2.4 = `$4`\n" if $4;
+						my $d_one = _decode_qq($1);
+						$t .= _dequote($d_one);
+						$s = $2;
+						###print "1-push (complex:re_qq): token => $1, glob => $opt{_glob_within_qq}\n";
+						#print "1-push (complex:re_qq_escok [bare]): token => $1, glob => $opt{_glob_within_qq}\n";
+						##push @{	$argv_3[ $i	] }, { token =>	_dequote($1), glob => $opt{_glob_within_qq}, id => 'complex:re_qq' };
+						push @{	$argv_3[ $i	] }, { token =>	_dequote($d_one), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_bare' };
+						next;
+						}
+					if ($s =~ /^(?:($re_qqq)(.*))|(.*)$/)
+						{# quoted token (no escapes) == NOW only single quoted token after 're_qq_escok' change above
+						## no critic ( ProhibitDeepNests )
+						#print "3.1	= `$1`\n" if $1;
+						#print "3.2	= `$2`\n" if $2;
+						#print "3.3	= `$3`\n" if $3;
+						#print "3.4	= `$4`\n" if $4;
 						#$t	.= $1;
 						my $one	= defined($1) ? $1 : q{};
 						my $two	= defined($2) ? $2 : q{};
@@ -615,7 +771,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							$glob_this_token = $opt{_glob_within_qq} && ($quote eq $_G{qq});
 							$t .= $dequoted_token;
 							$s = $two;
-							#print "1-push (complex:noescapes): token => $one{dequoted}, glob => $glob_this_token\n";
+							#print "1-push (complex:noescapes): token => _dequote($one), glob => $glob_this_token\n";
 							push @{	$argv_3[ $i ] }, { token => _dequote($one), glob =>	$glob_this_token, id => 'complex:noescapes' };
 							}
 						else {
@@ -661,7 +817,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	@argv2_globok =	@argv2_globok[$n+1..$#argv2_globok];
 
 	# check	for	unbalanced quotes and croak	if so...
-	if ($opt{_carp_unbalanced} && $_unbalanced_command_line_quotes) { Carp::croak 'Unbalanced command line quotes (at token `'.$argv2[-1].'`)'; }
+	if ($opt{_carp_unbalanced} && $_unbalanced_command_line_quotes) { Carp::croak 'Unbalanced command line quotes [#1] (at token `'.$argv2[-1].'` from command line `'.$command_line.'`)'; }
 
 	# do globbing
 #META CHARACTERS
@@ -772,7 +928,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	my $glob_this;
 
 	my %home_paths = _home_paths();
-	# add ability to specify "home_paths" from environment vars
+	# [DONE] add ability to specify "home_paths" from environment vars => use the general set ~<x>=<FOOPATH> technique
 	# if <username> is duplicated in environment vars, it overrides any previous path found in the registry
 	for my $k (keys %ENV)
 		{
@@ -852,7 +1008,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 # DONE/instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
 # must do the slash changes for user expectations ( "\\machine\dir\"* should work as expected on Win32 machines )
 # TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
-# TODO: note in LImITATIONS section
+# TODO: note in LIMITATIONS section
 
 # DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
 # DONE=>TODO: find a better name for 'dospath' => 'dosify'
@@ -894,10 +1050,10 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		#print "pat	= `$pat`\n";
 		#print "#g = @g\n";
 
-		my $dos_special_chars = ':*?"<>|';
 		# if whitespace or special characters, surround with double-quotes ((whole token or just individual problem characters??))
 		if ($opt{dosify})
 			{
+			my $dos_special_chars = ':*?"<>|';
 			my $dc = quotemeta( $dos_special_chars );
 			foreach my $tok (@g) {
 				$tok =~ s:":\\":g;	## no critic (ProhibitUnusualDelimiters)
@@ -1088,8 +1244,8 @@ return %home_paths;
 
 This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing. With the use of the companion script (x.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any command.
 
-doskey type=x type $*
-type [a-c]*.pl
+	doskey type=x type $*
+	type [a-c]*.pl
 
 Note the bash compatible character expansion and globbing available, including meta-notations a{b,c}* ...
 
@@ -1121,7 +1277,11 @@ Globbing:
 
 ?       Match any single character
 
-~       User name home directory		[ ONLY if File::HomeDir::Win32 is installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
+~       Expand to user home directory
+
+~<name> Expands to user <name> home directory for any defined user [ ONLY if File::HomeDir::Win32 is installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
+
+~<text> Expands to value of environment variable "~<text>", if defined
 
 =back
 
@@ -1196,35 +1356,35 @@ C<parse()> returns the parsed argument string as an array.
 
 Attempts were made using Win32::API and Inline::C.
 
-Win32::API
+Win32::API attempt (causes GPFs):
 
-@rem = '--*-Perl-*--
-@echo off
-if "%OS%" == "Windows_NT" goto WinNT
-perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
-goto endofperl
-:WinNT
-perl -x -S %0 %*
-if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
-if %errorlevel% == 9009 echo You do not have Perl in your PATH.
-if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
-goto endofperl
-@rem ';
-#!/usr/bin/perl -w
-#line 15
+    @rem = '--*-Perl-*--
+    @echo off
+    if "%OS%" == "Windows_NT" goto WinNT
+    perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+    goto endofperl
+    :WinNT
+    perl -x -S %0 %*
+    if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+    if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+    if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+    goto endofperl
+    @rem ';
+    #!/usr/bin/perl -w
+    #line 15
 
-use Win32::API;
+    use Win32::API;
 
-Win32::API->Import("kernel32", "LPTSTR GetCommandLine()");
+    Win32::API->Import("kernel32", "LPTSTR GetCommandLine()");
 
-my $string = pack("Z*", GetCommandLine());
+    my $string = pack("Z*", GetCommandLine());
 
-print "string[".length($string)."] = '$string'\n";
+    print "string[".length($string)."] = '$string'\n";
 
-# ------ padding --------------------------------------------------------------------------------------
+    # ------ padding --------------------------------------------------------------------------------------
 
-__END__
-:endofperl
+    __END__
+    :endofperl
 
 Unfortunately, Win32::API causes a GPF and Inline::C is very brittle on Win32 systems (not compensating for paths with embedded strings).
 
@@ -1326,6 +1486,10 @@ Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched lit
 GOTCHA: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must still be double-quoted. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before any process can get a look at the command line.
 
 GOTCHA: Some programs expect their arguments to maintain their surrounding quotes (eg, C<<perl -e 'print "x";'>> doesn't work as expected).
+
+GOTCHA: {4NT/TCC/TCMD} The shell interprets and _removes_ backquote characters before executing the command. You must quote backquote characters with _double-quotes_ to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
+		??? fix this by using $ENV{CMDLINE} which is set by TCC? => attempts to workaround this using $ENV{CMDLINE} fail because TCC doesn't have control between processes and can't set the new CMDLINE value if one process directly creates another (and I'm not sure how to detect that TCC started the process)
+		-- can try PPIDs if Win32::API is present... => DONE [2009-02-18] [seems to be working now... if Win32::API is available, parentEXE is checked and $ENV{CMDLINE} is used if the parent process matches 4nt/tcc/tcmd]
 
 No bugs have been reported.
 

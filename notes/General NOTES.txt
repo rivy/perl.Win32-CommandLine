@@ -2,6 +2,17 @@ BUILDs
 
 use 'b' for builds (calls build+nant) to make sure build.pl is up to date.
 
+
+POSSIBLE x.bat name change
+
+? xcl.bat
+? xc.bat
+
+
+TODO for BUILD
+
+* customize "install" action for this installation to check for perl alias using "x" (doskey for cmd.exe, alias for 4nt/tcc/tcmd) [ a specially modified build.PL based on the current build.PL - ?? an addition to .config vs a diff on the base custom build.PL somehow?? ]
+
 INSTALLATION
 
 ADD NOTE to installation that any perl alias using x.bat must be deleted/unaliased before installation of Win32-CommandLine to allow x.bat to be updated (should be rare).
@@ -34,3 +45,28 @@ EXAMPLES
 doskey to=x -S cd ~$*
 ::4nt/tcc/tcmd
 alias to=x -S cd ~%%$
+
+
+::
+doskey cd=x -S cd $* ([4nt] alias cd=x -S cd ~%%$ -?? *cd internally to prevent re-aliasing?)
+
+voila, cd with expanding arguments (better term here?)
+although it's not as snappy because the perl interpreter loads and executes for every 'cd'. so, I would use:
+
+doskey to=x -S cd $*
+
+although since we're using a seperate command, I like to have an optional initial ~: so I created to.bat (in the eg directory).
+
+normal cd behavior with extra behavior when used as to
+
+set ~p=c:\documents and settings\USERX\My Documents\Projects
+set ~finance=c:\documents and settings\USERY\My Documents\finance
+set ~w=%windir
+
+[initial tildes optional]
+
+to ~p
+to p
+to administrator
+to finance
+

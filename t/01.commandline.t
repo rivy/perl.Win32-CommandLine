@@ -25,7 +25,7 @@ Win32::CommandLine->import( qw( command_line ) );
 my $zero = quotemeta $0;
 my $string = command_line();
 print "command_line = $string\n";
-ok($string =~ /.*perl.*$zero.*/, "command_line() returned {matches /.*perl.*\$0.*/}");
+ok($string =~ /.*perl.*$zero.*/, "command_line() [$string] for $0 returned {matches /.*perl.*\$0.*/}");
 
 my @argv2 = Win32::CommandLine::argv();
 print "ARGV[$#ARGV] = {".join(':',@ARGV)."}\n";

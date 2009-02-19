@@ -24,6 +24,17 @@ sub do_tests;
 
 ## accumulate tests
 
+add_test( [ qq{$0 }.q{'"'} ], ( q{"} ) ); 	#"
+add_test( [ qq{$0 }.q{'"'}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
+add_test( [ qq{$0 }.q{"\\""}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
+
+add_test( [ qq{$0 }.q{$""} ], ( q{} ) );
+add_test( [ qq{$0 }.q{$'\x25'} ], ( q{%} ) );
+
+add_test( [ qq{$0 }.q{$'test'} ], ( q{test} ) );
+add_test( [ qq{$0 }.q{$"test"} ], ( q{test} ) );
+add_test( [ qq{$0 }.q{'"test"'} ], ( q{"test"} ) );
+
 add_test( [ qq{$0} ], qw( ) );
 
 add_test( [ qq{ $0} ], qw( ) );

@@ -1,0 +1,12 @@
+if perl is aliased to 'x perl ...' then installs will fail with:
+	"ppm install failed: Can't rename as C:/Perl/site/bin/x.bat.ppmbak: Permission denied"
+because x.bat is in use and can't be renamed
+ppm is a batch file which uses perl internally ... so an alias to 'x perl ...' will keep x.bat in use while executing the install command
+
+workaround: unalias perl
+re-run "build install" or "ppm install Win32-Command..."
+
+* ADD this notation to the suggestion to alias perl to ... 
+	- maybe, in the future, perl could be compiled with this module in mind to avoid the need to alias it...
+	
+* MAYBE make a customized BUILD.PL to check for this (or maybe check for any installable exe's/bat's that may be in use)
