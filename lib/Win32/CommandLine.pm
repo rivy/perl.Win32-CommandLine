@@ -579,12 +579,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	#			?? can we somehow meta-quote the string to protect and then allow redirection??
 	#   ?? what about errors? how to propogate?
 
-	# TODO:	Change semantics so	that "..." has no internal globbing	(? unless has at least one non-quoted glob character, vs what to do	with combination quoted	and	non-quoted glob	characters)
+	# DONE[]:TODO:	Change semantics so	that "..." has no internal globbing	(? unless has at least one non-quoted glob character, vs what to do	with combination quoted	and	non-quoted glob	characters)
 	#		only glob bare (non-quoted)	characters
 
 	# _argv( $ [,\%] ):	returns	@
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
-	# [%]: an optional hash_ref	containing function	options	as named parameters
+	# [%]: an optional hash_ref	containing function	options as named parameters
 	my %opt	= (
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
 		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
@@ -601,10 +601,10 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
 	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp	"Unknown option	'$_' to	for	function ".$me;	} }	}
 
-	my @argv2;
+	my @argv2;					# [] of tokens
 	my @argv2_globok;			# glob signal per argv2	entry
 
-	my @argv_3;					# [] of	[](token =>	<token_portion>, glob => glob_this)
+	my @argv_3;					# [] of [](token =>	<token_portion>, glob => glob_this)
 
 	my $sq = $_G{single_q};			# single quote (')
 	my $dq = $_G{double_q};			# double quote (")
@@ -646,6 +646,21 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		_ltrim($s);	# remove leading whitespace
 		$glob_this_token = 1;
 		my $i =	scalar(@argv_3);
+
+		# Check for $(<...>), where <...> may contain strings with escapes
+		if ($s =~ /^(\$\()(.*$)/)
+			{# found $(<...>
+			# read until unquoted ) is found and then replace it
+			# $1 = $(
+			# $2 = rest	of string
+			# :: 3 possible phases: out of string, in string with no possible escapes, in string with possible escapes
+			my $two = $2;
+			my $instring='';
+			my $i = 0;
+			while ( 0 ) {
+				}
+			# CHECK for unbalanced ?what should it be called (not exactly quote...)
+			}
 
 		if ($s =~ /^([^\s$q]+)(\s.*$|$)/)
 			{# simple leading full token with no quote delimeter characters
@@ -1049,7 +1064,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		#print "pat	= `$pat`\n";
 		#print "#g = @g\n";
 
-		# if whitespace or special characters, surround with double-quotes ((whole token or just individual problem characters??))
+		# if whitespace or special characters, surround with double-quotes ((::whole token:: or just individual problem characters??))
 		if ($opt{dosify})
 			{
 			my $dos_special_chars = ':*?"<>|';

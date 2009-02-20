@@ -79,6 +79,9 @@ in order to test x.bat:
 
 x -S cd ~
 x -S cd ~1
+x perl -e "print `x -e t/*.t`"		NOTE: x perl -e "print `x -e t\*.t`" prints "t*.t" as output (because the \* => * ... need to check and fix this...
+											CHECK this WITH: x perl -e "print `x -e t\*.t`" vs x perl -e "print `x -e t/*.t`"
+											==> it's eaten by PERL not reinterpretation => so this is OK (NOT FIX NEEDED)
 x perl -e "use Env::Path qw(PATH); print join(qq{\n},PATH->Whence('wh*'));"
 [SHOULD FAIL <unless aliased>] 		perl -e 'print 10'
 [SUCCEEDS with X] 					x perl -e 'print 10'
