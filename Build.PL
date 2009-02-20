@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.1.1268626 ( r34:d55444e9f1a7 [mercurial] ) 2008/12/02 17:57:46 rivy $
+#$Id: Build.PL,v 0.1.1.8134517 ( r35:4d9fbff75de7 [mercurial] ) 2009/02/20 05:09:17 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -15,10 +15,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
-# generate VERSION from $Version: 0.1.1.1268626 $ SCS tag
+# generate VERSION from $Version: 0.1.1.8134517 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.1.1268626 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.1.8134517 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -46,6 +46,7 @@ $config{'c_source'} = undef;						# c source files to compile
 $config{'config_href'} = {};						# modify Config.pm values for the build
 $config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];	# extra files to clean up during "build clean"
 $config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS)
+$config{'custom_code_href'} = {};					# custom code overrides from config
 
 # helper variables
 $config{'lib_path'} = undef;						# generated during .config file parsing
@@ -157,7 +158,8 @@ $build->create_build_script;
 
 sub rivy_builder_code
 { ## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
-	my $code = q{
+my %code;
+my $code = q{
 	use File::Basename;
 	use File::Spec;
 	use File::Spec::Functions;
@@ -472,18 +474,6 @@ Build the PPM distribution.
 
         return $self->SUPER::ACTION_testall;
       }
-    sub ACTION_test {
-        my ($self) = @_;
-
-        #[ADD] build dependency (to make sure we're testing the most recent incarnation of the package)
-        $self->depends_on('build');
-
-        # TODO: ? make dependent upon TEST_AUTHOR definition? so that META doesn't build just for non-author tests?
-        ##[ADD] update the distmeta info when testing (for up-to-date AUTHOR tests)
-        #$self->depends_on('distmeta');
-
-        return $self->SUPER::ACTION_test;
-      }
     ## FROM: ExtUtils::Manifest (v1.54)
 	sub my_maniskip {
 		#print "HERE in my_maniskip()\n";
@@ -588,24 +578,43 @@ Build the PPM distribution.
 	  	$self->add_to_cleanup($file);
 	  }
 
-	};
-	$code .= q{
-		sub do_create_makefile_pl \{
-			my $self = shift;
+};
+$code{ACTION_test} = q{
+    sub ACTION_test {
+        my ($self) = @_;
 
-			$self->SUPER::do_create_makefile_pl;
-		};
-#	if ( defined( $config{'specific_os'} ) )
-#		{
-#		$code .= qq{
-#			my $fh;
-#			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
-#			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
-#			$fh->close();
-#			};
-	$code .= q{
-			\}
-		};
+        #[ADD] build dependency (to make sure we're testing the most recent incarnation of the package)
+        $self->depends_on('build');
+
+        # TODO: ? make dependent upon TEST_AUTHOR definition? so that META doesn't build just for non-author tests?
+        #[ADD] update the distmeta info when testing (for up-to-date AUTHOR tests)
+        $self->depends_on('distmeta');
+
+        return $self->SUPER::ACTION_test;
+      }
+};
+
+##	$code .= q[
+##		sub do_create_makefile_pl{
+##			my $self = shift;
+##
+##			$self->SUPER::do_create_makefile_pl;
+##		];
+###	if ( defined( $config{'specific_os'} ) )
+###		{
+###		$code .= qq{
+###			my $fh;
+###			$fh = IO::File->new(">> Makefile.PL") or die "Can't append Makefile.PL: $!";
+###			print \$fh q(BEGIN {if (\$^O ne '$config{q{specific_os}}') { die "$specific_os_msg"; }});
+###			$fh->close();
+###			};
+##	$code .= q[
+##			}
+##		];
+
+	for (keys %{$config{custom_code_href}}) { $code{$_} = $config{custom_code_href}->{$_}; }
+
+	for (keys %code) { $code .= $code{$_}; }
 
 	return $code;
 }

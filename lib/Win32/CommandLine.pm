@@ -62,14 +62,9 @@ sub command_line{
 	# command_line(): returns $
 ##	return _wrap_GetCommandLine();
 	my $retVal = _wrap_GetCommandLine();
-	## PROBLEM: CMDLINE is not set/reset by TCC, et al when directly calling the program with `command` syntax
-##	if ($ENV{COMSPEC}) {
-##		my $file;
-##		( undef, undef, $file ) = File::Spec->splitpath($ENV{COMSPEC});
-##		#4nt, tcc, tcmd
-##		if (($file =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
-##		}
 
+	## PROBLEM: can't just check $ENV{COMSPEC} and use $ENV{CMDLINE} as it is not set/reset by TCC, et al when directly calling the program with `command` syntax
+	##     ::: SOLVE by checking 'parent' process name
 	my $parentEXE = _getparentname();
 	if (($parentEXE =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
 
@@ -115,8 +110,10 @@ my %_G = ( # package globals
 sub _getparentname {
 	# _getparentname( <null> ): returns $
 	# find parent process ID and return the exe name
+	# TODO?: add to .xs and remove Win32::API recommendation/dependence
 	my $have_Win32_API = eval { require Win32::API; 1; };
 	if ($have_Win32_API) {
+		# modified from prior anon author
 		my $CreateToolhelp32Snapshot;		# define API calls
 		my $Process32First;
 		my $Process32Next;
@@ -632,14 +629,13 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	#print "re_superescape = $re_superescape\n";
 
 	my $command_line = shift @_;	# copy command line [if used, "extract_..." functions are destructive of the original string]
-	my $s =	$command_line;
+	my $s = _ltrim($command_line);	# initial string to parse; prefix is whitespace trimmed
 	my $glob_this_token	= 1;
-	while ($s ne q{})
-		{
-		# $s ==	string being parsed
-		# $t ==	partial	or full	token
 
-		my $t =	q{};
+	# $s ==	string being parsed
+	while ($s ne q{})
+		{# $s is non-empty
+		my $t =	q{};	# in-progress token (may be partial)
 
 		#print "s =	`$s`\n";
 
