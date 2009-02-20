@@ -88,6 +88,13 @@ x perl -e "use Env::Path qw(PATH); print join(qq{\n},PATH->Whence('wh*'));"
 [ADD redirection character tests] 	
 	x echo test">"this
 	x echo test ">" * 'true"test'
+x -a edit $(which which)
+x edit $(which which)
+x -e //sethra/c$/*
+x -e \\sethra\c$\*
+x -e \\sethra/c$\*
+x -e //sethra\c$\*
+
 
 to ~
 to 1

@@ -437,6 +437,10 @@ sub	_dequote{
 	}
 
 sub	_zero_position {
+	# _zero_position( $q, @args ): returns $
+	# find and return the position of the current executable within the given argument array
+	# $q = allowable quotation marks (possibly surrounding the executable name)
+	# @args = the parsed argument array
 	use	English	qw(	-no_match_vars ) ;	# '-no_match_vars' avoids regex	performance	penalty
 
 	my $q =	shift @_;
@@ -445,10 +449,10 @@ sub	_zero_position {
 	my $pos;
 	# find $0 in the ARGV array
 	#print "0 =	$0\n";
-	#win32 - filenames are case-preserving but case-insensitive	[so, case doesn't matter]
+	#win32 - filenames are case-preserving but case-insensitive	[so, solely case difference compares equal => convert to lowercase]
 	my $zero = $PROGRAM_NAME;	   ## no critic	(Variables::ProhibitPunctuationVars)
 	my $zero_lc	= lc($zero);
-	my $zero_dq	= _dequote($zero_lc);  # dequoted $0
+	my $zero_dq	= _dequote($zero_lc, { allowed_quotes_re => '['.quotemeta($q).']' } );  # dequoted $0
 
 	#print "zero = $zero\n";
 	#print "zero_lc	= $zero_lc\n";
@@ -506,14 +510,20 @@ sub	_zero_position_NEW{}
 sub	_argv_NEW{
 	# _argv( $ [,\%] ):	returns	@
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
-	# [%]: an optional hash_ref	containing function	options	as named parameters
-	#	nullglob = true/false [default = false]	# if true, patterns	which match	no files are expanded to a null	string,	rather than	the	pattern	itself
+	# [\%]: an optional hash_ref containing function options as named parameters
 	my %opt	= (
-		'nullglob' => 0,
+		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
+		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
+		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
+		glob => 1,					# = 0/<true> [default = true]		# when true, globbing is performed
+		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
+		_carp_unbalanced => 1,		# = 0/true/'quotes'/'subshells' [default = true] # <private> if true, carp for unbalanced command line quotes or subshell blocks
+		_die_subshell_error => 1,	# = true/false [default = true]		# <private> if true, die on any subshell call returning an error
 		);
 
 	# read/expand optional named parameters
 	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
 	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp	"Unknown option	'$_' to	for	function ".$me;	} }	}
