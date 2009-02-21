@@ -140,6 +140,12 @@ add_test( [ qq{$0 t 0} ], ( q{t}, q{0} ) );
 add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
 add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
+
+# FRAGILE
+add_test( [ qq{$0 }.q{c:/{windows}}, { dosify => 1 } ], ( q{c:\windows} ) );
+add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\Documents and Settings"} ) );
+add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\windows} ) );
+add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\Documents and Settings"} ) );
 #
 
 # TODO BUG: "\\loish\Shared Documents"\* => "\\loish\Shared Documents" and glob of '\*'
@@ -155,6 +161,8 @@ add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
 #add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
 #add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
 #add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+#add_test( [ qq{$0 ~"administrator"} ], ( q{C:/Documents and Settings/Administrator/} ) );
+#add_test( [ qq{$0 ~"administrator"test} ], ( q{ ??? } ) );
 ###
 
 

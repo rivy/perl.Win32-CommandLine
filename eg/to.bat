@@ -7,17 +7,18 @@
 setlocal
 
 :: gather all arguments
-:: :CMD quirk
-set "args=%*"
-:: :4NT/TCC/TCMD quirk
-if NOT "%_4ver%" == "" ( set args=%* )
+set args=%*
+:::: :CMD quirk
+::set "args=%*"
+:::: :4NT/TCC/TCMD quirk
+::if 01 == 1.0 ( set args=%* )
 
 :: <args> == null => to ~
-if [^%args%]==[] ( set "args=roy" )
+if [%args%]==[] ( set args=~ )
 :: remove leading ~ (if it exists)
 set prefix_char=%args:~0,1%
 set suffix=%args:~1%
-if [^%prefix_char%]==[~] (
+if [%prefix_char%]==[~] (
 	:: avoid interpretation of set unless the leading character is ~ [arguments surrounded by quotes would otherwise cause a syntax error for %suffix% with only a trailing quote
 	set args=%suffix%
 	)

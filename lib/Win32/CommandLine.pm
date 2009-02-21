@@ -310,6 +310,15 @@ sub	_decode_qq {
 
 sub	_is_const { my $is_const = !eval { ($_[0]) = $_[0]; 1; }; return $is_const; }
 
+sub _ltrim_withNL {
+	# _ltrim( $|@ [,\%] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+	my $opt_ref;
+	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last argument only if it's a HASH reference (assumed to be options for our function)
+	$opt_ref->{trim_re} = '(?s)[\s\n]+';
+	_ltrim ( @_, $opt_ref );
+}
+
 sub	_ltrim {
 	# _ltrim( $|@ [,\%] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
 	# trim leading characters (defaults to whitespace)
@@ -437,13 +446,13 @@ sub	_dequote{
 	}
 
 sub	_zero_position {
-	# _zero_position( $q, @args ): returns $
+	# _zero_position( $q_re, @args ): returns $
 	# find and return the position of the current executable within the given argument array
-	# $q = allowable quotation marks (possibly surrounding the executable name)
+	# $q_re = allowable quotation marks (possibly surrounding the executable name)
 	# @args = the parsed argument array
 	use	English	qw(	-no_match_vars ) ;	# '-no_match_vars' avoids regex	performance	penalty
 
-	my $q =	shift @_;
+	my $q_re =	shift @_;
 	my @args = @_;
 
 	my $pos;
@@ -452,7 +461,7 @@ sub	_zero_position {
 	#win32 - filenames are case-preserving but case-insensitive	[so, solely case difference compares equal => convert to lowercase]
 	my $zero = $PROGRAM_NAME;	   ## no critic	(Variables::ProhibitPunctuationVars)
 	my $zero_lc	= lc($zero);
-	my $zero_dq	= _dequote($zero_lc, { allowed_quotes_re => '['.quotemeta($q).']' } );  # dequoted $0
+	my $zero_dq	= _dequote($zero_lc, { allowed_quotes_re => $q_re } );  # dequoted $0
 
 	#print "zero = $zero\n";
 	#print "zero_lc	= $zero_lc\n";
@@ -468,7 +477,7 @@ sub	_zero_position {
 			#print "\tMATCH	(direct)\n";
 			last;
 			}
-		$arg =~	s/([$q])(.*)\1/$2/;
+		$arg =~	s/($q_re)(.*)\1/$2/;
 		#print "arg	= $arg\n";
 		if ($zero_lc eq	lc($arg))
 			{ #	dequoted match
@@ -504,7 +513,90 @@ sub	_zero_position {
 	return $pos;
 }
 
-sub	_argv_parse{}
+sub	_argv_parse{
+	# _argv( $ [,\%] ):	returns	@
+	# parse scalar using bash-like rules for quotes and subshell block replacements (no enviroment variable substitutions or globbing are performed)
+	# [\%]: an optional hash_ref containing function options as named parameters
+	## NOTE: once $(<...>) is implemented => need to parse "\n" as whitespace (use the /s argument for regexp) because there may be embedded newlines as whitespace
+	my %opt	= (
+		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
+		_carp_unbalanced => 1,		# = 0/true/'quotes'/'subshells' [default = true] # <private> if true, carp for unbalanced command line quotes or subshell blocks
+		_die_subshell_error => 1,	# = true/false [default = true]		# <private> if true, die on any subshell call returning an error
+		);
+
+	# read/expand optional named parameters
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+
+	my $opt_ref;
+	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
+	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp	"Unknown option	'$_' to	for	function ".$me;	} }	}
+
+	my $command_line = shift @_;
+
+	my @args; #@args = []ofhref{token=>'', chunk_aref[]ofhref{token=>'',glob=>0,id=>''}, glob_aref[]}
+
+	my $sq = $_G{single_q};			# single quote (')
+	my $dq = $_G{double_q};			# double quote (")
+	my $quotes = $sq.$dq;			# quote chars ('")
+	my $q_re = '['.quotemeta $quotes.']';
+
+	my $g_re = '['.quotemeta $_G{glob_char}.']'; 	# glob signal characters
+
+	my $escape = $_G{escape_char};
+
+	my $_unbalanced_command_line = 0;
+
+	my $re_q_escok = _gen_delimeted_regexp(	$sq, $escape );		# regexp for single	quoted string with internal	escaped	characters allowed
+	my $re_qq_escok = _gen_delimeted_regexp( $dq, $escape );	# regexp for double quoted string with internal	escaped	characters allowed
+	my $re_q	= _gen_delimeted_regexp( $sq );					# regexp for single	quoted string (no internal escaped characters)
+	my $re_qq	= _gen_delimeted_regexp( $dq );					# regexp for double	quoted string (no internal escaped characters)
+	my $re_qqq	= _gen_delimeted_regexp( $quotes );				# regexp for any-quoted	string (no internal	escaped	characters)
+
+	my $s = _ltrim($command_line, {trim_re => '(?s)[\s\n]+'});	# initial string to parse; prefix is whitespace trimmed		#???: need to change trim characters to include NL?
+	my $glob_this_token	= 1;
+
+	# $s ==	string being parsed
+	while ($s ne q{})
+		{# $s is non-empty and starts with non-whitespace character
+		Carp::Assert::assert( $s =~	/^\S/ );
+		my $t =	q{};	# token (may be a partial/in-progess or full/finished token)
+
+		print "s =	`$s`\n";
+		$s = _ltrim($command_line, {trim_re => '(?s)[\s\n]+'});
+		# get and concatenate chunks
+		while ($s =~ /^\S/)
+			{# $s has initial non-whitespace character
+			# chunk types: \S+, ".*" <escapes ok>, '.*' <literal, no escapes>, $".*" <escapes ok>, $'.*' <ANSI C string, escapes ok>, $(.*) <subshell command, ends with non-quoted )>
+			if (0) {
+				}
+			elsif ($s =~ /^($re_qq_escok)(.*)$/)
+				{# double-quoted token (possible internal escapes)
+				## no critic ( ProhibitDeepNests )
+				# $1 = double-quoted token
+				# $2 = rest	of string [if exists]
+				#print "2.1	= `$1`\n" if $1;
+				#print "2.2	= `$2`\n" if $2;
+				my $d_one = _decode_qq($1);
+				$t .= _dequote($d_one);
+				$s = $2;
+				}
+			else {
+				#default
+				## no critic ( ProhibitDeepNests )
+				$s =~ /^(\S+)(\s.*$|$)/s;
+				# $1 = non-whitespace/non-quoted token
+				# $2 = rest	of string (with	leading	whitespace)	[if	exists]
+				#print "[DEFAULT]-push `$1` (g_ok =	$glob_this_token)\n";
+				#[LATER}push @args, {	token => $1, chunk_aref => ( { token => $1, glob => 1, id => '[DEFAULT]' } ), glob_aref => undef };
+				$t = $1;
+				$s = defined($2) ? $2 : q{};
+				}
+			}
+		push @args, $t;
+		_ltrim($s, {trim_re => '(?s)[\s\n]+'});
+		}
+	return @args;
+}
 sub	_argv_do_glob{}
 sub	_zero_position_NEW{}
 sub	_argv_NEW{
@@ -531,23 +623,24 @@ sub	_argv_NEW{
 	my $command_line = shift @_;
 
 	# parse	tokens from	the	$command_line string
-	my %argv2 =	_argv_parse( $command_line );
+	my @args = _argv_parse( $command_line, { _glob_within_qq => $opt{_glob_within_qq}, _carp_unbalanced => $opt{_carp_unbalanced}, _die_subshell_error => $opt{_die_subshell_error} } );
+	#@args = []of{token=>'', chunk_aref[]of{token=>'',glob=>0,id=>''}, glob_aref[]}
 
 	# remove $0	(and any prior entries)	from ARGV array	(and the matching glob_ok signal array)
-	my $p =	_zero_position_NEW(	\%argv2	);
+	my $p = _zero_position_NEW( @args )
 	#print "p =	$p\n";
-	my $n =	scalar($argv2{'argv'});
+	##??my $n =	scalar($argv2{'argv'});
 	#print "n =	$n\n";
   ##$argv2{'argv'} = $argv2{'argv'}[ $p+1..$n ];
   ##$argv2{'glob_ok'} =	$argv2{'glob_ok'}[ $p+1..$n	];
 
 	# check	for	unbalanced quotes and croak	if so...
-	if ($_G{'unbalanced_quotes'}) {	Carp::croak	'Unbalanced command line quotes [#2] (at token `'.$argv2{'argv'}[-1].'` from command line `'.$command_line.'`)'; }
+##?	if ($_G{'unbalanced_quotes'}) {	Carp::croak	'Unbalanced command line quotes [#2] (at token `'.$argv2{'argv'}[-1].'` from command line `'.$command_line.'`)'; }
 
 	# do globbing
-	my @argv2_g	= _argv_do_glob( \%argv2 );
+##?	my @argv2_g	= _argv_do_glob( \%argv2 );
 
-	return @argv2_g;
+##?	return @argv2_g;
 }
 
 sub	_quote_gc_meta{
@@ -592,6 +685,9 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# _argv( $ [,\%] ):	returns	@
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [%]: an optional hash_ref	containing function	options as named parameters
+
+	# ???: distinction between cmd.exe argument quoting and 'dosify' == change to forward slash path dividers; 'unixify' == just backslash dividers or quote as well?
+	# ???: cmdify, bashify, or quote => 0/cmd/bash to use as seperate from path divider changes
 	my %opt	= (
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
 		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
@@ -616,13 +712,13 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	my $sq = $_G{single_q};			# single quote (')
 	my $dq = $_G{double_q};			# double quote (")
 	my $quotes = $sq.$dq;			# quote chars ('")
-	my $q =	quotemeta $quotes;
+	my $q_qm = quotemeta $quotes;
 
 	my $gc = quotemeta ( $_G{glob_char} );  #	glob signal	characters
 
 	my $escape = $_G{escape_char};
 
-	my $_unbalanced_command_line_quotes	= 0;
+	my $_unbalanced_command_line = 0;
 
 	my $re_q_escok = _gen_delimeted_regexp(	$sq, $escape );		# regexp for single	quoted string with internal	escaped	characters allowed
 	my $re_qq_escok = _gen_delimeted_regexp( $dq, $escape );	# regexp for double quoted string with internal	escaped	characters allowed
@@ -668,7 +764,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			# CHECK for unbalanced ?what should it be called (not exactly quote...)
 			}
 
-		if ($s =~ /^([^\s$q]+)(\s.*$|$)/)
+		if ($s =~ /^([^\s$q_qm]+)(\s.*$|$)/)
 			{# simple leading full token with no quote delimeter characters
 			# $1 = non-whitespace/non-quote	token
 			# $2 = rest	of string (with	leading	whitespace)	[if	exists]
@@ -685,12 +781,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		else
 			{
 			# complex token	containing quote delimeters
-			Carp::Assert::assert( $s =~	/[$q]/ );
+			Carp::Assert::assert( $s =~	/[$q_qm]/ );
 			#my	$t = q{};
 			while ($s =~ /^[^\s]/)
 				{# parse full token containing quote delimeters
 				# $s contains non-whitespace characters and starts with non-whitespace
-				if ($s =~ /^((?:[^\s$q\$]|\$[^$q])*)((?:(\$([$q]))|[$q])?(.*))$/)
+				if ($s =~ /^((?:[^\s$q_qm\$]|\$[^$q_qm])*)((?:(\$([$q_qm]))|[$q_qm])?(.*))$/)
 					{# complex token with internal quotes and leading non-quote/non-whitespace characters
 					# initial non-quotes now seperated
 					# $1 = initial non-quote/non-whitespace characters (except any $<quote-char>)
@@ -749,7 +845,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							next;
 							}
 						$t .= q{$}.$s;
-						$_unbalanced_command_line_quotes = 1;
+						$_unbalanced_command_line = 1;
 						$s = q{};
 						last;
 						}
@@ -795,12 +891,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 							push @{	$argv_3[ $i ] }, { token => _dequote($one), glob =>	$glob_this_token, id => 'complex:noescapes' };
 							}
 						else {
-							$t .= $three; $_unbalanced_command_line_quotes = 1; $s = q{};
+							$t .= $three; $_unbalanced_command_line = 1; $s = q{};
 							#print "1-push (complex:NON-quoted/unbalanced): token => $three, glob => 1\n";
 							push @{	$argv_3[ $i	] }, { token => $three, glob => 1, id => 'complex:NON-quoted/unbalanced' };
 							last;
 							}
-						#else { $t .= $4; $s = q{}; $_unbalanced_command_line_quotes = 1; last; }
+						#else { $t .= $4; $s = q{}; $_unbalanced_command_line = 1; last; }
 						}
 					}
 				else { Carp::croak q{no	match: shouldn't get here...}; };
@@ -831,13 +927,13 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	#print "" . Dumper( @argv_3 )."\n";
 
 	# remove $0 (and any prior entries) from ARGV array (and the matching glob signal array)
-	my $n = _zero_position(	$q,	@argv2 );
+	my $n = _zero_position(	'['.$q_qm.']',	@argv2 );
 	#print "n = $n\n";
 	@argv2 = @argv2[$n+1..$#argv2];
 	@argv2_globok =	@argv2_globok[$n+1..$#argv2_globok];
 
 	# check	for	unbalanced quotes and croak	if so...
-	if ($opt{_carp_unbalanced} && $_unbalanced_command_line_quotes) { Carp::croak 'Unbalanced command line quotes [#1] (at token `'.$argv2[-1].'` from command line `'.$command_line.'`)'; }
+	if ($opt{_carp_unbalanced} && $_unbalanced_command_line) { Carp::croak 'Unbalanced command line quotes [#1] (at token `'.$argv2[-1].'` from command line `'.$command_line.'`)'; }
 
 	# do globbing
 #META CHARACTERS
@@ -961,7 +1057,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			}
 		}
 	for my $k (keys %home_paths) { $home_paths{$k} =~ s/\\/\//g; }; # unixify path seperators
-	my $home_path_re =  q{(?i)}.q{^~(}.join(q{|}, keys %home_paths ).q{)(/|$)}; ## no critic (RequireInterpolationOfMetachars)
+	my $home_path_re =  q{(?i)}.q{^~(}.join(q{|}, keys %home_paths ).q{)?(/|$)}; ## no critic (RequireInterpolationOfMetachars)
+	##my $home_path_re = q{(?i)}.q{^~(?:[$q_qm])?(}.join(q{|}, keys %home_paths ).q{)(?:[$q_qm])?(/|$)}; ## no critic (RequireInterpolationOfMetachars)
+
+	# TODO: figure out a method to allow '~"<username>"' to be globbed correctly since <username>'s can have internal whitespace
+	#		currently, this is handled by adding the <username> with nulled internal whitespace into the home_path hash (but this process can result in collisions)
+	#		* it may be difficult since globbing is done based on the "chunk" of the token and non-quoted and quoted portions are "chunked" into seperate pieces (and what about ~"administrator"TEST == how far should the concatenation go for a possible match?)
 
 	#for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
 	#print "home_path_re = $home_path_re\n";
@@ -982,21 +1083,10 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		foreach my $r_h ( @{ $argv_3[$n+$i+1] } )
 			{
 			my $t = $r_h->{token};
-			my $prefix = ($s eq q{});
 			$s .= $t;
 			if ($r_h->{glob})
 				{
 				$glob_this = 1;
-				#print "prefix = $prefix\n";
-				#print "t = $t\n";
-				if ($prefix && scalar(keys %home_paths))
-					{
-					$t =~ s/\\/\//g;
-					$t =~ s/$home_path_re/$home_paths{lc($1)}$2/;
-					if (defined $1) { $s = $t; };
-					if ($opt{dosify}) { $s =~ s:\/:\\:g; };	## no critic (ProhibitUnusualDelimiters)
-					}
-				#if ($prefix) { $t =~ s/$home_path_re/$home_paths{$1}/; }
 				$t =~ s/\\/\//g;
 				#print "s = $s\n";
 				#print "t = $t\n";
@@ -1024,15 +1114,15 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 ##		  @g = File::Glob::glob( $pat )	if ( $pat =~ /[$gc]/ );		## no critic (ProhibitPostfixControls)		## only	glob if	glob characters	are	in string
 
 
-# NOT!: bash-like globbing EXCEPT no backslash quoting within the glob; this makes "\\" => "\\" instead of "\" so that "\\machine\dir" works
-# DONE/instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
-# must do the slash changes for user expectations ( "\\machine\dir\"* should work as expected on Win32 machines )
-# TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
-# TODO: note in LIMITATIONS section
+		# NOT!: bash-like globbing EXCEPT no backslash quoting within the glob; this makes "\\" => "\\" instead of "\" so that "\\machine\dir" works
+		# DONE/instead: backslashes have already been replaced with forward slashes (by _quote_gc_meta())
+		# must do the slash changes for user expectations ( "\\machine\dir\"* should work as expected on Win32 machines )
+		# TODO: note differences this causes between bash and Win32::CommandLine::argv() globbing
+		# TODO: note in LIMITATIONS section
 
-# DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
-# DONE=>TODO: find a better name for 'dospath' => 'dosify'
-# TODO: TEST 'dosify' and 'unixify'
+		# DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
+		# DONE=>TODO: find a better name for 'dospath' => 'dosify'
+		# TODO: TEST 'dosify' and 'unixify'
 
 		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE | GLOB_QUOTE;
 #		my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT |	GLOB_BRACE;
@@ -1049,6 +1139,20 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		if ( $opt{glob} && $glob_this )
 			{
 			$pat =~ s:\\\\:\/:g;		## no critic ( ProhibitUnusualDelimiters )	## replace all backslashes (assumed to be backslash quoted already) with forward slashes
+
+			if ($pat =~ m/$home_path_re/)
+				{# deal with possible prefixes
+				# TODO: CHECK: are there any cases where the $s wouldn't match but $pat would causing incorrect fallback string?
+				#print "pat(pre-prefix)  = `$pat`\n";
+				#print "s(pre-prefix)    = `$s`\n";
+				$pat =~ s/$home_path_re/$home_paths{lc($1)}$2/;
+				$s =~ s:\\:\/:g;								# unixify $s for processing
+				$s =~ s/$home_path_re/$home_paths{lc($1)}$2/;	# need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
+				if ($opt{dosify}) { $s =~ s:\/:\\:g; };
+				#print "pat(post-prefix) = `$pat`\n";
+				#print "s(post-prefix)   = `$s`\n";
+				}
+
 			if ( $pat =~ /\\[?*]/ )
 				{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
 				@g = ( $s );
@@ -1073,10 +1177,12 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		# if whitespace or special characters, surround with double-quotes ((::whole token:: or just individual problem characters??))
 		if ($opt{dosify})
 			{
-			my $dos_special_chars = ':*?"<>|';
+#			my $dos_special_chars = ':*?"<>|';
+			# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
+			my $dos_special_chars = '"<>|';
 			my $dc = quotemeta( $dos_special_chars );
 			foreach my $tok (@g) {
-				$tok =~ s:":\\":g;	## no critic (ProhibitUnusualDelimiters)
+				$tok =~ s:":\\":g;	# CMD: preserve double-quotes within double-quotes with backslash escape	# TODO: change to $dos_escape	## no critic (ProhibitUnusualDelimiters)
 				if ($tok =~ qr{(\s|[$dc])})
 					{
 					$tok = q{"}.$tok.q{"};
@@ -1086,12 +1192,8 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 				};
 			};
 
-
 		push @argv2_g, @g;
 		}
-
-	# TODO: $opt{dosify} = 'all' => for all args, check file exists and if so change '/' to '\'
-	# TODO: $opt{unixify} = 'all' => for all args, check file exists and if so change '\' to '/'
 
 	## TODO: TEST these...
 	if ($opt{dosify} eq 'all') { foreach my $a (@argv2_g) { if (-e $a) {$a =~ s:\/:\\:g; } } }	## no critic (ProhibitUnusualDelimiters)
@@ -1117,6 +1219,11 @@ my %home_paths = ();
 # initial paths for user from environment vars
 if ($ENV{USERNAME} && $ENV{USERPROFILE}) { $home_paths{q{}} = $home_paths{lc($ENV{USERNAME})} = $ENV{USERPROFILE}; };
 
+# add All Users / Public
+$home_paths{'all users'} = $ENV{ALLUSERSPROFILE};					#?? should this be $ENV{PUBLIC} on Vista?
+if ($ENV{PUBLIC}) { $home_paths{public} = $ENV{PUBLIC}; }
+else { $home_paths{public} = $ENV{ALLUSERSPROFILE}; }
+
 my $profiles_href;
 
 if ($have_all_needed_modules) {
@@ -1131,7 +1238,8 @@ if ($have_all_needed_modules) {
 
 	#foreach my $p (keys %{$profiles}) { print "profiles{$p} = $profiles->{$p}\n"; }
 
-	foreach my $p (keys %{$profiles_href}) {
+	foreach my $p (keys %{$profiles_href})
+		{
 		#print "p = $p\n";
 		if ($p =~ /^(S(?:-\d+)+)\\$/) {
 			my $sid_str = $1;
@@ -1146,16 +1254,21 @@ if ($have_all_needed_modules) {
 				my $path = $profiles_href->{$p}->{ProfileImagePath};
 				$path =~ s/\%(.+)\%/$ENV{$1}/eg;
 				#print $uid."\n";
-				$home_paths{lc($uid)} = $path;		# remove/ignore user case
+				$uid = lc($uid);				# remove/ignore user case
+				$home_paths{$uid} = $path;		# save uid => path
 				}
 			}
 		}
+	foreach my $uid (sort keys %home_paths)
+		{# add paths for UIDs with internal whitespace removed (for convenience)
+		if ($uid =~ /\s/) {
+			# $uid contains whitespace
+			my $path = $home_paths{$uid};
+			$uid =~ s/\s+//g; # remove any internal whitespace (Win32 usernames may have internal whitespace)
+			if (!$home_paths{$uid}) { $home_paths{$uid} = $path; } # save uid(no-whitespace) => path (NOTE: no overwrites if previously defined, to avoid possible collisions with other UIDs)
+			}
+		}
 	}
-
-# add All Users / Public
-$home_paths{allusers} = $ENV{ALLUSERSPROFILE};					#?? should this be $ENV{PUBLIC} on Vista?
-if ($ENV{PUBLIC}) { $home_paths{public} = $ENV{PUBLIC}; }
-else { $home_paths{public} = $ENV{ALLUSERSPROFILE}; }
 
 #for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
 return %home_paths;
@@ -1214,7 +1327,7 @@ return %home_paths;
 #		$r .= $tok;
 #		$s = $suffix;
 #		if ($tok eq	q{}) {
-#			#$Win32::CommandLine::_unbalanced_command_line_quotes =	1;
+#			#$Win32::CommandLine::_unbalanced_command_line =	1;
 #			if (($r	ne q{} && !$unbalanced_as_seperate_last_arg) ||	($r	eq q{})) {
 #				$r .= $suffix; $s =	q{};
 #				}
@@ -1504,6 +1617,8 @@ None reported.
 Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 
 GOTCHA: ** Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must still be **double-quoted**. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before any process can get a look at the command line.
+
+GOTCHA: %<x> is still replaced by ENV vars and %% must be used to place single %'s in the command line, eg: >perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }"
 
 GOTCHA: Some programs expect their arguments to maintain their surrounding quotes (eg, C<<perl -e 'print "x";'>> doesn't work as expected).
 

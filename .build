@@ -1,22 +1,19 @@
 <?xml version="1.0"?>
 <!-- NANT Build file -->
 <project name="Win32-CommandLine" default="build">
+	<target name="*" depends="build"/><!-- BUILD if target not recognized -->
+
    	<!--echo message="starting folder ... ${directory::get-current-directory()}" /-->
+    <property name="bin.path" value="c:\users\public\documents\@bin"/>
+    <property name="bat.source.path" value="..\..\bat"/>
     <target name="build">
         <nant buildfile="../.build" />
-    	<foreach item="File" property="filename">
-    		<in>
-				<items>
-					<include name="extras/exout.bat" />
-				</items>
-    		</in>
-    		<do>
-    			<if test="${not file::up-to-date('..\..\bat\advanced\exout.bat', filename)}">
-			    	<!--echo message="copying ${filename}" /-->
-	    			<copy file="..\..\bat\advanced\exout.bat" tofile="${filename}" />
-			    	<!--echo message="${filename}: DONE" /-->
-	    		</if>
-		    </do>
-		</foreach>
+        <!-- TODO: make FAIL (not just no copy) if target NEWER than SOURCE -->
+        <copy file="${bat.source.path}\advanced\exout.bat" todir="extras" flatten="true" />
+        <copy file="extras\exout.bat" todir="${bin.path}" flatten="true" />
+        <copy file="eg\to.bat" todir="${bin.path}" flatten="true" />
     </target>
+
+    <target name="install" />
+
 </project>
