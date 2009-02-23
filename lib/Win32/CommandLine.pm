@@ -220,8 +220,7 @@ sub	_dosify {
 	for (@_ ? @_ : $_)
 		{
 		#print "_ = $_\n";
-		##?_dequote($_);						# remove any balanced outer quotes
-		s:\/:\\:g;							# forward to back slashes
+		s:\/:\\:g;								# forward to back slashes
 		if ( $_ =~ qr{(\s|[$dc])} )
 			{
 			#print "in qr\n";
