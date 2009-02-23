@@ -155,15 +155,42 @@ add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\Documents an
 ## now in 02.argv-tilde.t
 ## ?? change to include here surrounded by $ENV{TEST_FRAGILE} check? or do skipped tests need to be in a specific file by themselves?
 ### TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
+### TEST_FRAGILE == tests which require a specific environment setup to work
 ### use TEST_FRAGILE
-#add_test( [ qq{$0 ~*} ], ( q{~*} ) );
-#add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
-#add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-#add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
-#add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
-#add_test( [ qq{$0 ~"administrator"} ], ( q{C:/Documents and Settings/Administrator/} ) );
-#add_test( [ qq{$0 ~"administrator"test} ], ( q{ ??? } ) );
+if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+	add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+	add_test( [ qq{$0 ~"administrator"} ], ( q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~"administrator"/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+	add_test( [ qq{$0 ~"administrator"test} ], ( q{~administratortest} ) );
+
+	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{//sethra/C$/WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
+	add_test( [ qq{$0 }.q{//sethra/C$/WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
+	}
 ###
+
+## TODO: test backslash escapes within quotes (how to output ", \", etc) => {\"} => {"}, {\\"} => {\"}, ...
+
+add_test( [ qq{$0 }.q{"\\"} ], ( q{\\} ) );
+add_test( [ qq{$0 }.q{"\\"}, { dosify => 1 } ], ( q{\\} ) );
+add_test( [ qq{$0 }.q{"\\\\"} ], ( q{\\} ) );
+add_test( [ qq{$0 }.q{"\\\\"}, { dosify => 1 } ], ( q{\\} ) );
+# double-quotes
+add_test( [ qq{$0 }.q{"\\""} ], ( q{"}) );
+add_test( [ qq{$0 }.q{"\\""}, { dosify => 1 } ], ( q{"\\""} ) );
+#add_test( [ qq{$0 }.q{"\\\\""} ], ( q{\\"},0) );							#CORRECT: ERROR: Unbalanced quotes...
+#add_test( [ qq{$0 }.q{"\\\\""}, { dosify => 1 } ], ( q{"\\\\""},0 ) );		#CORRECT: ERROR: Unbalanced quotes...
+add_test( [ qq{$0 }.q{"\\\\\\""} ], ( q{\\"} ) );
+add_test( [ qq{$0 }.q{"\\\\\\""}, { dosify => 1 } ], ( q{"\\\\\\""} ) );
 
 
 # rule tests

@@ -29,7 +29,7 @@ echo @:: %_x_bat% file > %_x_bat%
 
 :: 4NT/TCC
 ::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
-if 01 == 1.0 ( setdos /x-1467 )
+if 01 == 1.0 ( setdos /x-14567 )
 
 :: gather all arguments (work for WinNT [and should work for previous versions as well])
 :: CMD quirk

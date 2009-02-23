@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.1.8134517 ( r35:4d9fbff75de7 [mercurial] ) 2009/02/20 05:09:17 rivy $
+#$Id: Build.PL,v 0.1.2.70 ( r38:efb716e84c78 [mercurial] ) 2009/02/22 14:11:26 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -8,6 +8,8 @@
 
 ## TODO: check on the broken install for ppm for perl 5.10 => <ARCHITECTURE NAME="MSWin32-x86-multi-thread-118.53" /> instead of the correct <ARCHITECTURE NAME="MSWin32-x86-multi-thread-5.10" />
 
+## TODO: flesh out stub documentation for additional custom actions
+
 use strict;
 use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
@@ -15,10 +17,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
-# generate VERSION from $Version: 0.1.1.8134517 $ SCS tag
+# generate VERSION from $Version: 0.1.2.70 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.0'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.1.8134517 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.2'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.2.70 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -158,13 +160,38 @@ $build->create_build_script;
 
 sub rivy_builder_code
 { ## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
+my $code = q{};
 my %code;
-my $code = q{
+$code{'#pod'} = q{
+=head1 ACTIONS (CUSTOM)
+
+Additional custom actions.
+
+=over 4
+
+=item distall
+
+Build all distributions.
+
+=item distppm
+
+Build the PPM distribution.
+
+=item distpar
+
+Build the PAR distribution.
+
+=back
+
+=cut
+};
+$code{'@'} = q{
 	use File::Basename;
 	use File::Spec;
 	use File::Spec::Functions;
 	use IO::File;
-
+};
+$code{'@new'} = q{
 	sub new{
 		#my $self = shift()->_construct(@_);
 		#
@@ -191,8 +218,9 @@ my $code = q{
 
 		return $self->SUPER::new(@_);
 		}
-	#[ADD] New ACTIONs
-	#[ADD] distall - makes all distributions
+};
+$code{'ACTION_distall'} = q{
+	#[ADD] NEW action = distall - makes all distributions
 	sub ACTION_distall {
 		my ($self) = @_;
 
@@ -200,39 +228,24 @@ my $code = q{
 		$self->depends_on('ppmdist');
 		$self->depends_on('dist');
 	  }
-	#[ADD] distppm - makes ppm distribution
+};
+$code{'ACTION_distppm'} = q{
+	#[ADD] NEW action = distppm - makes ppm distribution (ALIAS to ppmdist)
 	sub ACTION_distppm {
 		my ($self) = @_;
 
 		$self->depends_on('ppmdist');
 	  }
-	#[ADD] distpar - makes par distribution
+};
+$code{'ACTION_distpar'} = q{
+	#[ADD] NEW action = distpar - makes par distribution (ALIAS to pardist)
 	sub ACTION_distpar {
 		my ($self) = @_;
 
 		$self->depends_on('pardist');
 	  }
-=head1 ACTIONS
-
-Additional custom actions.
-
-=over 4
-
-=item distall
-
-Build all distributions.
-
-=item distpar
-
-Build the PAR distribution.
-
-=item distppm
-
-Build the PPM distribution.
-
-=back
-
-=cut
+};
+$code{'ACTION_realclean'} = q{
 	sub ACTION_realclean {
 		## BUG in Module::Build v0.30 : Win32 is case-insensitive => so comparisons should be case insensitive => '$basename eq $self->build_script' should be 'lc($basename) eq lc($self->build_script)'
 		## and 'Vodoo' is misspelled
@@ -293,11 +306,15 @@ Build the PPM distribution.
 				}
 			}
 		}
+};
+$code{'ACTION_ppmdist@ppm_name'} = q{
 	# change PPM name to trailing '-PPM' (instead of the default leading 'PPM-')
 	sub ppm_name{
 		my $self = shift;
 		return $self->dist_dir . '-PPM';
 		}
+};
+$code{'ACTION_ppmdist@htmlify_pods'} = q{
 	# correct HTML generation for ActivePerl installations
 	sub htmlify_pods{
 		my $self = shift;
@@ -351,6 +368,8 @@ Build the PPM distribution.
 			ActivePerl::DocTools::UpdateHTML_blib( installdirs => "$installdirs" );
 			}
 		}
+};
+$code{'ACTION_ppmdist'} = q{
 	# correct PPM generation for ActivePerl installations (modified from Module::Build::Base.pm v0.2808)
 	sub ACTION_ppmdist {
 		my ($self) = @_;
@@ -415,6 +434,8 @@ Build the PPM distribution.
 
 	  $self->SUPER::delete_filetree( $ppm );
 	  }
+};
+$code{'ACTION_install'} = q{
 	sub ACTION_install {
 		my ($self) = @_;
 
@@ -437,6 +458,8 @@ Build the PPM distribution.
 		my $output = `ppm install $ppd_name`;
 		print $output;
 	  }
+};
+$code{'ACTION_fakeinstall'} = q{
 	sub ACTION_fakeinstall {
 		my ($self) = @_;
 
@@ -454,10 +477,14 @@ Build the PPM distribution.
 		$self->SUPER::log_info("Installing via ppm (using $ppd_name)\n");
 		#`ppm install $ppd_name`;
 	  }
+};
+$code{'ACTION_fakeinstall@_has_ppm'} = q{
 	sub _has_ppm {
 		use File::Which;
 		return File::Which::which('ppm');
 	  }
+};
+$code{'ACTION_distmeta'} = q{
     sub ACTION_distmeta {
         my ($self) = @_;
 
@@ -466,6 +493,8 @@ Build the PPM distribution.
 
         return $self->SUPER::ACTION_distmeta;
       }
+};
+$code{'ACTION_testall'} = q{
     sub ACTION_testall {
         my ($self) = @_;
 
@@ -474,6 +503,8 @@ Build the PPM distribution.
 
         return $self->SUPER::ACTION_testall;
       }
+};
+$code{'ACTION_manifest@my_maniskip'} = q{
     ## FROM: ExtUtils::Manifest (v1.54)
 	sub my_maniskip {
 		#print "HERE in my_maniskip()\n";
@@ -525,6 +556,8 @@ Build the PPM distribution.
 			return $found;
 			};
 	  }
+};
+$code{'ACTION_manifest'} = q{
 	sub ACTION_manifest {
 		my ($self) = @_;
 
@@ -548,7 +581,8 @@ Build the PPM distribution.
 
 	# ... might be brittle:: Module::Signature overrides it as well ( but only for ExtUtils::Manifest->VERSION < 1.41 ), probably ok
 	# ... petition ExtUtils::Manifest maintainers for a hook? changing the original code might break some folks MANIFEST.SKIPs
-
+};
+$code{'ACTION_ppd@my_varchname'} = q{
 	##BUGBYPASS: [for Module::Build v0.3 and perl v5.10+ $^V version string change] repairs incorrect version interpretation for perl v5.10+ (still works for 5.8 and earlier, as well)
 	sub my_varchname {  # Copied from PPMMaker.pm
 	  	my ($self, $config) = @_;
@@ -566,6 +600,8 @@ Build the PPM distribution.
       	}
 	  	return $varchname;
 	  }
+};
+$code{'ACTION_ppd'} = q{
 	# copied from Mobule::Build - Base.pm (v0.3)
 	sub ACTION_ppd {
 	  	my ($self) = @_;
@@ -579,7 +615,7 @@ Build the PPM distribution.
 	  }
 
 };
-$code{ACTION_test} = q{
+$code{'ACTION_test'} = q{
     sub ACTION_test {
         my ($self) = @_;
 
@@ -614,7 +650,7 @@ $code{ACTION_test} = q{
 
 	for (keys %{$config{custom_code_href}}) { $code{$_} = $config{custom_code_href}->{$_}; }
 
-	for (keys %code) { $code .= $code{$_}; }
+	for (sort keys %code) { $code .= $code{$_}; }
 
 	return $code;
 }
