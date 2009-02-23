@@ -1383,7 +1383,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 				$s =~ s:\\:\/:g;								# unixify $s for processing
 				$s =~ s/$home_path_re/$home_paths{lc($1)}$2/;	# need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
 #				if ($opt{dosify}) { $s =~ s:\/:\\:g; };
-				if ($opt{dosify}) { _dosify($s); };
+				#if ($opt{dosify}) { _dosify($s); };
 				#print "pat(post-prefix) = `$pat`\n";
 				#print "s(post-prefix)   = `$s`\n";
 				}

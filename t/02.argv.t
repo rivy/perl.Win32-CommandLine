@@ -159,13 +159,21 @@ add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\Documents an
 ### use TEST_FRAGILE
 if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+	add_test( [ qq{$0 ~*}, { dosify => 1 } ], ( q{~*} ) );
 	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~}, { dosify => 1 } ], ( q{"C:\\Documents and Settings\\Administrator"} ) );
 	add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~ ~administrator}, { dosify => 1 } ], ( q{"C:\\Documents and Settings\\Administrator"}, q{"C:\\Documents and Settings\\Administrator"} ) );
 	add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+	add_test( [ qq{$0 ~administrator/}, { dosify => 1 } ], ( q{"C:\\Documents and Settings\Administrator\\"} ) );
 	add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+	add_test( [ qq{$0 x ~administrator\\ x}, { dosify => 1 } ], ( 'x', q{"C:\\Documents and Settings\\Administrator\\"}, 'x' ) );
 	add_test( [ qq{$0 ~"administrator"} ], ( q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~"administrator"}, { dosify => 1 } ], ( q{"C:\\Documents and Settings\\Administrator"} ) );
 	add_test( [ qq{$0 ~"administrator"/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+	add_test( [ qq{$0 ~"administrator"/}, { dosify => 1 } ], ( q{"C:\\Documents and Settings\\Administrator\\"} ) );
 	add_test( [ qq{$0 ~"administrator"test} ], ( q{~administratortest} ) );
+	add_test( [ qq{$0 ~"administrator"test}, { dosify => 1 } ], ( q{~administratortest} ) );
 
 	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
