@@ -30,6 +30,10 @@ Options:
 
 =over
 
+=item --dosify, --dos, -d
+
+"Dosify" output
+
 =item --where, -w, --all, -a
 
 Find and print B<<all>> possible executable paths for the filename(s) given
@@ -82,11 +86,13 @@ use File::Spec;
 
 use Env::Path qw(PATH);
 
+#sub dosify;
+
 @ARGV = Win32::CommandLine::argv( {glob => 0} ) if eval { require Win32::CommandLine; };
 
 # getopt
 my %ARGV = ();
-GetOptions (\%ARGV, 'where|w|all|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
+GetOptions (\%ARGV, 'where|w|all|a', 'help|h|?|usage', 'man', 'version|ver|v', 'dosify|dos|d') or pod2usage(2);
 Getopt::Long::VersionMessage() if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage(-verbose => 2) if $ARGV{'man'};
@@ -102,6 +108,33 @@ foreach (@ARGV)
 	if (! $ARGV{where} && @w) { @w = $w[0]; }
 	my %printed;
 #	# output full path for all matches (and no repeats [repeats can happen if the PATH contains multiple references to the same location])
-	for (@w) { if ($_) {$_ = File::Spec->rel2abs($_); if (!$printed{$_}) {$printed{$_}=1; print $_."\n"; } } }
+	for (@w) { if ($_) {$_ = File::Spec->rel2abs($_); if (!$printed{$_}) {$printed{$_}=1; print ''.($ARGV{dosify} ? _dosify($_) : $_)."\n"; } } }
 	#if (@w) { print join("\n", @w)."\n"; }
 	}
+
+sub	_dosify {
+	# _dosify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# dosify string, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+	# CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
+	#	:: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
+	#				 {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+
+	# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
+	my $dos_special_chars = '"<>|';
+	my $dc = quotemeta( $dos_special_chars );
+	for (@_ ? @_ : $_)
+		{
+		#print "_ = $_\n";
+		s:\/:\\:g;								# forward to back slashes
+		if ( $_ =~ qr{(\s|[$dc])} )
+			{
+			#print "in qr\n";
+			s:":\\":g;							# CMD: preserve double-quotes with backslash	# TODO: change to $dos_escape	## no critic (ProhibitUnusualDelimiters)
+			s:([\\]+)\\":($1 x 2).q{\\"}:eg;	# double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
+			$_ = q{"}.$_.q{"};					# quote the final token
+			};
+		}
+
+	return wantarray ? @_ : "@_";
+}

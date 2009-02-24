@@ -13,6 +13,7 @@
         <copy file="${bat.source.path}\advanced\exout.bat" todir="extras" flatten="true" />
         <copy file="extras\exout.bat" todir="${bin.path}" flatten="true" />
         <copy file="extras\which.pl" todir="${bin.path}" flatten="true" />
+        <copy file="extras\dosify.bat" todir="${bin.path}" flatten="true" />
         <copy file="eg\to.bat" todir="${bin.path}" flatten="true" />
     </target>
 
