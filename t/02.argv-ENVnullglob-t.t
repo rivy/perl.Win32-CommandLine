@@ -51,9 +51,9 @@ add_test( [ qq{$0 "a b" c"" } ], ( "a b", "c" ) );
 
 add_test( [ qq{$0 "a b" c""d } ], ( "a b", "cd" ) );
 
-add_test( [ qq{$0 'a b" c'} ], ( qq{a b" c} ) );
+add_test( [ qq{$0 'a b" c'} ], ( qq{a b" c} ) );	##"
 
-add_test( [ qq{$0 'a bb" c'} ], ( qq{a bb" c} ) );
+add_test( [ qq{$0 'a bb" c'} ], ( qq{a bb" c} ) );	##"
 
 add_test( [ qq{$0 \$'test'} ], ( qq{test} ) );
 
@@ -71,7 +71,7 @@ add_test( [ qq{$0 a b c t/\*.t} ], ( qw{a b c}, glob('t/*.t') ) );
 
 add_test( [ qq{$0 a t/\*.t b} ], ( "a", glob('t/*.t'), "b" ) );
 
-add_test( [ qq{$0 t/\"*".t} ], ( q{t/*.t} ) );
+add_test( [ qq{$0 t/\"*".t} ], ( q{t/*.t} ) );	##"
 
 add_test( [ qq{$0 t/\'*'.t} ], ( q{t/*.t} ) );
 

@@ -16,11 +16,19 @@ set args=%*
 :: <args> == null => to ~
 if [%args%]==[] ( set args=~ )
 :: remove leading ~ (if it exists)
+set tilde=~
 set prefix_char=%args:~0,1%
 set suffix=%args:~1%
-if [%prefix_char%]==[~] (
+
+:: ^%prefix_char% is used to escape the character in cases where it might be a quote character
+if [^%prefix_char%] == [^%tilde%] (
 	:: avoid interpretation of set unless the leading character is ~ [arguments surrounded by quotes would otherwise cause a syntax error for %suffix% with only a trailing quote
 	set args=%suffix%
+	)
+if 01 == 1.0 (
+	:: :4NT/TCC/TCMD quirk: "if [^%prefix_char%] == [^%tilde%]" DOESN'T work in 4NT/TCC/TCMD
+	:: : used 4NT/TCC/TCMD %@ltrim[] instead
+	set args=%@ltrim[~,%args%]
 	)
 
 ::echo prefix_char = %prefix_char%
@@ -29,4 +37,3 @@ if [%prefix_char%]==[~] (
 
 :: URLref: http://www.ss64.com/nt/endlocal.html :: combining set with endlocal
 endlocal & x -S cd ~%args%
-

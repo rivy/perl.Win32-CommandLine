@@ -141,13 +141,6 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
 add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
 
-# FRAGILE
-add_test( [ qq{$0 }.q{c:/{windows}}, { dosify => 1 } ], ( q{c:\windows} ) );
-add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\Documents and Settings"} ) );
-add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\windows} ) );
-add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\Documents and Settings"} ) );
-#
-
 # TODO BUG: "\\loish\Shared Documents"\* => "\\loish\Shared Documents" and glob of '\*'
 # TODO: create tests for above
 # TODO: create tests for "\\127.0.0.1\"...
@@ -158,6 +151,14 @@ add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\Documents an
 ### TEST_FRAGILE == tests which require a specific environment setup to work
 ### use TEST_FRAGILE
 if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+	# SLIGHTLY-FRAGILE
+	add_test( [ qq{$0 }.q{c:/{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
+	add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
+	add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
+	add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
+	add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\02.argv.t "c:\\"win*`) at t\\02.argv.t line 235}.qq{\n} ) );		##"
+	add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\02.argv.t "c:\\"win*`) at t\\02.argv.t line 235}.qq{\n} ) );
+	#
 	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
 	add_test( [ qq{$0 ~*}, { dosify => 1 } ], ( q{~*} ) );
 	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
@@ -176,20 +177,23 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 	add_test( [ qq{$0 ~"administrator"test}, { dosify => 1 } ], ( q{~administratortest} ) );
 
 	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
-	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$"\\WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{//sethra/C$/WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
-	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$"\\WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
 	add_test( [ qq{$0 }.q{//sethra/C$/WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
+
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\02.argv.t "\\\\sethra\\C$\\"WIND*`) at t\\02.argv.t line 235}.qq{\n} ) );	##"
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\02.argv.t "\\\\sethra\\C$\\"WIND*`) at t\\02.argv.t line 235}.qq{\n} ) );	##"
 	}
 ###
 
 ## TODO: test backslash escapes within quotes (how to output ", \", etc) => {\"} => {"}, {\\"} => {\"}, ...
 
-add_test( [ qq{$0 }.q{"\\"} ], ( q{\\} ) );
-add_test( [ qq{$0 }.q{"\\"}, { dosify => 1 } ], ( q{\\} ) );
+#add_test( [ qq{$0 }.q{"\\"} ], ( q{\\} ) );					## EVALUATE
+#add_test( [ qq{$0 }.q{"\\"}, { dosify => 1 } ], ( q{\\} ) );	## EVALUATE
 add_test( [ qq{$0 }.q{"\\\\"} ], ( q{\\} ) );
 add_test( [ qq{$0 }.q{"\\\\"}, { dosify => 1 } ], ( q{\\} ) );
 # double-quotes
@@ -228,4 +232,4 @@ my @tests;
 sub add_test { push @tests, \@_; return; }
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
-sub do_tests { foreach my $t (@tests) { my @args = @{shift @{$t}}; my @exp = @{$t}; my @got = Win32::CommandLine::_argv(@args); eq_or_diff \@got, \@exp, "testing _argv parse: `@args`"; } return; }
+sub do_tests { foreach my $t (@tests) { my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; eval { @got = Win32::CommandLine::_argv(@args); 1; } or @got = ( $@ ); eq_or_diff \@got, \@exp, "testing _argv parse: `@args`"; } return; }

@@ -14,6 +14,8 @@ package Win32::CommandLine;
 
 # TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
 
+# TODO: deal with possible reinterpretation of $() by x.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT
+
 use strict;
 use warnings;
 #use diagnostics;	# invoke blabbermouth warning mode
@@ -500,7 +502,7 @@ sub	_dequote{
 	return wantarray ? @_ :	"@_";
 	}
 
-sub	_zero_position {
+sub	_zero_position_v1 {
 	# _zero_position( $q_re, @args ): returns $
 	# find and return the position of the current executable within the given argument array
 	# $q_re = allowable quotation marks (possibly surrounding the executable name)
@@ -567,7 +569,7 @@ sub	_zero_position {
 
 	return $pos;
 }
-sub _get_next_chunk;
+#sub _get_next_chunk;
 sub	_argv_parse{
 	# _argv( $ [,\%] ):	returns	@
 	# parse scalar using bash-like rules for quotes and subshell block replacements (no environment variable substitutions or globbing are performed)
@@ -605,7 +607,7 @@ sub	_argv_parse{
 		##$s = _ltrim($s, {trim_re => '(?s)[\s\n]+'});		# ?needed
 		$s = _ltrim($s);
 		# get and concatenate chunks
-		print "1.s = `$s`\n";
+		#print "1.s = `$s`\n";
 		while ($s =~ /^\S/)
 			{# $s has initial non-whitespace character
 			# process and concat chunks until non-quoted whitespace is encountered
@@ -622,13 +624,13 @@ sub	_argv_parse{
 			my $type;
 			($chunk, $s, $type) = _get_next_chunk( $s );
 
-			print "2.s = `$s`\n";
-			print "2.chunk = `$chunk`\n";
-			print "2.type = `$type`\n";
+			#print "2.s = `$s`\n";
+			#print "2.chunk = `$chunk`\n";
+			#print "2.type = `$type`\n";
 
 			if ($type eq 'subshell_start')
 				{
-				print ":in subshell_start\n";
+				#print ":in subshell_start\n";
 				# NOTE: UN-like BASH, the internal subshell command block may be quoted and will be interpreted with any external, balanced quotes (' or ") removed. This allows pipe and redirection characters within the subshell command block (eg, $("dir | sort")).
 				my $in_subshell_n = 1;
 				my $block = q{};
@@ -636,10 +638,10 @@ sub	_argv_parse{
 				($block_chunk, $s, $type) = _get_next_chunk( $s );
 				while ($in_subshell_n > 0)
 					{
-					print "ss:block_chunk = `$block_chunk`\n";
-					print "ss:type = `$type`\n";
-					print "ss:s = `$s`\n";
-					if ($block_chunk eq q{}) { die 'unbalanced subshell block'; }
+					#print "ss:block_chunk = `$block_chunk`\n";
+					#print "ss:type = `$type`\n";
+					#print "ss:s = `$s`\n";
+					if ($block_chunk eq q{}) { die 'unbalanced subshell block [#1]'; }
 					elsif ($type eq 'subshell_start') { $in_subshell_n++; }
 					elsif ($type eq 'subshell_end') { $in_subshell_n--; }
 					else {
@@ -648,9 +650,9 @@ sub	_argv_parse{
 						}
 					}
 				$block = _dequote($block);
-				print "block = `$block`\n";
+				#print "block = `$block`\n";
 				my $output = `$block`;
-				print "output = `$output`\n";
+				#print "output = `$output`\n";
 				if ($opt{_die_subshell_error} and $?) { die 'error '.($? >> 8).' while executing subshell block `'.$block.'`'; }
 				$output =~ s/\n$//s; # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
 				$s = $output . $s; # graft to the front of $s for further interpretation
@@ -658,9 +660,9 @@ sub	_argv_parse{
 				}
 			elsif ($type eq '$double-quoted')
 				{
-				print ":in \$double-quoted\n";
+				#print ":in \$double-quoted\n";
 				my $ss = _dequote(_ltrim($chunk, { trim_re => '\s+|\$' }));	# trim whitespace and initial $ and then remove outer quotes
-				print "\$dq.1.ss = `$ss`\n";
+				#print "\$dq.1.ss = `$ss`\n";
 				while ($ss ne q{})
 					{
 					# remove and concat any initial non-escaped/non-subshell portion of the string
@@ -675,8 +677,8 @@ sub	_argv_parse{
 							if (substr($o, 0, 1) eq '\\') { $o = substr($o, 1, 1); }
 							else
 								{# subshell_start
-								print "\$double-quote: in subshell consumer\n";
-								print "\$dq.sss.ss = `$ss`\n";
+								#print "\$double-quote: in subshell consumer\n";
+								#print "\$dq.sss.ss = `$ss`\n";
 								# NOTE: UNlike BASH, the internal subshell command block may be quoted and will be interpreted with any external, balanced quotes (' or ") removed. This allows pipe and redirection characters within the subshell command block (eg, $("dir | sort")).
 								my $in_subshell_n = 1;
 								my $block = q{};
@@ -684,10 +686,10 @@ sub	_argv_parse{
 								($block_chunk, $ss, $type) = _get_next_chunk( $ss );
 								while ($in_subshell_n > 0)
 									{
-									print "ssc:block_chunk = `$block_chunk`\n";
-									print "ssc:type = `$type`\n";
-									print "ssc:ss = `$ss`\n";
-									if ($block_chunk eq q{}) { die 'unbalanced subshell block'; }
+									#print "ssc:block_chunk = `$block_chunk`\n";
+									#print "ssc:type = `$type`\n";
+									#print "ssc:ss = `$ss`\n";
+									if ($block_chunk eq q{}) { die 'unbalanced subshell block [#2]'; }
 									elsif ($type eq 'subshell_start') { $in_subshell_n++; }
 									elsif ($type eq 'subshell_end') { $in_subshell_n--; }
 									else {
@@ -696,9 +698,9 @@ sub	_argv_parse{
 										}
 									}
 								$block = _dequote($block);
-								print "block = `$block`\n";
+								#print "block = `$block`\n";
 								my $output = `$block`;
-								print "output = `$output`\n";
+								#print "output = `$output`\n";
 								if ($opt{_die_subshell_error} and $?) { die 'error '.($? >> 8).' while executing subshell block `'.$block.'`'; }
 								$output =~ s/\n$//s; # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
 								$o = $output;	# output as single token ## do this within $"..."
@@ -708,58 +710,64 @@ sub	_argv_parse{
 						push @argY, { token => $o, glob => 0, id => "[$type]" };
 						$t .= $argY[-1]->{token};
 						#push @{	$argX[ $i ] }, { token => _dequote($o), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
-						print "\$dq.dq.0.t = `$t`\n";
-						print "\$dq.dq.0.ss = `$ss`\n";
+						#print "\$dq.dq.0.t = `$t`\n";
+						#print "\$dq.dq.0.ss = `$ss`\n";
 						}
 					}
 				}
 			elsif ($type eq 'double-quoted')
 				{
-				print ":in double-quoted\n";
+				#print ":in double-quoted\n";
 				#$t .= _dequote(_decode_dosqq(_ltrim($chunk)));
 				push @argY, { token => _dequote(_decode_dosqq(_ltrim($chunk))), glob => $opt{_glob_within_qq}, id => "[$type]" };
 				$t .= $argY[-1]->{token};
 				}
 			elsif ($type eq '$single-quoted')
 				{
-				print ":in \$single-quoted\n";
+				#print ":in \$single-quoted\n";
 				# trim whitespace and initial $, decode, and then remove outer quotes
 				push @argY, { token => _dequote(_decode(_ltrim($chunk, { trim_re => '\s+|\$' }))), glob => 0, id => "[$type]" };
 				$t .= $argY[-1]->{token};
 				}
 			elsif ($type eq 'single-quoted')
 				{
-				print ":in single-quoted\n";
+				#print ":in single-quoted\n";
 				#$t .= _dequote(_ltrim($chunk));
 				push @argY, { token => _dequote(_ltrim($chunk)), glob => 0, id => "[$type]" };
 				$t .= $argY[-1]->{token};
 				}
 			else ## default to ($type eq 'simple') [also assumes the 'null' case which should be impossible]
 				{
-				print ":in default\n";
+				#print ":in default[$type]\n";
 				push @argY, { token => _ltrim($chunk), glob => 1, id => '[default]:'.$type };
-				$t .= $argY[-1]->{token};
-				if (($chunk =~ /^['"]/) and $opt{_carp_unbalanced}) { Carp::croak 'Unbalanced command line quotes [#1] (at token`'.$chunk.'` from command line `'.$command_line.'`)'; }	#"
+				my $token = $argY[-1]->{token};
+				#print "token = $token\n";
+				$t .= $token;
+#				if (($token =~ /^[\'\"]/) and $opt{_carp_unbalanced}) { Carp::croak 'Unbalanced command line quotes [#1] (at token`'.$token.'` from command line `'.$command_line.'`)'; }	#"
+				if ($token =~ /^[\'\"]/) { Carp::croak 'Unbalanced command line quotes [#1] (at token`'.$token.'` from command line `'.$command_line.'`)'; }	#"
 				Carp::Assert::assert( $type ne 'null', 'Found a null chunk in $s (should be impossible with $s =~ /^\S/)' );
 				}
 			Carp::Assert::assert( $start_s2 ne $s, 'Parsing is not proceeding ($s is unchanged)' );
 			}
-		print "t = `$t`\n";
+		#print "t = `$t`\n";
 		push @args, { token => $t, chunks => \@argY };
 		_ltrim($s);
 		##_ltrim($s, {trim_re => '(?s)[\s]+'});		## ?needed for multi-NL command lines?
-		print "[end (\$s ne '')] s = `$s`\n";
+		#print "[end (\$s ne '')] s = `$s`\n";
 		Carp::Assert::assert( $start_s1 ne $s, 'Parsing is not proceeding ($s is unchanged)' );
 		}
-	print "-- _argv_parse [RETURNING]\n";
+	#print "-- _argv_parse [RETURNING]\n";
 	#print "args[".scalar(@args)."] => `@args`\n";
-	print "args[".scalar(@args)."]\n";
+	#print "args[".scalar(@args)."]\n";
 	#push @{	$argX[ $i ] }, { token => _dequote($o), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
 	#print "argX[".scalar(@argX)."]\n";
 #	for (@argX) { print "token = ".$_->{token}."; glob = ".$_->{glob}."; id = ".$_->{id}."\n"; }
 #	foreach (@argX) { print "token = ".$_->{token}."; glob = ".$_->{glob}."; id = ".$_->{id}."\n"; }
 #	for my $a (@argX) { for my $aa (@{$a}) {print "token = $a->[0]->{token}; glob = $a->[0]->{glob}; id = $a->[0]->{id}; \n"; } }
-	for my $arg (@args) { print "token = $arg->{token};\n"; for my $chunk (@{$arg->{chunks}}) { print "::chunk = $chunk->{token}; glob = $chunk->{glob}; id = $chunk->{id}; \n"; } }
+	#for my $arg (@args) { print "token = $arg->{token};\n"; for my $chunk (@{$arg->{chunks}}) { print "::chunk = $chunk->{token}; glob = $chunk->{glob}; id = $chunk->{id}; \n"; } }
+
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+
 	return @args;
 }
 
@@ -800,16 +808,16 @@ sub _get_next_chunk{
 
 	$ret_chunk = q{};
 
-	print "gc.1.s = `$s`\n";
+	#print "gc.1.s = `$s`\n";
 	if ($s =~ /^(\s+)(.*)/s)
 		{# remove leading whitespace
-		print "ws.1	= `$1`\n" if $1;
-		print "ws.2	= `$2`\n" if $2;
+		#print "ws.1	= `$1`\n" if $1;
+		#print "ws.2	= `$2`\n" if $2;
 		$ret_type = 'null';		# 'null' type so far
 		$ret_chunk = $1;
 		$s = defined($2) ? $2 : q{};
 		}
-	print "gc.2.s = `$s`\n";
+	#print "gc.2.s = `$s`\n";
 	if ($s ne q{})
 		{
 		if ($s =~ /^(\$\()(.*)$/s)
@@ -865,16 +873,27 @@ sub _get_next_chunk{
 			$ret_chunk .= $1;
 			$s = defined($2) ? $2 : q{};
 			}
+		elsif ($s =~ /^([$q_qm].*)$/s)
+			{# quoted chunk unmatched above (unbalanced)
+			# $1 = quoted token
+			#print "ub.1	= `$1`\n" if $1;
+			$ret_type = 'unbalanced-quoted';
+			$ret_chunk .= $1;
+			$s = q{};
+			}
 		else
-			{# simple non-whitespace chunk	##default	# added non-subshell end
+			{# simple non-whitespace chunk	##default
+			# added non-subshell end
 			## n#o critic ( ProhibitDeepNests )
-			$s =~ /^([^\s$q_qm)]+)(.*)/s;
+			Carp::Assert::assert( $s =~	/^\S/ );
+			$s =~ /^([^\s$q_qm\)]+)(.*)/s;
+			Carp::Assert::assert( defined $1 );
 			# $1 = non-whitespace/non-quoted token
 			# $2 = rest	of string [if exists]
-			print "simple.1	= `$1`\n" if defined($1);
-			print "simple.2	= `$2`\n" if defined($2);
+			#print "simple.1	= `$1`\n" if defined($1);
+			#print "simple.2	= `$2`\n" if defined($2);
 			$ret_type = 'simple';
-			$ret_chunk .= $1;
+			$ret_chunk .= defined($1) ? $1 : q{};
 			$s = defined($2) ? $2 : q{};
 			}
 		}
@@ -887,6 +906,7 @@ sub	_argv_do_glob{
 	## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 	my %opt	= (
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
+		glob => 1,		## REMOVE this??
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
 		);
 
@@ -920,7 +940,7 @@ sub	_argv_do_glob{
 		{
 		use	File::Glob qw( :glob );
 		my @g =	();
-		#print "args[$i] = $args[$i] (globok = $args_globok[$i])\n";
+		#print "args[$i] = $args[$i]->{token}\n";
 		my $pat;
 
 		$pat = q{};
@@ -979,10 +999,12 @@ sub	_argv_do_glob{
 
 			if ( $pat =~ /\\[?*]/ )
 				{ ## '?' and '*' are not allowed in	filenames in Win32,	and	Win32 DosISH globbing doesn't correctly	escape them	when backslash quoted, so skip globbing for any tokens containing these characters
+				#print "pat contains escaped wildcard characters ($pat)\n";
 				@g = ( $s );
 				}
 			else
 				{
+				#print "bsd_glob of `$pat`\n";
 				@g = bsd_glob( $pat, $glob_flags );
 				#print "s = $s\n";
 				if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
@@ -992,10 +1014,10 @@ sub	_argv_do_glob{
 			{
 			@g = ( $s );
 			}
-		print "glob_this = $glob_this\n";
-		print "s	= `$s`\n";
-		print "pat	= `$pat`\n";
-		print "\@g	= @g\n";
+		#print "glob_this = $glob_this\n";
+		#print "s	= `$s`\n";
+		#print "pat	= `$pat`\n";
+		#print "\@g	= { @g }\n";
 
 		# if whitespace or special characters, surround with double-quotes ((::whole token:: or just individual problem characters??))
 		if ($opt{dosify})
@@ -1006,28 +1028,30 @@ sub	_argv_do_glob{
 		$args[$i]->{globs} = \@g;
 		}
 
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+
 	return @args;
 }
 
-sub	_zero_position_NEW{
-	# _zero_position( $q_re, @args ): returns $
+sub	_zero_position{
+	# _zero_position( @args, \% ): returns $
 	# find and return the position of the current executable within the given argument array
-	# $q_re = allowable quotation marks (possibly surrounding the executable name)
 	# @args = the parsed argument array		## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 	my %opt	= (
+		''=>'',							# placeholder to allow {''=><x>} as a named optional parameter group because the function takes complex parameters which will be seen as a HASHREF
 		quote_re => qq{[\x22\x27]},		# = <regexp> [default = single/double quotes]	## allowable quotation marks (possibly surrounding the executable name)
 		);
 
-#	# read/expand optional named parameters
-#	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
-#
-#	my $opt_ref;
-#	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
-#	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp "Unknown option '$_' supplied for function ".$me;	} }	}
+	# read/expand optional named parameters
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+
+	my $opt_ref;
+	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
+	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp "Unknown option '$_' supplied for function ".$me;	} }	}
 
 	use	English	qw(	-no_match_vars ) ;	# '-no_match_vars' avoids regex	performance	penalty
 
-	my $q_re =	shift @_;
+	my $q_re = $opt{quote_re};
 	my @args = @_;
 
 	my $pos;
@@ -1042,10 +1066,13 @@ sub	_zero_position_NEW{
 	#print "zero_lc	= $zero_lc\n";
 	#print "zero_dq	= $zero_dq\n";
 
+	#print "#args	= $#args\n";
+	#print "$me:starting search\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 #	while (my $arg = shift @a) {
-	for	($pos=0; $pos<$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
+	for	($pos=0; $pos<=$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
 		my $arg	= $args[$pos]->{token};
 #	 for my	$arg (@a) {
+		#print "pos	= $pos\n";
 		#print "arg	= $arg\n";
 		if ($zero_lc eq	lc($arg))
 			{ #	direct match
@@ -1088,17 +1115,20 @@ sub	_zero_position_NEW{
 	return $pos;
 }
 
-sub	_argv_NEW{
+sub	_argv{
 	# _argv( $ [,\%] ):	returns	@
 	# parse	scalar as a	command	line string	(bash-like parsing of quoted strings with globbing of resultant	tokens,	but	no other expansions	or substitutions are performed)
 	# [\%]: an optional hash_ref containing function options as named parameters
 	my %opt	= (
+		remove_exe_prefix => 1,		# = 0/<true> [default = true]		# if true, remove all initial args up to and including the exe name from the @args array
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
 		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
 		glob => 1,					# = 0/<true> [default = true]		# when true, globbing is performed
+		## TODO: rework this ... need carp/croak on unbalanced quotes/subshells (? carp_ub_quotes, carp_ub_shells, carp = 0/1/warn/carp/die/croak)
+		croak_unbalanced => 1,		# = 0/true/'quotes'/'subshells' [default = true] # if true, croak for unbalanced command line quotes or subshell blocks (takes precedence over carp_unbalanced)
+		carp_unbalanced => 1,		# = 0/true/'quotes'/'subshells' [default = true] # if true, carp for unbalanced command line quotes or subshell blocks
 		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
-		_carp_unbalanced => 1,		# = 0/true/'quotes'/'subshells' [default = true] # <private> if true, carp for unbalanced command line quotes or subshell blocks
 		_die_subshell_error => 1,	# = true/false [default = true]		# <private> if true, die on any subshell call returning an error
 		);
 
@@ -1111,20 +1141,58 @@ sub	_argv_NEW{
 
 	my $command_line = shift @_;
 
+	#print "$me: command_line = $command_line\n";
+
 	# parse	tokens from	the	$command_line string
 	my @args = _argv_parse( $command_line, { _glob_within_qq => $opt{_glob_within_qq}, _carp_unbalanced => $opt{_carp_unbalanced}, _die_subshell_error => $opt{_die_subshell_error} } );
 	#@args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
-	# remove $0	(and any prior entries)	from ARGV array	(and the matching glob_ok signal array)
-	#my $p = _zero_position_NEW( @args, {} );
-	my $p = _zero_position_NEW( @args, {} );
-	@args = @args[$p+1..$#args];
+	#print "$me:pre-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
-	# do globbing
-	@args = _argv_do_glob( @args, { dosify => $opt{dosify}, nullglob => $opt{nullglob} } );
+	if ($opt{remove_exe_prefix})
+		{# remove $0	(and any prior entries)	from ARGV array	(and the matching glob_ok signal array)
+		#my $p = _zero_position( @args, {} );
+		my $p = _zero_position( @args, {''=>''} );
+		#print "p = $p\n";
+		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+		@args = @args[$p+1..$#args];
+		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+		}
+
+	#print "$me:post-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+
+	if ($opt{glob})
+		{# do globbing
+		#print 'globbing'.qq{\n};
+		@args = _argv_do_glob( @args, { dosify => $opt{dosify}, nullglob => $opt{nullglob} } );
+		}
+	else
+		{# copy tokens to 'glob' position (for output later)
+		#TODO: testing
+		#print 'NO globbing'.qq{\n};
+		for my $arg (@args) { $arg->{globs} = [ $arg->{token} ]; }
+		}
+
+	## TODO: TEST
+	if ($opt{dosify} eq 'all')
+		{
+		foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { _dosify($glob); }}}
+		}
+	if ($opt{unixify} eq 'all')
+		{
+		foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { $glob =~ s:\\:\/:g; }}}
+		}
 
 	my @g;
-	for my $arg (@args) { for my $glob ($arg->{globs}) { push @g, $glob; } }
+	#print "$me:gather globs\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; print "args[$pos]->{globs} = `$args[$pos]->{globs}`\n"; my @globs = $args[$pos]->{globs}; for (my $xpos=0; $xpos<$#globs; $xpos++) { print "globs[$pos] = `$globs[$pos]`\n"; } }
+	for my $arg (@args)
+		{
+		my @globs = @{$arg->{globs}};
+		for (@globs) { push @g, $_; }
+		}
+
+	#@g = ('this', 'that', 'the other');
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "g[$pos] = `$g[$pos]`\n"; }
 
 	return @g;
 }
@@ -1147,7 +1215,7 @@ sub	_quote_gc_meta{
 	return $s;
 }
 
-sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
+sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	# _argv( $command_line )
 
 	# [seperated from argv() for testing]
@@ -1398,7 +1466,7 @@ sub	_argv{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	#print "" . Dumper( @argv_3 )."\n";
 
 	# remove $0 (and any prior entries) from ARGV array (and the matching glob signal array)
-	my $n = _zero_position( '['.$q_qm.']',	@argv2 );
+	my $n = _zero_position_v1( '['.$q_qm.']',	@argv2 );
 	#print "n = $n\n";
 	@argv2 = @argv2[$n+1..$#argv2];
 	@argv2_globok =	@argv2_globok[$n+1..$#argv2_globok];
@@ -2102,6 +2170,11 @@ GOTCHA: Some programs expect their arguments to maintain their surrounding quote
 GOTCHA: {4NT/TCC/TCMD} The shell interprets and _removes_ backquote characters before executing the command. You must quote backquote characters with _double-quotes_ to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
 		??? fix this by using $ENV{CMDLINE} which is set by TCC? => attempts to workaround this using $ENV{CMDLINE} fail because TCC doesn't have control between processes and can't set the new CMDLINE value if one process directly creates another (and I'm not sure how to detect that TCC started the process)
 		-- can try PPIDs if Win32::API is present... => DONE [2009-02-18] [seems to be working now... if Win32::API is available, parentEXE is checked and $ENV{CMDLINE} is used if the parent process matches 4nt/tcc/tcmd]
+
+GOTCHA: Note this behavior (ending \" => ", which is probably not what is desired or expected in this case (? what about other cases, should this be "fixed" or would it break something else?)
+	C:\...\perl\Win32-CommandLine
+	>t\prelim\echo.exe "\\sethra\C$\"win*
+	[0]\\sethra\C$"win*
 
 No bugs have been reported.
 
