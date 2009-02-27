@@ -94,8 +94,9 @@ x -e //sethra/c$/*
 x -e \\sethra\c$\*
 x -e \\sethra/c$\*
 x -e //sethra\c$\*
-x -S set os_version=$(ver)
 
+$version_output = `ver`;
+x -e set os_version=$(ver)	=> expect "set os_version=".$version_output
 
 to ~
 to 1

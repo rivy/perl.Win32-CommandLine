@@ -36,4 +36,4 @@ if 01 == 1.0 (
 ::echo args = %args%
 
 :: URLref: http://www.ss64.com/nt/endlocal.html :: combining set with endlocal
-endlocal & x -S cd ~%args%
+endlocal & xx -s cd ~%args%

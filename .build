@@ -10,10 +10,11 @@
         <nant buildfile="../.build" />
         <exec program="perl.exe" commandline="Build.PL" if="${ not file::exists('_build\lib\RIVY\Builder.pm') or not file::up-to-date('Build.PL','_build\lib\RIVY\Builder.pm') }" />
         <!-- TODO: make FAIL (not just no copy) if target NEWER than SOURCE -->
-        <copy file="${bat.source.path}\advanced\exout.bat" todir="extras" flatten="true" />
-        <copy file="extras\exout.bat" todir="${bin.path}" flatten="true" />
+        <copy file="${bat.source.path}\advanced\so.bat" todir="extras" flatten="true" />
+        <copy file="extras\so.bat" todir="${bin.path}" flatten="true" />
         <copy file="extras\which.pl" todir="${bin.path}" flatten="true" />
         <copy file="extras\dosify.bat" todir="${bin.path}" flatten="true" />
+        <copy file="extras\quote.bat" todir="${bin.path}" flatten="true" />
         <copy file="eg\to.bat" todir="${bin.path}" flatten="true" />
     </target>
 

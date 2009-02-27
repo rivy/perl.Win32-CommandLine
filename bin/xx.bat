@@ -13,64 +13,59 @@
 :: localize ENV changes until sourcing is pending
 setlocal
 
-set _x_bat=nul
+set _xx_bat=nul
 
 ::echo *=%*
 
-if NOT [%1]==[-S] ( goto :pass_findUniqueTemp )
+if [%1]==[-s] ( goto :findUniqueTemp )
+if [%1]==[-so] ( goto :findUniqueTemp )
+goto :pass_findUniqueTemp
 
 :: find bat file for sourcing and instantiate it with 1st line of text
 :findUniqueTemp
-set _x_bat="%temp%\x.bat.source.%RANDOM%.bat"
-if EXIST %_x_bat% ( goto :findUniqueTemp )
-echo @:: %_x_bat% file > %_x_bat%
+set _xx_bat="%temp%\x.bat.source.%RANDOM%.bat"
+if EXIST %_xx_bat% ( goto :findUniqueTemp )
+echo @:: %_xx_bat% file > %_xx_bat%
 :pass_findUniqueTemp
-::echo _x_bat=%_x_bat%
+::echo _xx_bat=%_xx_bat%
 
 :: 4NT/TCC
 ::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
 if 01 == 1.0 ( setdos /x-14567 )
 
-:: gather all arguments (work for WinNT [and should work for previous versions as well])
-:: CMD quirk
-set args=%*
-:: 4NT/TCC/TCMD quirk
-::if 01 == 1.0 ( set args=%* )
-
-::echo args=%args%
-
-if NOT [%_x_bat%]==[nul] ( goto :source_output )
+if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
 ::echo "perl output"
-::perl -x -S %0 %*
-perl -x -S %0 %args%
+perl -x -S %0 %*
 if NOT %errorlevel% == 0 (
-	endlocal & exit /B %errorlevel%
+::	endlocal & exit /B %errorlevel%
+	exit /B %errorlevel%
 	)
 endlocal
 goto :done
 
-:source_output
+:source_expansion
 if 01 == 1.0 ( setdos /x0 )
-echo @echo OFF >> %_x_bat%
+echo @echo OFF >> %_xx_bat%
 ::echo "perl output"
-perl -x -S %0 %args% >> %_x_bat%
+perl -x -S %0 %* >> %_xx_bat%
 ::echo "sourcing - started"
 if NOT %errorlevel% == 0 (
-	erase %_x_bat% 1>nul 2>nul
-	endlocal &  exit /B %errorlevel%
+	erase %_xx_bat% 1>nul 2>nul
+::	endlocal &  exit /B %errorlevel%
+	exit /B %errorlevel%
 	)
 ::echo "sourcing & cleanup..."
-endlocal & call %_x_bat% & erase %_x_bat% 1>nul 2>nul
+endlocal & call %_xx_bat% & erase %_xx_bat% 1>nul 2>nul
 
 :done
 goto endofperl
 @rem ';
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#line 68
+#line 65
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
 
-# x [OPTIONS] <command> <arg(s)>
+# xx [OPTIONS] <command> <arg(s)>
 # execute <command> with parsed <arg(s)>
 # a .bat file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see documentation for pl2bat [ADVANTAGES, specifically Method 5] for further explanation)
 # see linux 'xargs' and 'source' commands for something similar
@@ -78,8 +73,6 @@ goto endofperl
 #	NOTE: using $"<string>" => "<string>" quote preservation behavior can overcome this issue (eg, x perl -e $"print 'test'")
 #		[??] $"<string>" under bash ignores the $ if C or POSIX locale in force, and only leaves string qq'd if translated to another locale
 #	NOTE: or use another method to preserve quotes for appropriate commands (such as "'"'<string'"'" (noisy but it works)
-
-# '-a' is the one optional paramater (placed immediately before the <command>) => print expanded args and quit (WITHOUT executing the command)
 
 #TODO: add option to see "normal", "dosify", and "unixify" options for echo/args to see what a command using Win32::CommandLine will get
 #	??	-a = -ad => expanded arguments as x.bat would for an another executable (dosified)
@@ -100,15 +93,15 @@ goto endofperl
 
 =head1 NAME
 
-x - eXpand and reparse the command line for
+xx - eXpand and reparse the command line for
 
 =head1 VERSION
 
-This document describes C<x> ($Version$).
+This document describes C<xx> ($Version$).
 
 =head1 SYNOPSIS
 
-x [-S] [B<<option(s)>>] B<<command>> [B<<argument(s)>>]
+xx [-s|-so] [B<<option(s)>>] B<<command>> [B<<argument(s)>>]
 
 =begin HIDDEN-OPTIONS
 
@@ -123,9 +116,13 @@ Options:
 
 =over
 
-=item -S
+=item -s
 
-Expand the commandline and then source the resultant expanded command, causing possible modification of the current process environment.
+Expand the commandline and then source the resultant expanded command, causing possible modification of the current process environment. MUST be the first argument.
+
+=item -so
+
+Expand the commandline and then source the resulting output of executing the expanded command, causing possible modification of the current process environment. MUST be the first argument.
 
 =item --version
 
@@ -151,9 +148,9 @@ COMMAND...
 
 =head1 DESCRIPTION
 
-B<x> will read expand the command line and execute the COMMAND.
+B<xx> will read expand the command line and execute the COMMAND.
 
-NOTE: B<x> is designed for use with legacy commands to graft on better command line interpretation behaviors. It shouldn't generally be necessary to use B<x> on commands which already use Win32::CommandLine::argv() internally as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
+NOTE: B<xx> is designed for use with legacy commands to graft on better command line interpretation behaviors. It shouldn't generally be necessary to use B<xx> on commands which already use Win32::CommandLine::argv() internally as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
 ??? what about pl2bat'ed perl scripts? Since the command line is used within the wrapping batch file, is it clean for the .pl file or does it need x wrapping as well?
 
 =cut
@@ -183,8 +180,8 @@ use ExtUtils::MakeMaker;
 #-- getopt
 use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute); ##	# no_permute to parse all args up to 1st non-arg or '--'
 my %ARGV = ();
-# NOTE: the 'source' option '-S' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by the wrapping .bat script by executing the output of the perl script.
-GetOptions (\%ARGV, 'echo|e|S', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
+# NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by the wrapping .bat script by executing the output of the perl script.
+GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
 Getopt::Long::VersionMessage() if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage(-verbose => 2) if $ARGV{'man'};
@@ -216,11 +213,11 @@ if ( $ARGV{args} )
 	for (my $i = 0; $i < @ARGV; $i++) { print '$ARGV'."[$i] = `$ARGV[$i]`\n"; }
 	}
 
-#system { $ARGV[0] } @ARGV;		# doesn't see "echo" as a command (?? problem for all CMD built-ins?)
+#system { $ARGV[0] } @ARGV;		# doesn't see "echo" as a command (?? might be a problem for all CMD built-ins)
 if ( not $ARGV{args} )
 	{
-	## TODO: is it possible to run the process as an extension of this process (i.e. not as a sub-process, so that it can modify the parent environment?? x.bat is already in the CLI parent environment? is this wise? but otherwise, how would 'cd ~' work?)
-	if ($ARGV{echo} ) { print join(" ",@ARGV); } else { system @ARGV; }
+	## TODO: REDO this comment -- unfortunately the args (which are correct at this point) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
+	if ($ARGV{echo} ) { print join(" ",@ARGV); } else { if ($ARGV{so}) { my $x = join(" ",@ARGV); print `$x`; } else { system @ARGV; }}
 	}
 
 __END__
