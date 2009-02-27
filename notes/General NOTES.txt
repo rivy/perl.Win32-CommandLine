@@ -125,6 +125,7 @@ xx TESTS
 NOTES
 
 {exout x echo set z=$(ver)} == {x -S set z=$(ver)}
+?? add "x -O <...>" or "x -SO <...>" to do sourcing of command _output_ instead/in addition to exout/xo/so?
 
 NEW UTILITIES
 
