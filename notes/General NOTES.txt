@@ -94,6 +94,7 @@ x -e //sethra/c$/*
 x -e \\sethra\c$\*
 x -e \\sethra/c$\*
 x -e //sethra\c$\*
+x -S set os_version=$(ver)
 
 
 to ~
@@ -107,3 +108,27 @@ to ~roy
 ADD unit tests for anything in bin/ and eg/ if possible.
 ADD hg versioning for anything in bin/ and eg/.
 ADD nant build steps for anything in extras/ with copy from original dirs and fail/error if not found (either source or target).
+
+
+TESTS
+
+xx 	== eXpand command line and eXecute
+	xx -S	==>	source expanded command line (eg, as if typed in to command line directly)
+	xx -S -o ?? source/execute output of expanded command line
+xo	== eXecute Output (execute output of remaining command line as source
+	[NOT] xo -S	==> source output == non-sourcing of output is not really needed
+	
+	
+	
+xx TESTS
+
+NOTES
+
+{exout x echo set z=$(ver)} == {x -S set z=$(ver)}
+
+NEW UTILITIES
+
+quote
+	-auto == default ($^O = MSWin => dosify o/w unixify)
+	-dosify|dos|d
+	-unixify|unix|u|bash|b

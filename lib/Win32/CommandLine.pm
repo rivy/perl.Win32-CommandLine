@@ -569,7 +569,7 @@ sub	_zero_position_v1 {
 
 	return $pos;
 }
-#sub _get_next_chunk;
+
 sub	_argv_parse{
 	# _argv( $ [,\%] ):	returns	@
 	# parse scalar using bash-like rules for quotes and subshell block replacements (no environment variable substitutions or globbing are performed)
@@ -883,18 +883,28 @@ sub _get_next_chunk{
 			}
 		else
 			{# simple non-whitespace chunk	##default
-			# added non-subshell end
+			# added avoid consuming subshell_start and subshell_end
 			## n#o critic ( ProhibitDeepNests )
 			Carp::Assert::assert( $s =~	/^\S/ );
-			$s =~ /^([^\s$q_qm\)]+)(.*)/s;
-			Carp::Assert::assert( defined $1 );
-			# $1 = non-whitespace/non-quoted token
-			# $2 = rest	of string [if exists]
-			#print "simple.1	= `$1`\n" if defined($1);
-			#print "simple.2	= `$2`\n" if defined($2);
+			#print "s = $s\n";
 			$ret_type = 'simple';
-			$ret_chunk .= defined($1) ? $1 : q{};
-			$s = defined($2) ? $2 : q{};
+			while ($s =~ /^([^$q_qm\s\$\)]+)(.*)$/s)
+				{
+				# $1 = non-whitespace/non-quoted/non-subshell_start/non-subshell_end token
+				# $2 = rest	of string [if exists]
+				#print "simple.1	= `$1`\n" if defined($1);
+				#print "simple.2	= `$2`\n" if defined($2);
+				#Carp::Assert::assert( defined $1 );
+				my $two = $2;
+				$ret_chunk .= defined($1) ? $1 : q{};
+				$s = defined($2) ? $2 : q{};
+				if ( $two =~/^\$\(/ ) { last; }
+				elsif ( $two =~ /^(\$)(.*)$/ )
+					{
+					$ret_chunk .= $1;
+					$s = $2;
+					}
+				}
 			}
 		}
 
