@@ -46,9 +46,13 @@ Options:
 
 =over
 
-=item --quote, -q
+=item --all, -a
 
 Quote all output
+
+=item --combine, -c
+
+Combine INPUT into one line seperated by SPACE.
 
 =head1 OPTIONAL ARGUMENTS
 
@@ -104,7 +108,7 @@ use Env::Path qw(PATH);
 
 # getopt
 my %ARGV = ();
-GetOptions (\%ARGV, 'help|h|?|usage', 'man', 'version|ver|v', 'auto', 'dosify|dos|cmd|msdos|d', 'unixify|unix|u', 'all|a') or pod2usage(2);
+GetOptions (\%ARGV, 'help|h|?|usage', 'man', 'version|ver|v', 'auto', 'dosify|dos|cmd|msdos|d', 'unixify|unix|u', 'all|a', 'combine|c') or pod2usage(2);
 Getopt::Long::VersionMessage() if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage(-verbose => 2) if $ARGV{'man'};
@@ -119,10 +123,13 @@ if (!($ARGV{dosify} or $ARGV{unixify}))
 
 if ($ARGV{unixify}) { die "unixify not implemented"; }
 
+my $sep = qq{\n};
+if ($ARGV{combine}) { $sep = q{ }; }
+
 while(<>)
 {
 	chomp($_);
-	print _dosify($_, {quote_all => $ARGV{all}}).qq{\n};
+	print _dosify($_, {quote_all => $ARGV{all}}).$sep;
 }
 
 sub	_dosify {

@@ -178,7 +178,7 @@ use ExtUtils::MakeMaker;
 @ARGV = Win32::CommandLine::argv( { dosify => 'true' } ) if eval { require Win32::CommandLine; };
 
 #-- getopt
-use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute); ##	# no_permute to parse all args up to 1st non-arg or '--'
+use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
 my %ARGV = ();
 # NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by the wrapping .bat script by executing the output of the perl script.
 GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
