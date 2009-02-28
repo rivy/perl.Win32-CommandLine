@@ -11,9 +11,17 @@
 
 # Avoid PACKAGE DISTRIBUTION FILES.
 # :: assumes that the package directory has the same name as the distribution prefix (i.e. MyNamespace-MyPackage is the containing directory for MyNamespace-MyPackage-0.1.0.tar.gz)
-(?:^|/)(.*)/\1-.*\.tar\.gz$
-(?:^|/)(.*)/\1-.*\.tgz$
-(?:^|/)(.*)/\1\.ppd$
+#(?:^|/)(.*)/\1-.*\.tar\.gz$
+#(?:^|/)(.*)/\1-.*\.tgz$
+#(?:^|/)(.*)/\1\.ppd$
+#(?:^|/)(.*)/\1-.*\.par$
+#(?:^|/)(.*)/\1-.*/
+^${dist_path}/${dist_name}-${dist_version}\.tar\.gz$
+^${dist_path}/${dist_name}-${dist_version}-PPM\.tar\.gz$
+^${dist_path}/${dist_name}-${dist_version}\.tgz$
+^${dist_path}/${dist_name}\.ppd$
+^${dist_path}/${dist_name}-${dist_version}-[^/]*\.par$
+^${dist_path}/${dist_name}-${dist_version}/
 # :: other possible/optional generated PACKAGE FILES to avoid
 (?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$		# compiler detrus in the lib directory
 

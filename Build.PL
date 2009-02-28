@@ -219,10 +219,39 @@ $code{'@new'} = q{
 		return $self->SUPER::new(@_);
 		}
 };
+$code{'ACTION_testaction'} = q{
+	#[ADD] NEW action = testaction - a TEST action
+	sub ACTION_testaction {
+		my ($self) = @_;
+
+		print "self->dist_name = `".$self->dist_name."`\n";
+		print "self->dist_name = `".$self->dist_version."`\n";
+		for (sort keys %{$self}) { print "self->{$_} = `$self->{$_}`\n"; }
+		my $n;
+		my $dist_name = $self->dist_name;
+		my $dist_version = $self->dist_version;
+		$n = "xx".$self->dist_name."xx";
+		print "n = $n\n";
+		$n =~ s/$dist_name/YY/g;
+		print "n = $n\n";
+	  }
+};
+$code{'ACTION_dist'} = q{
+	#[ADD] dist - makes dependant on distmeta
+	sub ACTION_dist {
+		my ($self) = @_;
+
+		$self->depends_on('distmeta');
+
+		$self->SUPER::ACTION_dist();
+	  }
+};
 $code{'ACTION_distall'} = q{
 	#[ADD] NEW action = distall - makes all distributions
 	sub ACTION_distall {
 		my ($self) = @_;
+
+		$self->depends_on('distmeta');
 
 		$self->depends_on('pardist');
 		$self->depends_on('ppmdist');
@@ -504,7 +533,11 @@ $code{'ACTION_testall'} = q{
         return $self->SUPER::ACTION_testall;
       }
 };
-$code{'ACTION_manifest@my_maniskip'} = q{
+$code{'ACTION_manifest'} = q{
+  {
+  my $dist_name = q{};
+  my $dist_version = q{};
+  my $dist_path = q{};
     ## FROM: ExtUtils::Manifest (v1.54)
 	sub my_maniskip {
 		#print "HERE in my_maniskip()\n";
@@ -527,7 +560,16 @@ $code{'ACTION_manifest@my_maniskip'} = q{
 		push @skip, ExtUtils::Manifest::_macify($_);
 		}
 		close M;
-		#print 'skip['.scalar(@skip)."]\n";
+		# bring $dist_name, $dist_version, $dist_path into current scope
+		my @x = ($dist_name, $dist_version, $dist_path);
+		#print "dist_path = $dist_path\n";
+		#print "dist_name = $dist_name\n";
+		#print "dist_version = $dist_version\n";
+		#print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
+		# insert vars into regexps
+		for (@skip) { s:\$\{(\w+)\}:eval '${'.$1.'}':eg}
+		#print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
+
 		return sub {0} unless (scalar @skip > 0);
 
 		# extinguish only used once warnings
@@ -556,8 +598,6 @@ $code{'ACTION_manifest@my_maniskip'} = q{
 			return $found;
 			};
 	  }
-};
-$code{'ACTION_manifest'} = q{
 	sub ACTION_manifest {
 		my ($self) = @_;
 
@@ -567,6 +607,15 @@ $code{'ACTION_manifest'} = q{
 		my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
 		#local *ExtUtils::Manifest::_maniskip = &my_maniskip;
 		*ExtUtils::Manifest::_maniskip = $codeRef;
+
+		use File::Spec::Functions qw( rel2abs );
+		use File::Basename qw( dirname );
+
+		## ADDED: dist_name and dist_version for use within MANIFEST.SKIP
+		$dist_name = quotemeta( $self->dist_name );
+		$dist_version = quotemeta( $self->dist_version );
+		$dist_path = dirname(rel2abs($0)); $dist_path =~ s:\\\\:\/:g; $dist_path = quotemeta( $dist_path );
+		#print "dist_path = $dist_path\n";
 
         return $self->SUPER::ACTION_manifest;
 	  }
@@ -581,6 +630,7 @@ $code{'ACTION_manifest'} = q{
 
 	# ... might be brittle:: Module::Signature overrides it as well ( but only for ExtUtils::Manifest->VERSION < 1.41 ), probably ok
 	# ... petition ExtUtils::Manifest maintainers for a hook? changing the original code might break some folks MANIFEST.SKIPs
+  }
 };
 $code{'ACTION_ppd@my_varchname'} = q{
 	##BUGBYPASS: [for Module::Build v0.3 and perl v5.10+ $^V version string change] repairs incorrect version interpretation for perl v5.10+ (still works for 5.8 and earlier, as well)
