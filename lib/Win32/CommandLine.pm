@@ -186,8 +186,8 @@ sub _getparentname {
 			$exes{$th32ProcessID} = $szEXE;
 		#	if ($$ == $th32ProcessID)
 		#		{
-		#		print "thisEXE = $szEXE\n";
-		#		print "parentPID = $th32ParentProcessID\n";
+		#		#print "thisEXE = $szEXE\n";
+		#		#print "parentPID = $th32ParentProcessID\n";
 		#		return $th32ParentProcessID;
 		#		}
 			#return unpack ('I', substr $pe32, 24, 4) if $$ == $th32ProcessID;
@@ -319,7 +319,7 @@ sub	_decode {
 
 #	my $c = quotemeta('0abefnrtv'.$_G{escape_char}.$_G{single_q}.$_G{double_q});
 	my $c = quotemeta('abefnrtv'.$_G{escape_char}.$_G{single_q}.$_G{double_q});		# \0 is covered by octal matches
-	#for my $k (sort keys %table) { print "table{:$k:} = $table{$k}\n";}
+	#for my $k (sort keys %table) { #print "table{:$k:} = $table{$k}\n";}
 #	for (@_ ? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/:$1:/g }
 	for (@_ ? @_ : $_) { s/\\([0-7]{1,3}|[$c]|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g }
 
@@ -657,6 +657,7 @@ sub	_argv_parse{
 				$output =~ s/\n$//s; # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
 				$s = $output . $s; # graft to the front of $s for further interpretation
 				_ltrim($s);
+				#print "s = `$s`\n";
 				}
 			elsif ($type eq '$double-quoted')
 				{
@@ -698,9 +699,9 @@ sub	_argv_parse{
 										}
 									}
 								$block = _dequote($block);
-								#print "block = `$block`\n";
+								#print "dq.block = `$block`\n";
 								my $output = `$block`;
-								#print "output = `$output`\n";
+								#print "dq.output = `$output`\n";
 								if ($opt{_die_subshell_error} and $?) { die 'error '.($? >> 8).' while executing subshell block `'.$block.'`'; }
 								$output =~ s/\n$//s; # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
 								$o = $output;	# output as single token ## do this within $"..."
@@ -721,6 +722,7 @@ sub	_argv_parse{
 				#$t .= _dequote(_decode_dosqq(_ltrim($chunk)));
 				push @argY, { token => _dequote(_decode_dosqq(_ltrim($chunk))), glob => $opt{_glob_within_qq}, id => "[$type]" };
 				$t .= $argY[-1]->{token};
+				#print "token = `$argY[-1]->{token}`\n";
 				}
 			elsif ($type eq '$single-quoted')
 				{
@@ -761,12 +763,12 @@ sub	_argv_parse{
 	#print "args[".scalar(@args)."]\n";
 	#push @{	$argX[ $i ] }, { token => _dequote($o), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
 	#print "argX[".scalar(@argX)."]\n";
-#	for (@argX) { print "token = ".$_->{token}."; glob = ".$_->{glob}."; id = ".$_->{id}."\n"; }
-#	foreach (@argX) { print "token = ".$_->{token}."; glob = ".$_->{glob}."; id = ".$_->{id}."\n"; }
+#	for (@argX) { #print "token = ".$_->{token}."; glob = ".$_->{glob}."; id = ".$_->{id}."\n"; }
+#	foreach (@argX) { #print "token = ".$_->{token}."; glob = ".$_->{glob}."; id = ".$_->{id}."\n"; }
 #	for my $a (@argX) { for my $aa (@{$a}) {print "token = $a->[0]->{token}; glob = $a->[0]->{glob}; id = $a->[0]->{id}; \n"; } }
-	#for my $arg (@args) { print "token = $arg->{token};\n"; for my $chunk (@{$arg->{chunks}}) { print "::chunk = $chunk->{token}; glob = $chunk->{glob}; id = $chunk->{id}; \n"; } }
+	#for my $arg (@args) { #print "token = $arg->{token};\n"; for my $chunk (@{$arg->{chunks}}) { #print "::chunk = $chunk->{token}; glob = $chunk->{glob}; id = $chunk->{id}; \n"; } }
 
-	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
 	return @args;
 }
@@ -845,13 +847,14 @@ sub _get_next_chunk{
 			# $1 = leading $ (if present)
 			# $2 = double-quoted chunk
 			# $3 = rest	of string [if exists]
-			#print "dq.1	= `$1`\n" if $1;
-			#print "dq.2	= `$2`\n" if $2;
-			#print "dq.3	= `$3`\n" if $3;
 			$ret_type = 'double-quoted';
 			if (defined($2)) { $ret_type = $2.$ret_type; };
 			$ret_chunk .= $1;
 			$s = defined($3) ? $3 : q{};
+			#print "dq.1	= `$1`\n" if $1;
+			#print "dq.2	= `$2`\n" if $2;
+			#print "dq.3	= `$3`\n" if $3;
+			#print "dq.s	= `$s`\n";
 			}
 		elsif ($s =~ /^(\$$re_q_escok)(.*)$/s)
 			{# $single-quoted chunk (possible internal escapes)
@@ -1038,7 +1041,7 @@ sub	_argv_do_glob{
 		$args[$i]->{globs} = \@g;
 		}
 
-	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
 	return @args;
 }
@@ -1077,7 +1080,7 @@ sub	_zero_position{
 	#print "zero_dq	= $zero_dq\n";
 
 	#print "#args	= $#args\n";
-	#print "$me:starting search\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:starting search\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 #	while (my $arg = shift @a) {
 	for	($pos=0; $pos<=$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
 		my $arg	= $args[$pos]->{token};
@@ -1157,19 +1160,19 @@ sub	_argv{
 	my @args = _argv_parse( $command_line, { _glob_within_qq => $opt{_glob_within_qq}, _carp_unbalanced => $opt{_carp_unbalanced}, _die_subshell_error => $opt{_die_subshell_error} } );
 	#@args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
-	#print "$me:pre-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:pre-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
 	if ($opt{remove_exe_prefix})
 		{# remove $0	(and any prior entries)	from ARGV array	(and the matching glob_ok signal array)
 		#my $p = _zero_position( @args, {} );
 		my $p = _zero_position( @args, {''=>''} );
 		#print "p = $p\n";
-		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 		@args = @args[$p+1..$#args];
-		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 		}
 
-	#print "$me:post-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:post-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
 	if ($opt{glob})
 		{# do globbing
@@ -1194,7 +1197,7 @@ sub	_argv{
 		}
 
 	my @g;
-	#print "$me:gather globs\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; print "args[$pos]->{globs} = `$args[$pos]->{globs}`\n"; my @globs = $args[$pos]->{globs}; for (my $xpos=0; $xpos<$#globs; $xpos++) { print "globs[$pos] = `$globs[$pos]`\n"; } }
+	#print "$me:gather globs\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; #print "args[$pos]->{globs} = `$args[$pos]->{globs}`\n"; my @globs = $args[$pos]->{globs}; for (my $xpos=0; $xpos<$#globs; $xpos++) { #print "globs[$pos] = `$globs[$pos]`\n"; } }
 	for my $arg (@args)
 		{
 		my @globs = @{$arg->{globs}};
@@ -1202,7 +1205,7 @@ sub	_argv{
 		}
 
 	#@g = ('this', 'that', 'the other');
-	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "g[$pos] = `$g[$pos]`\n"; }
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "g[$pos] = `$g[$pos]`\n"; }
 
 	return @g;
 }
@@ -1613,7 +1616,7 @@ sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 	#		currently, this is handled by adding the <username> with nulled internal whitespace into the home_path hash (but this process can result in collisions)
 	#		* it may be difficult since globbing is done based on the "chunk" of the token and non-quoted and quoted portions are "chunked" into seperate pieces (and what about ~"administrator"TEST == how far should the concatenation go for a possible match?)
 
-	#for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
+	#for my $k (keys %home_paths) { #print "$k => $home_paths{$k}\n"; }
 	#print "home_path_re = $home_path_re\n";
 
 	for	(my $i=0; $i<=$#argv2; $i++)		## no critic (ProhibitCStyleForLoops)
@@ -1791,7 +1794,7 @@ if ($have_all_needed_modules) {
 		$profiles_href = $Win32::TieRegistry::Registry->{'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ProfileList\\'};	## no critic (ProhibitPackageVars)
 		}
 
-	#foreach my $p (keys %{$profiles}) { print "profiles{$p} = $profiles->{$p}\n"; }
+	#foreach my $p (keys %{$profiles}) { #print "profiles{$p} = $profiles->{$p}\n"; }
 
 	foreach my $p (keys %{$profiles_href})
 		{
@@ -1825,7 +1828,7 @@ if ($have_all_needed_modules) {
 		}
 	}
 
-#for my $k (keys %home_paths) { print "$k => $home_paths{$k}\n"; }
+#for my $k (keys %home_paths) { #print "$k => $home_paths{$k}\n"; }
 return %home_paths;
 }
 
