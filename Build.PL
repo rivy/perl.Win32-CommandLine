@@ -1,5 +1,5 @@
 #!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.2.70 ( r38:efb716e84c78 [mercurial] ) 2009/02/22 14:11:26 rivy $
+#$Id: Build.PL,v 0.1.2.550708 ( r39:0e897bf3776d [mercurial] ) 2009/02/28 23:08:44 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -17,10 +17,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
-# generate VERSION from $Version: 0.1.2.70 $ SCS tag
+# generate VERSION from $Version: 0.1.2.550708 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.2'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.2.70 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.2'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.2.550708 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -46,7 +46,8 @@ $config{'xs_files_href'} = {};						# alternate XS file locations [to help with 
 $config{'PL_files_href'} = {};						# perl files to execute during processing (usually to generated .PL files from templates)
 $config{'c_source'} = undef;						# c source files to compile
 $config{'config_href'} = {};						# modify Config.pm values for the build
-$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];	# extra files to clean up during "build clean"
+$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];		# extra files to clean up during "build clean"
+$config{'add_to_realcleanup_aref'} = [];			# extra files to clean up during "build realclean"
 $config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS)
 $config{'custom_code_href'} = {};					# custom code overrides from config
 
@@ -152,6 +153,8 @@ my $build = $class->new(
 	PL_files             => { %{$config{'PL_files_href'}} },
 
 	add_to_cleanup       => [ @{$config{'add_to_cleanup_aref'}}, ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'module_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'module_name'} ) ],
+
+	add_to_realcleanup   => [ @{$config{'add_to_realcleanup_aref'}} ],
 );
 
 $build->create_build_script;
@@ -180,6 +183,10 @@ Build the PPM distribution.
 =item distpar
 
 Build the PAR distribution.
+
+=item sign
+
+Sign the current module content in the base directory (for local testing).
 
 =back
 
@@ -236,8 +243,54 @@ $code{'ACTION_testaction'} = q{
 		print "n = $n\n";
 	  }
 };
+$code{'ACTION_sign@_sign_dir'} = q{
+	sub _sign_dir {
+		my ($self, $dir) = @_;
+
+		unless (eval { require Module::Signature; 1 }) {
+		$self->log_warn("Couldn't load Module::Signature for signing action:\n $@\n");
+		return;
+		}
+
+		# Add SIGNATURE to the MANIFEST
+		{
+		my $manifest = File::Spec->catfile($dir, 'MANIFEST');
+		die "Signing a distribution requires a MANIFEST file" unless -e $manifest;
+		#$self->_add_to_manifest($manifest, "SIGNATURE    Added here by Module::Build");
+		#[CHANGED] == removed comment to prevent altering MANIFEST, when possible (to preserve correct signatures as long as possible)
+		$self->_add_to_manifest($manifest, 'SIGNATURE');	# SKIP any comment, it can alter the MANIFEST when/if it is auto-regenerated
+		}
+
+		#[ADD] create the dist_meta prior to signature
+		$self->ACTION_distmeta;
+
+		# Would be nice if Module::Signature took a directory argument.
+		$self->_do_in_dir($dir, sub {local $Module::Signature::Quiet = 1; Module::Signature::sign()});
+	}
+};
+$code{'ACTION_sign'} = q{
+	#[ADD] NEW action = sign - sign current module content
+	sub ACTION_sign {
+		my ($self) = @_;
+		# from: ACTION_distsign
+		#{
+		#local $self->{properties}{sign} = 0;  # We'll sign it ourselves
+		#$self->depends_on('distdir') unless -d $self->dist_dir;
+		#}
+		#$self->_sign_dir($self->dist_dir);
+		$self->depends_on('distmeta');
+
+		use File::Spec::Functions qw( rel2abs );
+		use File::Basename qw( dirname );
+
+		my $dist_path = '.';
+		$dist_path = dirname(rel2abs($0));
+		$dist_path =~ s:\\\\:\/:g;
+		$self->_sign_dir($dist_path);
+	}
+};
 $code{'ACTION_dist'} = q{
-	#[ADD] dist - makes dependant on distmeta
+	#[ADD] dist - make ACTION_dist dependant on distmeta
 	sub ACTION_dist {
 		my ($self) = @_;
 
@@ -305,6 +358,10 @@ $code{'ACTION_realclean'} = q{
 		#	}
 		#	}
 		my ($self) = @_;
+
+		#print @{$self->{properties}{add_to_realcleanup}}."\n";
+		#print 'realcleanup_aref = {'.join(':', @{$self->{properties}{add_to_realcleanup}})."}\n";
+		$self->add_to_cleanup(@{$self->{properties}{add_to_realcleanup}});
 
 		$self->SUPER::ACTION_realclean();
 
@@ -518,9 +575,20 @@ $code{'ACTION_distmeta'} = q{
         my ($self) = @_;
 
         #[ADD] update the MANIFEST when building 'distmeta'
-        $self->depends_on('manifest');
+        #$self->depends_on('manifest');
+		$self->ACTION_manifest;
 
-        return $self->SUPER::ACTION_distmeta;
+		#[ADD]
+		#$self->do_create_makefile_pl if $self->create_makefile_pl;
+		#$self->do_create_readme if $self->create_readme;
+		#$self->do_create_license if $self->create_license;
+		#$self->do_create_metafile;
+        #return $self->SUPER::ACTION_distmeta;
+        $self->SUPER::ACTION_distmeta;
+
+        #[ADD] re-update the MANIFEST with any new files
+        #$self->depends_on('manifest');
+		$self->ACTION_manifest;
       }
 };
 $code{'ACTION_testall'} = q{
@@ -568,7 +636,6 @@ $code{'ACTION_manifest'} = q{
 		#print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
 		# insert vars into regexps
 		for (@skip) { s:\$\{(\w+)\}:eval '${'.$1.'}':eg}
-		#print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
 
 		return sub {0} unless (scalar @skip > 0);
 
@@ -593,8 +660,10 @@ $code{'ACTION_manifest'} = q{
 			my $f = File::Spec->rel2abs($_[0]);
 			if ($^O eq 'MSWin32') {$f =~ s:\\\\:/:g;};		# unixify path for Win32
 			my $found = 0;
-			#print "[$_[0]=>$f]\n";
+			#print "[$_[0]=>$f]:";
+			#print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
 			for my $re (@skip) { if ($f =~ qr{$opts$re}) { $found = 1; last; } };
+			#print "[skip = ".($found ? "true" : "false")."]\n";
 			return $found;
 			};
 	  }
@@ -617,7 +686,16 @@ $code{'ACTION_manifest'} = q{
 		$dist_path = dirname(rel2abs($0)); $dist_path =~ s:\\\\:\/:g; $dist_path = quotemeta( $dist_path );
 		#print "dist_path = $dist_path\n";
 
-        return $self->SUPER::ACTION_manifest;
+        $self->SUPER::ACTION_manifest;
+
+		# ???: SIGN?
+		#my $dist_path = '.';
+		#$dist_path = dirname(rel2abs($0));
+		#$dist_path =~ s:\\\\:\/:g;
+		#$self->_sign_dir($dist_path);
+
+        ##my $manifest = File::Spec->catfile($dist_path, $ExtUtils::Manifest::MANIFEST);
+        ##$self->_sort_manifest( $manifest );
 	  }
 	##?? add Sub::Override for maniskip here?? for all subs in the new Build
 	#require ExtUtils::Manifest;
