@@ -2,6 +2,22 @@ BUILDs
 
 use 'b' for builds (calls build+nant) to make sure build.pl is up to date.
 
+SIGNING
+
+build sign
+cpansign => verifies SIGNATURE	
+build clean		(DOESN'T remove META info or MANIFEST)
+cpansign => SUCCEEDS
+erase MANIFEST, META.yml, and/or Makefile.PL
+cpansign => fails (missing file errors)
+build distmeta
+cpansign => SUCCEEDS
+build realclean (removes SIGNATURE)
+cpansign verify => fails, attempts to create a new MANIFEST and SIGNATURE
+
+'cpansign verify' will also work in any expanded distributions now as well.
+NOTE: 'cpansign' will fail _in the main build directory_ if a distribution is left expanded in that build directory (eg, 'tar xvf Win32-CommandLine-0.3.4.155522.tar.gz') because it doesn't understand the expanded MANFEST.SKIP format).
+BUT: build clean => cpansign will again verify correctly.
 
 POSSIBLE x.bat name change
 
@@ -134,3 +150,7 @@ quote
 	-auto == default ($^O = MSWin => dosify o/w unixify)
 	-dosify|dos|d
 	-unixify|unix|u|bash|b
+
+ADD to documentation
+
+build sign => signs current build contents (can check with 'cpansign')
