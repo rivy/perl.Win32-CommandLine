@@ -1,5 +1,5 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.2.550708 ( r39:0e897bf3776d [mercurial] ) 2009/02/28 23:08:44 rivy $
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
+#$Id: Build.PL,v 0.1.2.658722 ( r40:138e126b5167 [mercurial] ) 2009/03/02 05:08:58 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -17,10 +17,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
-# generate VERSION from $Version: 0.1.2.550708 $ SCS tag
+# generate VERSION from $Version: 0.1.2.658722 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.2'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.2.550708 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.2'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.2.658722 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -34,7 +34,7 @@ $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends'} = {};							# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0 };	# basic module requirements for Build.PL
+$config{'build_requires_href'} = { 'perl' => 5.006, 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0 };	# basic module requirements for Build.PL
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
 $config{'create_makefile_pl'} = 'passthrough';		# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)

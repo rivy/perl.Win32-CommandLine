@@ -25,9 +25,6 @@
 # :: other possible/optional generated PACKAGE FILES to avoid
 (?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$		# compiler detrus in the lib directory
 
-# for cpansign and SIGNATUREs
-#lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
-
 # Avoid Module::Build generated and utility files.
 (?:^|/)Build$
 (?:^|/)Build.bat$
