@@ -89,7 +89,7 @@ add_test( [ qq{$0 '\\x34\\x34'} ], ( qq{\\x34\\x34} ) );
 
 add_test( [ qq{$0 \*.t} ], ( q{*.t} ) );
 
-add_test( [ qq{$0 '*.t} ], ( q{Unbalanced command line quotes [#1] (at token`'*.t` from command line `t\\11.argv.t '*.t`)} ) );
+add_test( [ qq{$0 '*.t} ], ( q{Unbalanced command line quotes [#1] (at token`'*.t` from command line `}.qq{$0}.q{ '*.t`)} ) );
 
 add_test( [ qq{$0 a b c \*.t} ], ( qw{a b c}, q{*.t} ) );
 
@@ -145,7 +145,6 @@ add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
 # TODO: create tests for above
 # TODO: create tests for "\\127.0.0.1\"...
 
-## now in 03.argv-tilde.t
 ## ?? change to include here surrounded by $ENV{TEST_FRAGILE} check? or do skipped tests need to be in a specific file by themselves?
 ### TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
 ### TEST_FRAGILE == tests which require a specific environment setup to work
@@ -156,8 +155,8 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 	add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
 	add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
 	add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
-	add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\11.argv.t "c:\\"win*`)} ) );		##"
-	add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\11.argv.t "c:\\"win*`)} ) );
+	add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `}.qq{$0}.q{ "c:\\"win*`)} ) );		##"
+	add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `}.qq{$0}.q{ "c:\\"win*`)} ) );
 	#
 	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
 	add_test( [ qq{$0 ~*}, { dosify => 1 } ], ( q{~*} ) );
@@ -185,8 +184,8 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 	add_test( [ qq{$0 }.q{//sethra/C$/WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
 
-	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\11.argv.t "\\\\sethra\\C$\\"WIND*`)} ) );	##"
-	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\11.argv.t "\\\\sethra\\C$\\"WIND*`)} ) );	##"
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `}.qq{$0}.q{ "\\\\sethra\\C$\\"WIND*`)} ) );	##"
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `}.qq{$0}.q{ "\\\\sethra\\C$\\"WIND*`)} ) );	##"
 	}
 ###
 
