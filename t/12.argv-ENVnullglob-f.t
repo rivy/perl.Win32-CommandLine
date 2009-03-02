@@ -1,4 +1,4 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ sub add_test;
 sub test_num;
 sub do_tests;
 
-$ENV{nullglob} = 1;	# setup a known environment
+$ENV{nullglob} = 0;	# setup a known environment
 
 # Tests
 
@@ -61,11 +61,11 @@ add_test( [ qq{$0 \$'\\x34\\x34'} ], ( qq{44} ) );
 
 add_test( [ qq{$0 '\\x34\\x34'} ], ( qq{\\x34\\x34} ) );
 
-add_test( [ qq{$0 \*.t} ], ( ) );
+add_test( [ qq{$0 \*.t} ], ( q{*.t} ) );
 
 #add_test( [ qq{$0 '*.t} ], ( q{*.t} ) );   # exception: unbalanced quotes
 
-add_test( [ qq{$0 a b c \*.t} ], ( qw{a b c} ) );
+add_test( [ qq{$0 a b c \*.t} ], ( qw{a b c}, q{*.t} ) );
 
 add_test( [ qq{$0 a b c t/\*.t} ], ( qw{a b c}, glob('t/*.t') ) );
 
@@ -113,12 +113,12 @@ add_test( [ qq{$0 t 0} ], ( q{t}, q{0} ) );
 
 add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
-add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( ) );
+add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
 #
 
 ##
 ## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
-add_test( [ qq{$0 ~*} ], ( ) );
+add_test( [ qq{$0 ~*} ], ( q{~*} ) );
 add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
 add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
 add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );

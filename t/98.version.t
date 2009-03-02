@@ -1,4 +1,4 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 
 # check for CPAN/PAUSE parsable VERSIONs ( URLref: http://cpan.org/modules/04pause.html )
 

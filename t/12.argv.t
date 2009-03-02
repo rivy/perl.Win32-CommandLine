@@ -1,4 +1,4 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 
 use strict;
 use warnings;
@@ -89,7 +89,7 @@ add_test( [ qq{$0 '\\x34\\x34'} ], ( qq{\\x34\\x34} ) );
 
 add_test( [ qq{$0 \*.t} ], ( q{*.t} ) );
 
-add_test( [ qq{$0 '*.t} ], ( q{Unbalanced command line quotes [#1] (at token`'*.t` from command line `t\\03.argv.t '*.t`)} ) );
+add_test( [ qq{$0 '*.t} ], ( q{Unbalanced command line quotes [#1] (at token`'*.t` from command line `t\\11.argv.t '*.t`)} ) );
 
 add_test( [ qq{$0 a b c \*.t} ], ( qw{a b c}, q{*.t} ) );
 
@@ -156,8 +156,8 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 	add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
 	add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
 	add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
-	add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\03.argv.t "c:\\"win*`)} ) );		##"
-	add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\03.argv.t "c:\\"win*`)} ) );
+	add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\11.argv.t "c:\\"win*`)} ) );		##"
+	add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `t\\11.argv.t "c:\\"win*`)} ) );
 	#
 	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
 	add_test( [ qq{$0 ~*}, { dosify => 1 } ], ( q{~*} ) );
@@ -185,8 +185,8 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 	add_test( [ qq{$0 }.q{//sethra/C$/WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );
 
-	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\03.argv.t "\\\\sethra\\C$\\"WIND*`)} ) );	##"
-	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\03.argv.t "\\\\sethra\\C$\\"WIND*`)} ) );	##"
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*} ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\11.argv.t "\\\\sethra\\C$\\"WIND*`)} ) );	##"
+	add_test( [ qq{$0 }.q{"\\\\sethra\\C$\\"WIND*}, { dosify => 1 }  ], ( q{Unbalanced command line quotes [#1] (at token`"\\\\sethra\\C$\\"WIND*` from command line `t\\11.argv.t "\\\\sethra\\C$\\"WIND*`)} ) );	##"
 	}
 ###
 

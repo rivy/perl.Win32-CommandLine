@@ -1,4 +1,4 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 #$Id$
 
 ## TODO: aliases? bash which doesn't see aliases -- make a switch to search aliases as well?

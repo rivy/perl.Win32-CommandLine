@@ -1,4 +1,4 @@
-#!perl -w   -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 
 # t/00.load.t - check module loading
 
@@ -7,5 +7,7 @@ use warnings;
 
 use Test::More tests => 1;
 BEGIN {
-    use_ok( 'Win32::CommandLine' );
+    use_ok( $ENV{_module_name} );
 }
+
+diag("$ENV{_module_name}, $^O, Perl $], $^X");

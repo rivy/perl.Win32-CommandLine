@@ -26,7 +26,7 @@
 (?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$		# compiler detrus in the lib directory
 
 # for cpansign and SIGNATUREs
-lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
+#lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
 
 # Avoid Module::Build generated and utility files.
 (?:^|/)Build$

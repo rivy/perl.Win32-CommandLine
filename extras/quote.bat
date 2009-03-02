@@ -15,7 +15,7 @@ if NOT %errorlevel% == 0 (
 goto endofperl
 
 @rem ';
-#!perl -w	-*- tab-width: 4; mode: perl -*-
+#!perl -w	-- -*- tab-width: 4; mode: perl -*-
 #line 20
 #$Id: quote.pl,v 0.3.3.179015 ( r124:73041c265478 [mercurial] ) 2009/02/23 19:14:03 rivy $
 

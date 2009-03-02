@@ -750,10 +750,6 @@ $code{'ACTION_test'} = q{
         #[ADD] build dependency (to make sure we're testing the most recent incarnation of the package)
         $self->depends_on('build');
 
-        # TODO: ? make dependent upon TEST_AUTHOR definition? so that META doesn't build just for non-author tests?
-        #[ADD] update the distmeta info when testing (for up-to-date AUTHOR tests)
-        $self->depends_on('distmeta');
-
         return $self->SUPER::ACTION_test;
       }
 };
