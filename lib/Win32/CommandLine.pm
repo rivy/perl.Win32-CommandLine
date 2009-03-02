@@ -7,21 +7,18 @@ package Win32::CommandLine;
 ## ---- policies to REVISIT later
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
-# WORKS NOW (2008-11-14) => ADD some tests for this... [use TEST_EXPENSIVE vs TEST_EXHAUSTIVE]: TODO: make "\\sethra\c$\"* work (currently, have to "\\\\sethra\c$"\* or use forward slashes "//sethra/c$/"* ; two current problems ... \\ => \ (looks like it happens in the glob) and no globbing if the last backslash is inside the quotes)
-# TODO: Check edge cases for network paths (//sethra/C$/* vs \\sethra/C$/*, etc)
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
-# TODO: add $( <COMMAND> ) bash command replacement
 
 # TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
 
-# TODO: deal with possible reinterpretation of $() by x.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT
+# DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by x.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
 
 use strict;
 use warnings;
 #use diagnostics;	# invoke blabbermouth warning mode
-#use 5.006;
+use 5.006;			# earliest tested perl version
 
-# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
+# VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
 # generate VERSION from $Version$ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions

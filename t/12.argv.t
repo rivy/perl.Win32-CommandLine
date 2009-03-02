@@ -177,6 +177,8 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 
 	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"\\\\sethra\\C$"\\WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{\\\\sethra/C$/WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
+	add_test( [ qq{$0 }.q{"\\\\sethra/"C$/WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{//sethra/C$/WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{"//sethra/C$/"WIND*} ], ( q{//sethra/C$/WINDOWS} ) );
 	add_test( [ qq{$0 }.q{\\\\sethra\\C$\\WIND*}, { dosify => 1 }  ], ( q{\\\\sethra\\C$\\WINDOWS} ) );

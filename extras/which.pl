@@ -66,7 +66,7 @@ B<which> will read each FILENAME, find, and then print the executable path for t
 
 =cut
 
-# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
+# VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
 # generate VERSION from $Version$ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions

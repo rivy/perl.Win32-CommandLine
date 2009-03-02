@@ -84,7 +84,7 @@ B<quote> will read INPUT (either STDIN or B<<filename(s)>> and "quote" each inpu
 
 =cut
 
-# VERSION: major.minor.revision[.build]]  { minor is ODD = alpha/beta/experimental; minor is EVEN = release }
+# VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
 # generate VERSION from $Version: 0.3.3.179015 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions

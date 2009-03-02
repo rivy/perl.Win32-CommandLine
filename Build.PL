@@ -16,7 +16,7 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
-# VERSION: major.minor.revision[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => release }
+# VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
 # generate VERSION from $Version: 0.1.2.658722 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
