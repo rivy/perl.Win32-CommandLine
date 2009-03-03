@@ -22,7 +22,7 @@ use 5.006;			# earliest tested perl version
 # generate VERSION from $Version$ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3.4'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 # Module Summary
 
@@ -42,15 +42,15 @@ use base qw( DynaLoader Exporter );
 
 #our @EXPORT = qw( );	# no default exported symbols
 our %EXPORT_TAGS = (
-	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],  ## no critic ( ProhibitComplexRegexes ) ## all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
-#	'INTERNAL'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],   ## no critic ( ProhibitComplexRegexes ) ## all internal functions [Note: internal functions start with a leading '_']
+	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],  	## no critic ( ProhibitComplexRegexes ) ## all public symbols [Note: private/internal symbols are ALL_CAPS or start with a leading '_']
+#	'PRIVATE'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]+$/s } keys %Win32::CommandLine::) ],   					## no critic ( ProhibitComplexRegexes ) ## all private/internal functions [Note: private/internal functions start with a leading '_']
 	);
 our @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
 
 # Module Interface
 
 sub command_line;	# return Win32 command line string
-sub parse;			# parse string as a "bash-like" command line (globbing is done, but no other expansions or substitions)
+sub parse;			# parse string as a "bash-like" command line (globbing and subshell command expansion are done, but no other substitions)
 sub argv;			# get commandline and reparse it, returning a new ARGV array
 
 ####
@@ -61,11 +61,9 @@ bootstrap Win32::CommandLine $VERSION;
 
 sub command_line{
 	# command_line(): returns $
-##	return _wrap_GetCommandLine();
 	my $retVal = _wrap_GetCommandLine();
 
-	## PROBLEM: can't just check $ENV{COMSPEC} and use $ENV{CMDLINE} as it is not set/reset by TCC, et al when directly calling the program with `command` syntax
-	##     ::: SOLVE by checking 'parent' process name
+	# 4NT/TCC/TCMD compatibility
 	my $parentEXE = _getparentname();
 	if (($parentEXE =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
 
@@ -2379,7 +2377,7 @@ TODO: UPDATE THIS $"..." and "..." not exactly accurate now [2009-02-23]
 
 =end IMPLEMENTATION-NOTES
 
-This began as a simple need to reparse the commandline and grew into an odyssey to lend some bash shell magic to the CMD shell (and make it compatible with the excellent (and free) TCC-LE shell).
+This began as a simple need to reparse the commandline and grew into an odyssey to lend some bash shell magic to the CMD shell (and, additionally, then make it compatible with the excellent (and free) TCC-LE shell from JPSoft).
 
 =cut
 

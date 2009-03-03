@@ -1,45 +1,45 @@
 # Skip List RegExps for MANIFEST
 # each line is a regular expression which will exclude any matching files from entry into the MANIFEST
 
+# NOTE: AVOID trailing comments because of the trailing comment bug noted. It causes incorrect results from other programs, notably 'cpansign' doesn't collect the correct file names.
+
 # NOTE: regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
 # NOTE: some regexps assume paths have canonical path format with '/' characters as path dividers
 # NOTE: regexps all assume no embedded newlines
 
 # REMINDER: \w == "word character" == (alphanumeric + '_'); \b == boundary between word characters
 
-# TODO: Submit bug report(?) regarding regexps starting with \b used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest
+# TODO: ExtUtils::Manifest - Submit bug report(?) regarding regexps starting with \b used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest (suggest below alternatives as better...)
+# TODO: ExtUtils::Manifest - Submit bug report regarding trailing comments (trailing comments are interpreted incorrectly as part of the regexp [see BUGFIX in Build.PL code])
 
-# Avoid PACKAGE DISTRIBUTION FILES.
+# Avoid PACKAGE DISTRIBUTION FILES
 # :: assumes that the package directory has the same name as the distribution prefix (i.e. MyNamespace-MyPackage is the containing directory for MyNamespace-MyPackage-0.1.0.tar.gz)
-#(?:^|/)(.*)/\1-.*\.tar\.gz$
-#(?:^|/)(.*)/\1-.*\.tgz$
-#(?:^|/)(.*)/\1\.ppd$
-#(?:^|/)(.*)/\1-.*\.par$
-#(?:^|/)(.*)/\1-.*/
 ^${dist_path}/${dist_name}-${dist_version}\.tar\.gz$
 ^${dist_path}/${dist_name}-${dist_version}-PPM\.tar\.gz$
 ^${dist_path}/${dist_name}-${dist_version}\.tgz$
 ^${dist_path}/${dist_name}\.ppd$
 ^${dist_path}/${dist_name}-${dist_version}-[^/]*\.par$
 ^${dist_path}/${dist_name}-${dist_version}/
+# :: compiler detrus in the lib directory
+(?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
 # :: other possible/optional generated PACKAGE FILES to avoid
-(?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$		# compiler detrus in the lib directory
 
-# Avoid Module::Build generated and utility files.
+# Avoid Module::Build generated and utility files
 (?:^|/)Build$
 (?:^|/)Build.bat$
 (?:^|/)_build/
 
-# Avoid Makemaker generated and utility files.
+# Avoid Makemaker generated and utility files
 (?:^|/)MANIFEST\.bak$
 (?:^|/)Makefile$
 (?:^|/)blib/
 (?:^|/)MakeMaker-\d
 (?:^|/)pm_to_blib\.ts$
 (?:^|/)pm_to_blib$
-(?:^|/)blibdirs\.ts$         # 6.18 through 6.25 generated this
+# :: 6.18 through 6.25 generated 'blibdirs\.ts'
+(?:^|/)blibdirs\.ts$         
 
-# Avoid version control files.
+# Avoid version control files
 (?:^|/)RCS\b
 (?:^|/)CVS\b
 (?:^|/)SCCS\b
@@ -51,7 +51,7 @@
 (?:^|/)\.hgtags$
 (?:^|/)\.hgignore$
 
-# Avoid temp and backup files.
+# Avoid temp and backup files
 ~$
 \.old$
 \#$
