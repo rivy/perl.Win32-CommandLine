@@ -10,4 +10,4 @@ BEGIN {
     use_ok( $ENV{_module_name} );
 }
 
-diag("$ENV{_module_name}, $^O, Perl $], $^X");
+diag("$ENV{_module_name}, $^O, perl v$], $^X");

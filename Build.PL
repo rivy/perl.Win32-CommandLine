@@ -1,5 +1,5 @@
 #!perl -w   -- -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.1.2.658722 ( r40:138e126b5167 [mercurial] ) 2009/03/02 05:08:58 rivy $
+#$Id: Build.PL,v 0.1.3.13338 ( r48:8b89ede3eda6 [mercurial] ) 2009/03/04 05:11:38 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -17,10 +17,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.1.2.658722 $ SCS tag
+# generate VERSION from $Version: 0.1.3.13338 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.1.2'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.2.658722 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.1.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.1.3.13338 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -50,6 +50,7 @@ $config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', '
 $config{'add_to_realcleanup_aref'} = [];			# extra files to clean up during "build realclean"
 $config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS)
 $config{'custom_code_href'} = {};					# custom code overrides from config
+$config{'custom_ENV_href'} = { '_module_name' => '' };	# custom environment overrides (set before each dispatch) [default $ENV{_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
 
 # helper variables
 $config{'lib_path'} = undef;						# generated during .config file parsing
@@ -120,6 +121,8 @@ if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\
 if ( !$config{'dist_author'} ) { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 if ( !$config{'license'} ) 	   { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
+if (!$config{'custom_ENV_href'}->{'_module_name'}) { $config{'custom_ENV_href'}->{'_module_name'} = $config{'module_name'}; }
+
 #use lib 'inc';
 #require Devel::AssertOS; import Devel::AssertOS ( @{$config{'assert_os_aref'}} );
 
@@ -159,6 +162,32 @@ my $build = $class->new(
 
 $build->create_build_script;
 
+####
+sub _is_const { return !eval { ($_[0]) = $_[0]; 1; }; }
+sub _encodeQQ
+{
+	my $arg_ref;
+	$arg_ref = \@_;
+	$arg_ref = [ @_ ] if defined wantarray;     ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+
+	for my $arg ( @{$arg_ref} ) {
+		if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
+		$arg =~ s/([^[:word:].,;:])/'\x{'.sprintf("%x", ord($1)).'}'/esg;
+	}
+	return wantarray ? @{$arg_ref} : "@{$arg_ref}";
+}
+sub _encodeQ
+{
+	my $arg_ref;
+	$arg_ref = \@_;
+	$arg_ref = [ @_ ] if defined wantarray;     ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+
+	for my $arg ( @{$arg_ref} ) {
+		if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
+		$arg =~ s/([\\{}])/\\$1/sg;
+	}
+	return wantarray ? @{$arg_ref} : "@{$arg_ref}";
+}
 ####
 
 sub rivy_builder_code
@@ -226,6 +255,31 @@ $code{'@new'} = q{
 		return $self->SUPER::new(@_);
 		}
 };
+$code{'dispatch'} = q{
+	sub dispatch \{
+		#my $self = shift;
+		#local $self->{_completed_actions} = {};
+		#
+		#if (@_) {
+		#	my ($action, %p) = @_;
+		#	my $args = $p{args} ? delete($p{args}) : {};
+		#
+		#	local $self->{invoked_action} = $action;
+		#	local $self->{args} = {%{$self->{args}}, %$args};
+		#	local $self->{properties} = {%{$self->{properties}}, %p};
+		#	return $self->_call_action($action);
+		#	}
+		#
+		#die "No build action specified" unless $self->{action};
+		#local $self->{invoked_action} = $self->{action};
+		#$self->_call_action($self->{action});
+		my $self = shift;
+};
+foreach (keys %{$config{'custom_ENV_href'}}) { $code{'dispatch'} .= qq{\t\t}.'$ENV{'.$_.'} = q{'._encodeQ($config{'custom_ENV_href'}->{$_}).'};'.qq{\n}; }
+$code{'dispatch'} .= q{
+		return $self->SUPER::dispatch(@_);
+	\}
+};
 $code{'ACTION_testaction'} = q{
 	#[ADD] NEW action = testaction - a TEST action
 	sub ACTION_testaction {
@@ -241,6 +295,8 @@ $code{'ACTION_testaction'} = q{
 		print "n = $n\n";
 		$n =~ s/$dist_name/YY/g;
 		print "n = $n\n";
+		print "ENVIRONMENT:\n";
+		for (keys %ENV) { print "$_ = $ENV{$_}\n"; }
 	  }
 };
 $code{'ACTION_sign@_sign_dir'} = q{
