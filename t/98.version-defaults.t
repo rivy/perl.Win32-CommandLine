@@ -12,20 +12,21 @@ use Test::More;
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
-#use ExtUtils::MakeMaker;
 
-my @files = ( '.\lib\Win32\CommandLine.pm' );
-
-#print cwd();
+my @files = ( split(/;/, $ENV{_BUILD_versioned_file_globs}) );
 
 plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$haveExtUtilsMakeMaker;
 
-plan tests => scalar( @files ) * 2 ;
+plan tests => scalar( @files ) * 3 + 1;
 
-is( version_mmr(version_non_alpha_form(MM->parse_version($_))), version_mmr(version_non_alpha_form(parse_default_version($_))), "'$_' has equal ExtUtils::MakeMaker and default versions [MMR]") for @files;
+ok( (scalar(@files) > 0), "Found ".scalar(@files)." files to check");
+ok( (version_non_alpha_form(parse_default_version($_)) =~ /[0-9_]+\.[0-9_]+/), "'$_' has at least M.m default version") for @files;
+ok( (index (version_non_alpha_form(MM->parse_version($_)), version_non_alpha_form(parse_default_version($_))) == 0), "'$_' has default version which is a subset prefix of it's ExtUtils::MakeMaker version") for @files;
 is( is_alpha_version(MM->parse_version($_)), is_alpha_version(parse_default_version($_)), "'$_' has correct correspondance of alpha/release versions") for @files;
 
 #-----------------------------------------------------------------------------
+
+use Carp;		# included with perl [?version]
 
 sub parse_default_version
 { ## parse_default_version( $ [,\%] ): returns $
@@ -90,7 +91,7 @@ sub version_mmr
 { ## version_mmr( $ [,\%] ): returns $|@ ['shortcut' function]
 	# version_mmr( $version )
 	#
-	# transform $version into <major>.<minor>.<revision> form
+	# transform $version into <major>.<minor>.<release> form
 	#
 	# assumes $version is a set of numbers intersperced with '.' or '_'
 	# returns undef for $version == undef or unparsable as a version string (do allow and ignore leading/trailing whitespace)

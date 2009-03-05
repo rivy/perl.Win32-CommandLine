@@ -10,9 +10,8 @@ use Test::More;
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
-#use ExtUtils::MakeMaker;
 
-my @files = ( '.\lib\Win32\CommandLine.pm' );
+my @files = ( split(/;/, $ENV{_BUILD_versioned_file_globs}) );
 
 #my @all_files = all_perl_files( '.' );
 #my @files = @all_files;
@@ -29,12 +28,44 @@ my @files = ( '.\lib\Win32\CommandLine.pm' );
 
 plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$haveExtUtilsMakeMaker;
 
-plan tests => scalar( @files + 1 );
+plan tests => scalar( @files * 3 + 1 );
 
-isnt( (scalar(@files) > 0), 0, "Found ".scalar(@files)." files to check");
+ok( (scalar(@files) > 0), "Found ".scalar(@files)." files to check");
 isnt( MM->parse_version($_), 'undef', "'$_' has ExtUtils::MakeMaker parsable version") for @files;
+ok( (version_non_alpha_form(MM->parse_version($_)) =~ /[0-9]+\.[0-9_]+\.[0-9_]+/), "'$_' has at least M.m.r version") for @files;
+ok( (MM->parse_version($_) =~ /^([0-9]+\.)?[0-9]+\.[0-9_]+[_.][0-9_]+$/), "'$_' has version with correct canonical form [M.m.r[.b] and correct '_' position for alphas]") for @files;
 
 #-----------------------------------------------------------------------------
+
+use Carp;
+
+sub	_is_const { my $is_const = !eval { ($_[0]) = $_[0]; 1; }; return $is_const; }
+sub version_non_alpha_form
+{ ## version_non_alpha_form( $ ): returns $|@ ['shortcut' function]
+	# version_non_alpha_form( $version )
+	#
+	# transform $version into non-alpha form
+	#
+	# NOTE: not able to currently determine the difference between a function call with a zero arg list {"f(());"} and a function call with no arguments {"f();"} => so, by the Principle of Least Surprise, f() in void context is disallowed instead of being an alias of "f($_)" so that f(@array) doesn't silently perform f($_) when @array has zero elements
+	# ** use "f($_)" instead of "f()" when needed
+
+	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+	if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of '.$me.' with no arguments in void return context (did you want '.$me.'($_) instead?)'; return; } ## no critic ( RequireInterpolationOfMetachars ) #
+	if ( !@_ ) { Carp::carp 'Useless use of '.$me.' with no arguments'; return; }
+
+	my $v_ref;
+	$v_ref = \@_;
+	$v_ref = [ @_ ] if defined wantarray; ## no critic (ProhibitPostfixControls) #	# break aliasing if non-void return context
+
+	for	my $v ( @{$v_ref} ) {
+		if (_is_const($v)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
+		$v =~ s/_/./g;	# replace interior '_' with '.'
+		}
+
+	return wantarray ? @{$v_ref} : "@{$v_ref}";
+}
+
+use File::Spec;
 
 ## from Perl::Critic::Utils
 
@@ -93,7 +124,7 @@ sub _is_backup {
 # extension, or if it has a shebang-line containing 'perl' This
 # subroutine was also poached from Test::Perl::Critic
 
-use Perl::Critic::Exception::Fatal::Generic qw{ throw_generic };
+##use Perl::Critic::Exception::Fatal::Generic qw{ throw_generic };
 
 sub _is_perl {
     my ($file) = @_;
@@ -106,7 +137,8 @@ sub _is_perl {
     #Check for shebang
     open my $fh, '<', $file or return;
     my $first = <$fh>;
-    close $fh or throw_generic "unable to close $file: $!";
+    #close $fh or throw_generic "unable to close $file: $!";
+    close $fh or die "unable to close $file: $!";	## no critic (RequireCarping)
 
     return 1 if defined $first && ( $first =~ m{ \A [#]!.*perl }xms );
     return;

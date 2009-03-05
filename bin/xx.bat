@@ -93,7 +93,7 @@ goto endofperl
 
 =head1 NAME
 
-xx - eXpand and reparse the command line for
+xx - eXpand (reparse) and eXecute the command line
 
 =head1 VERSION
 

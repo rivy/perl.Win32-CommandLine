@@ -7,7 +7,7 @@ use warnings;
 
 use Test::More tests => 1;
 BEGIN {
-    use_ok( $ENV{_module_name} );
+    use_ok( $ENV{_BUILD_module_name} );
 }
 
-diag("$ENV{_module_name}, $^O, perl v$], $^X");
+diag("$ENV{_BUILD_module_name}, $^O, perl v$], $^X");
