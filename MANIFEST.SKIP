@@ -39,6 +39,13 @@
 # :: 6.18 through 6.25 generated 'blibdirs\.ts'
 (?:^|/)blibdirs\.ts$         
 
+# Avoid META-build files (ANT/NANT)
+(?:^|/)\.build$
+(?:^|/)\.build.xml$
+# :: regexp matches .build/.build.xml in any directory (including subs) =>? need to base this on the ${dist_path}? => BUT causes MANIFEST mismatches for SIGNATURE
+#^${dist_path}/\.build$
+#^${dist_path}/\.build.xml$
+
 # Avoid version control files
 (?:^|/)RCS\b
 (?:^|/)CVS\b
