@@ -4,24 +4,27 @@
 # NOTE: AVOID trailing comments because of the trailing comment bug noted. It causes incorrect results from other programs, notably 'cpansign' doesn't collect the correct file names.
 
 # NOTE: regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
+# NOTE: scripts/modules using the default ExtUtils::Manifest code (eg, 'cpansign') will not interpret lines with ${dist_<X>} correctly and may complain
 # NOTE: some regexps assume paths have canonical path format with '/' characters as path dividers
 # NOTE: regexps all assume no embedded newlines
 
 # REMINDER: \w == "word character" == (alphanumeric + '_'); \b == boundary between word characters
 
-# TODO: ExtUtils::Manifest - Submit bug report(?) regarding regexps starting with \b used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest (suggest below alternatives as better...)
 # TODO: ExtUtils::Manifest - Submit bug report regarding trailing comments (trailing comments are interpreted incorrectly as part of the regexp [see BUGFIX in Build.PL code])
+# TODO: ExtUtils::Manifest - Submit bug report(?) regarding regexps starting with \b used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest (suggest below alternatives using "(?:^|/)" as an improvement)
 
 # Avoid PACKAGE DISTRIBUTION FILES
-# :: assumes that the package directory has the same name as the distribution prefix (i.e. MyNamespace-MyPackage is the containing directory for MyNamespace-MyPackage-0.1.0.tar.gz)
+# :: ${dist_<X>} used; ok since these are BUILD generated files and 'clean'ed up (simply 'build clean' prior to running tools [such as 'cpansign'] using the default ExtUtils::Manifest code)
 ^${dist_path}/${dist_name}-${dist_version}\.tar\.gz$
 ^${dist_path}/${dist_name}-${dist_version}-PPM\.tar\.gz$
 ^${dist_path}/${dist_name}-${dist_version}\.tgz$
 ^${dist_path}/${dist_name}\.ppd$
 ^${dist_path}/${dist_name}-${dist_version}-[^/]*\.par$
 ^${dist_path}/${dist_name}-${dist_version}/
+
 # :: compiler detrus in the lib directory
 (?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
+
 # :: other possible/optional generated PACKAGE FILES to avoid
 
 # Avoid Module::Build generated and utility files
@@ -40,13 +43,15 @@
 (?:^|/)blibdirs\.ts$         
 
 # Avoid META-build files (ANT/NANT)
+# :: regexp matches .build/.build.xml in any directory (including subs)
 (?:^|/)\.build$
 (?:^|/)\.build.xml$
-# :: regexp matches .build/.build.xml in any directory (including subs) =>? need to base this on the ${dist_path}? => BUT causes MANIFEST mismatches for SIGNATURE
+# :: regexp matches .build/.build.xml ONLY in main directory; unfortunately, other tools complain => eg, causes MANIFEST mismatches for SIGNATURE
 #^${dist_path}/\.build$
 #^${dist_path}/\.build.xml$
 
 # Avoid version control files
+# :: TODO: check on correcting the trailing '\b' to a '/' for the SCS directories
 (?:^|/)RCS\b
 (?:^|/)CVS\b
 (?:^|/)SCCS\b
@@ -54,7 +59,7 @@
 (?:^|/)\.svn\b
 (?:^|/)_darcs\b
 # :: mercurial
-(?:^|/)\.hg/.*
+(?:^|/)\.hg/
 (?:^|/)\.hgtags$
 (?:^|/)\.hgignore$
 
