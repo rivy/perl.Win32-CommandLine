@@ -1,0 +1,199 @@
+<?xml version="1.0"?>
+<!-- ANT Build file -->
+<project name="Win32-CommandLine" default="build" xmlns:ac="antlib:net.sf.antcontrib">
+
+<target name="*" depends="build"/><!-- BUILD if no target recognized -->
+
+<property name="build.main.dir" location="."/>
+
+<property name="bin.dir" value="c:\users\public\documents\@bin"/>
+
+<target name="build">
+	<ant antfile=".build.xml" dir=".." inheritAll="false"/>
+
+	<property name="bat.source.dir" value="..\..\bat\advanced"/>
+	<fileset id="bat.source.files" defaultexcludes="false" dir="${bat.source.dir}">
+		<include name="so.bat" />
+	</fileset>
+
+	<ac:for param="s.fname">
+		<fileset refid="bat.source.files"/>
+		<sequential>
+			<!-- CONFIG -->
+			<property name="source.dir" location="${bat.source.dir}"/>
+			<property name="destination.dir" location="extras"/>
+			<!--<echo message="source.dir = ${source.dir}"/>-->
+			<!--<echo message="destination.dir = ${destination.dir}"/>-->
+			<!-- ====== -->
+			<property name="s.fname" value="@{s.fname}"/>
+			<!--<echo message="s.fname = ${s.fname}"/>-->
+			<pathconvert property="d.fname">
+				<path><pathelement location="${s.fname}"/></path>
+				<map from="${source.dir}" to="${destination.dir}"/>
+			</pathconvert>
+			<!--<echo message="d.fname = ${d.fname}"/>-->
+			<condition property="d.isNewer" else="FALSE">
+				<and>
+					<available file="${d.fname}"/>
+					<not>
+					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
+					</not>
+				</and>
+			</condition>
+			<!--<echo message="d.isNewer = ${d.isNewer}"/>-->
+			<ac:if><ac:equals arg1="${d.isNewer}" arg2="true"/>
+				<ac:then>
+					<pathconvert property="dir">
+						<path><pathelement location="${destination.dir}"/></path>
+						<map from="${build.main.dir}/" to=""/>
+					</pathconvert>
+					<pathconvert property="fname">
+						<path><pathelement location="${d.fname}"/></path>
+						<map from="${destination.dir}/" to=""/>
+					</pathconvert>
+					<echo level="warning" message="WARNING: In directory '${dir}', '${fname}' is NEWER than the SOURCE file (NOT OVERWRITTEN)."/>
+					<ac:var name="dir" unset="true"/>
+					<ac:var name="fname" unset="true"/>
+				</ac:then>
+				<ac:else>
+					<!--<echo message="copy file ${s.fname} tofile=${d.fname}"/>-->
+					<!--<echo message="attrib readonly=true file=${d.fname}"/>-->
+					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
+					<attrib readonly="true" file="${d.fname}"/>
+				</ac:else>
+			</ac:if>
+			<ac:var name="s.fname" unset="true"/>
+			<ac:var name="d.fname" unset="true"/>
+			<ac:var name="d.isNewer" unset="true"/>
+			<ac:var name="source.dir" unset="true"/>
+			<ac:var name="destination.dir" unset="true"/>
+		</sequential>
+	</ac:for>
+
+
+	<property name="eg.source.dir" value="eg"/>
+	<fileset id="eg.source.files" defaultexcludes="false" dir="${eg.source.dir}">
+		<include name="to.bat" />
+	</fileset>
+
+	<ac:for param="s.fname">
+		<fileset refid="eg.source.files"/>
+		<sequential>
+			<!-- CONFIG -->
+			<property name="source.dir" location="${eg.source.dir}"/>
+			<property name="destination.dir" location="${bin.dir}"/>
+			<!--<echo message="source.dir = ${source.dir}"/>-->
+			<!--<echo message="destination.dir = ${destination.dir}"/>-->
+			<!-- ====== -->
+			<property name="s.fname" value="@{s.fname}"/>
+			<!--<echo message="s.fname = ${s.fname}"/>-->
+			<pathconvert property="d.fname">
+				<path><pathelement location="${s.fname}"/></path>
+				<map from="${source.dir}" to="${destination.dir}"/>
+			</pathconvert>
+			<!--<echo message="d.fname = ${d.fname}"/>-->
+			<condition property="d.isNewer" else="FALSE">
+				<and>
+					<available file="${d.fname}"/>
+					<not>
+					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
+					</not>
+				</and>
+			</condition>
+			<!--<echo message="d.isNewer = ${d.isNewer}"/>-->
+			<ac:if><ac:equals arg1="${d.isNewer}" arg2="true"/>
+				<ac:then>
+					<pathconvert property="dir">
+						<path><pathelement location="${destination.dir}"/></path>
+						<map from="${build.main.dir}/" to=""/>
+					</pathconvert>
+					<pathconvert property="fname">
+						<path><pathelement location="${d.fname}"/></path>
+						<map from="${destination.dir}/" to=""/>
+					</pathconvert>
+					<echo level="warning" message="WARNING: In directory '${dir}', '${fname}' is NEWER than the SOURCE file (NOT OVERWRITTEN)."/>
+					<ac:var name="dir" unset="true"/>
+					<ac:var name="fname" unset="true"/>
+				</ac:then>
+				<ac:else>
+					<!--<echo message="copy file ${s.fname} tofile=${d.fname}"/>-->
+					<!--<echo message="attrib readonly=true file=${d.fname}"/>-->
+					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
+					<attrib readonly="true" file="${d.fname}"/>
+				</ac:else>
+			</ac:if>
+			<ac:var name="s.fname" unset="true"/>
+			<ac:var name="d.fname" unset="true"/>
+			<ac:var name="d.isNewer" unset="true"/>
+			<ac:var name="source.dir" unset="true"/>
+			<ac:var name="destination.dir" unset="true"/>
+		</sequential>
+	</ac:for>
+
+	<property name="extras.source.dir" value="extras"/>
+	<fileset id="extras.source.files" defaultexcludes="false" dir="${extras.source.dir}">
+		<include name="dosify.bat" />
+		<include name="so.bat" />
+		<include name="quote.bat" />
+		<include name="which.pl" />
+	</fileset>
+
+	<ac:for param="s.fname">
+		<fileset refid="extras.source.files"/>
+		<sequential>
+			<!-- CONFIG -->
+			<property name="source.dir" location="${extras.source.dir}"/>
+			<property name="destination.dir" location="${bin.dir}"/>
+			<!--<echo message="source.dir = ${source.dir}"/>-->
+			<!--<echo message="destination.dir = ${destination.dir}"/>-->
+			<!-- ====== -->
+			<property name="s.fname" value="@{s.fname}"/>
+			<!--<echo message="s.fname = ${s.fname}"/>-->
+			<pathconvert property="d.fname">
+				<path><pathelement location="${s.fname}"/></path>
+				<map from="${source.dir}" to="${destination.dir}"/>
+			</pathconvert>
+			<!--<echo message="d.fname = ${d.fname}"/>-->
+			<condition property="d.isNewer" else="FALSE">
+				<and>
+					<available file="${d.fname}"/>
+					<not>
+					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
+					</not>
+				</and>
+			</condition>
+			<!--<echo message="d.isNewer = ${d.isNewer}"/>-->
+			<ac:if><ac:equals arg1="${d.isNewer}" arg2="true"/>
+				<ac:then>
+					<pathconvert property="dir">
+						<path><pathelement location="${destination.dir}"/></path>
+						<map from="${build.main.dir}/" to=""/>
+					</pathconvert>
+					<pathconvert property="fname">
+						<path><pathelement location="${d.fname}"/></path>
+						<map from="${destination.dir}/" to=""/>
+					</pathconvert>
+					<echo level="warning" message="WARNING: In directory '${dir}', '${fname}' is NEWER than the SOURCE file (NOT OVERWRITTEN)."/>
+					<ac:var name="dir" unset="true"/>
+					<ac:var name="fname" unset="true"/>
+				</ac:then>
+				<ac:else>
+					<!--<echo message="copy file ${s.fname} tofile=${d.fname}"/>-->
+					<!--<echo message="attrib readonly=true file=${d.fname}"/>-->
+					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
+					<attrib readonly="true" file="${d.fname}"/>
+				</ac:else>
+			</ac:if>
+			<ac:var name="s.fname" unset="true"/>
+			<ac:var name="d.fname" unset="true"/>
+			<ac:var name="d.isNewer" unset="true"/>
+			<ac:var name="source.dir" unset="true"/>
+			<ac:var name="destination.dir" unset="true"/>
+		</sequential>
+	</ac:for>
+
+</target>
+
+<target name="install" />
+
+</project>

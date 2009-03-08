@@ -13,7 +13,7 @@ plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHO
 
 my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
 
-my @files = ( split(/;/, $ENV{_BUILD_versioned_file_globs}) );
+my @files = ( map { glob $_ } split(/;/, $ENV{_BUILD_versioned_file_globs}) );
 
 plan skip_all => 'ExtUtils::MakeMaker required to check code versioning' if !$haveExtUtilsMakeMaker;
 
