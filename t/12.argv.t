@@ -24,6 +24,9 @@ sub do_tests;
 
 ## accumulate tests
 
+add_test( [ qq{$0 }.q{-m "VERSION: update to 0.3.11"} ], ( q{-m}, q{VERSION: update to 0.3.11} ) );
+add_test( [ qq{$0 }.q{-m "VERSION: update to 0.3.11"}, {dosquote => 1} ], ( q{-m}, q{"VERSION: update to 0.3.11"} ) );
+
 add_test( [ qq{$0 }.q{'"'} ], ( q{"} ) ); 	#"
 #add_test( [ qq{$0 }.q{'"'}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
 #add_test( [ qq{$0 }.q{"\\""}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
