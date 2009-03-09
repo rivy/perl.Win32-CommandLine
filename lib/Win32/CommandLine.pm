@@ -43,7 +43,10 @@ This document describes C<Win32::CommandLine> ($Version$).
 
 # Module base/ISA and Exports
 
-use base qw( DynaLoader Exporter );
+## URLrefs: [base.pm vs @ISA: http://www.perlmonks.org/?node_id=643366]; http://search.cpan.org/perldoc?base; http://search.cpan.org/perldoc?parent; http://perldoc.perl.org/DynaLoader.html; http://perldoc.perl.org/Exporter.html
+#use base qw( DynaLoader Exporter );	# use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
+#use parent qw( DynaLoader Exporter );	# use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
+BEGIN { require DynaLoader; require Exporter; our @ISA = qw( DynaLoader Exporter ); }
 
 #our @EXPORT = qw( );	# no default exported symbols
 our %EXPORT_TAGS = (

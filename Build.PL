@@ -31,8 +31,8 @@ $config{'module_name'} = undef;
 $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
-$config{'recommends'} = {};							# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => 5.006, 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
+$config{'recommends_href'} = {};					# module recommendations (no obvious default)
+$config{'build_requires_href'} = { 'perl' => '5.6.0', 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
 $config{'create_makefile_pl'} = 'passthrough';		# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
@@ -141,7 +141,7 @@ my $build = $class->new(
 	license        => $config{'license'},
 
 	requires       => { %{$config{'requires_href'}} },
-	recommends     => { %{$config{'recommends'}} },
+	recommends     => { %{$config{'recommends_href'}} },
 
 	build_requires => { %{$config{'build_requires_href'}} },
 
