@@ -6,8 +6,6 @@
 ## TODO?: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META.yml
 ## TODO?: .. or just remove VERSION code generating the alpha '_' within the version? does it matter? does the '_' interfere with version comparisons on CPAN?
 
-## TODO: check on the broken install for ppm for perl 5.10 => <ARCHITECTURE NAME="MSWin32-x86-multi-thread-118.53" /> instead of the correct <ARCHITECTURE NAME="MSWin32-x86-multi-thread-5.10" />
-
 ## TODO: flesh out stub documentation for additional custom actions
 
 use strict;
@@ -25,7 +23,7 @@ use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alpha
 ##- config
 my %config;
 
-# config may be done via a local config file [OPTIONAL] 	## allows Build.PL to be maintained seperately and used without changes between modules)
+# config may be done via a local config file [OPTIONAL] 	## allows Build.PL to be maintained seperately and used without changes between modules
 $config{'rc_filename'} = 'Build.PL.config'; ##	# configuration file name (in .NET style)
 
 # Module::Build DEFAULTS [ ** DO NOT CHANGE, use the Build.PL.config to set the values ]
@@ -34,7 +32,7 @@ $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends'} = {};							# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => 5.006, 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0 };	# basic module requirements for Build.PL
+$config{'build_requires_href'} = { 'perl' => 5.006, 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
 $config{'create_makefile_pl'} = 'passthrough';		# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
@@ -53,7 +51,7 @@ $config{'custom_code_href'} = {};					# custom code overrides from config
 $config{'custom_ENV_href'} = { '_BUILD_module_name' => '' };	# custom environment overrides (set before each dispatch) [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
 
 # helper variables
-$config{'lib_path'} = undef;						# generated during .config file parsing
+$config{'lib_path'} = undef;						# generated from $config{'module_name'} during .config file parsing (may be set in .config, but is reset after each successful $config{'module_name'} parse)
 
 ##
 
@@ -101,6 +99,7 @@ if ( -e $config_filename )
 				$SIG{'__WARN__'} = undef;
 				if ($w || $e) {warn "build: warning, malformed configuration entry: $config{'rc_filename'}, line $line\n";}
 				}
+			if ($key eq 'module_name') { $config{'lib_path'} = 'lib/' . join( q{/}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) ); }	# relative path to the modules lib location (using standard Module::Builder rules)
 			}
 			else { die "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
 		}
@@ -287,8 +286,8 @@ $code{'ACTION_testaction'} = q{
 	sub ACTION_testaction {
 		my ($self) = @_;
 
-		print "self->dist_name = `".$self->dist_name."`\n";
-		print "self->dist_name = `".$self->dist_version."`\n";
+		print "self->dist_name = `$self->dist_name`\n";
+		print "self->dist_name = `$self->dist_version`\n";
 		for (sort keys %{$self}) { print "self->{$_} = `$self->{$_}`\n"; }
 		my $n;
 		my $dist_name = $self->dist_name;
@@ -298,7 +297,7 @@ $code{'ACTION_testaction'} = q{
 		$n =~ s/$dist_name/YY/g;
 		print "n = $n\n";
 		print "ENVIRONMENT:\n";
-		for (keys %ENV) { print "$_ = $ENV{$_}\n"; }
+		for (sort keys %ENV) { print "$_ = $ENV{$_}\n"; }
 	  }
 };
 $code{'ACTION_sign@_sign_dir'} = q{
@@ -731,12 +730,14 @@ $code{'ACTION_manifest'} = q{
 	sub ACTION_manifest {
 		my ($self) = @_;
 
-		use Sub::Override;
+		#use Sub::Override;
 		require ExtUtils::Manifest; #ExtUtils::Manifest->import();
 		my $codeRef = \&my_maniskip;
-		my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
+		#my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
 		#local *ExtUtils::Manifest::_maniskip = &my_maniskip;
-		*ExtUtils::Manifest::_maniskip = $codeRef;
+		{no warnings 'redefine';
+		*ExtUtils::Manifest::maniskip = $codeRef;
+		}
 
 		use File::Spec::Functions qw( rel2abs );
 		use File::Basename qw( dirname );
@@ -796,13 +797,15 @@ $code{'ACTION_ppd'} = q{
 	  	my ($self) = @_;
 	  	require Module::Build::PPMMaker;
 	  	my $ppd = Module::Build::PPMMaker->new();
-		use Sub::Override;
+		#use Sub::Override;
 		my $codeRef = \&my_varchname;
-		my $override = Sub::Override->new( 'Module::Build::PPMMaker::_varchname' => $codeRef );
+		#my $override = Sub::Override->new( 'Module::Build::PPMMaker::_varchname' => $codeRef );
+		{no warnings 'redefine';
+		*Module::Build::PPMMaker::_varchname = $codeRef;
+		}
 	  	my $file = $ppd->make_ppd(%{$self->{args}}, build => $self);
 	  	$self->add_to_cleanup($file);
 	  }
-
 };
 $code{'ACTION_test'} = q{
     sub ACTION_test {

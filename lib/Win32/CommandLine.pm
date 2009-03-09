@@ -7,6 +7,11 @@ package Win32::CommandLine;
 ## ---- policies to REVISIT later
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
+## BUG:
+#C:\...\perl\build
+#>xx -e perl -e "$x = split( /x/, q{}); print $x;"
+#perl -e "$x = split( \x\, q{}); print $x;"
+
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
 # TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
@@ -206,6 +211,7 @@ sub _getparentname {
 sub	_dosify {
 	# _dosify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
 	# dosify string, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+	# TODO: NOTE: this also changes '/' to '\' which is fine for files but not so good for strings ... LOOK INTO this...
 	# CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
 	#	:: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
 	#				 {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
@@ -218,6 +224,33 @@ sub	_dosify {
 		{
 		#print "_ = $_\n";
 		s:\/:\\:g;								# forward to back slashes
+		if ( $_ =~ qr{(\s|[$dc])} )
+			{
+			#print "in qr\n";
+			s:":\\":g;							# CMD: preserve double-quotes with backslash	# TODO: change to $dos_escape	## no critic (ProhibitUnusualDelimiters)
+			s:([\\]+)\\":($1 x 2).q{\\"}:eg;	# double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
+			$_ = q{"}.$_.q{"};					# quote the final token
+			};
+		}
+
+	return wantarray ? @_ : "@_";
+}
+
+sub	_dos_quote {
+	# _dos_quote( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# quote string in DOS manner, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+	# CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
+	#	:: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
+	#				 {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+
+	# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
+	my $dos_special_chars = '"<>|';
+	my $dc = quotemeta( $dos_special_chars );
+	for (@_ ? @_ : $_)
+		{
+		#print "_ = $_\n";
+		#s:\/:\\:g;								# forward to back slashes
 		if ( $_ =~ qr{(\s|[$dc])} )
 			{
 			#print "in qr\n";
@@ -913,7 +946,9 @@ sub	_argv_do_glob{
 	# _argv_do_glob( @args ): returns @
 	## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 	my %opt	= (
+		dosquote => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
+		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
 		glob => 1,		## REMOVE this??
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
 		);
@@ -1016,22 +1051,29 @@ sub	_argv_do_glob{
 				@g = bsd_glob( $pat, $glob_flags );
 				#print "s = $s\n";
 				if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
+				if ($opt{dosify}) {	foreach (@g) { _dosify($_); }}
+				elsif ($opt{unixify}) { foreach (@g) { $_ =~ s:\\:\/:g; }}
 				}
 			}
 		else
 			{
 			@g = ( $s );
+			# TODO: CHECK this and think about correct function names... (both here and in successful glob function above)
+			if ($opt{dosify} eq 'all') { foreach (@g) { if (-e $_) { _dosify($_); }}}
+			elsif ($opt{dosquote}) { foreach (@g) { _dos_quote($_); }}
+			elsif ($opt{unixify} eq 'all') { foreach (@g) { $_ =~ s:\\:\/:g; }}
 			}
 		#print "glob_this = $glob_this\n";
 		#print "s	= `$s`\n";
 		#print "pat	= `$pat`\n";
 		#print "\@g	= { @g }\n";
 
-		# if whitespace or special characters, surround with double-quotes ((::whole token:: or just individual problem characters??))
-		if ($opt{dosify})
-			{
-			foreach (@g) { _dosify($_); }
-			};
+		#BUGFIX: do this only for successful globs... MOVED into glob loop above [FIXES: xx -e perl -e "$x = split( /n/, q{Win32::CommandLine}); print $x;" => perl -e "$x = split( \n\, q{Win32::CommandLine}); print $x;" ]
+		## if whitespace or special characters, surround with double-quotes ((::whole token:: or just individual problem characters??))
+		#if ($opt{dosify})
+		#	{
+		#	foreach (@g) { _dosify($_); }
+		#	};
 
 		$args[$i]->{globs} = \@g;
 		}
@@ -1129,6 +1171,7 @@ sub	_argv{
 	# [\%]: an optional hash_ref containing function options as named parameters
 	my %opt	= (
 		remove_exe_prefix => 1,		# = 0/<true> [default = true]		# if true, remove all initial args up to and including the exe name from the @args array
+		dosquote => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
 		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
 		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
@@ -1172,7 +1215,7 @@ sub	_argv{
 	if ($opt{glob})
 		{# do globbing
 		#print 'globbing'.qq{\n};
-		@args = _argv_do_glob( @args, { dosify => $opt{dosify}, nullglob => $opt{nullglob} } );
+		@args = _argv_do_glob( @args, { dosify => $opt{dosify}, dosquote => $opt{dosquote}, nullglob => $opt{nullglob} } );
 		}
 	else
 		{# copy tokens to 'glob' position (for output later)
@@ -1181,15 +1224,22 @@ sub	_argv{
 		for my $arg (@args) { $arg->{globs} = [ $arg->{token} ]; }
 		}
 
-	## TODO: TEST
-	if ($opt{dosify} eq 'all')
-		{
-		foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { _dosify($glob); }}}
-		}
-	if ($opt{unixify} eq 'all')
-		{
-		foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { $glob =~ s:\\:\/:g; }}}
-		}
+	## TODO: TEST -- NOW DONE in _argv_do_glob()
+	#if ($opt{dosify} eq 'all')
+	#	{
+	#	foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { _dosify($glob); }}}
+	#	}
+	#if ($opt{unixify} eq 'all')
+	#	{
+	#	foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { $glob =~ s:\\:\/:g; }}}
+	#	}
+
+	## TODO: CHECK this and think about correct function names... -- NOW DONE in _argv_do_glob()
+	#if ($opt{dosquote})
+	#	{
+	#	foreach (@g) { _dos_quote($_); }
+	#	};
+
 
 	my @g;
 	#print "$me:gather globs\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; #print "args[$pos]->{globs} = `$args[$pos]->{globs}`\n"; my @globs = $args[$pos]->{globs}; for (my $xpos=0; $xpos<$#globs; $xpos++) { #print "globs[$pos] = `$globs[$pos]`\n"; } }

@@ -25,8 +25,10 @@ sub do_tests;
 ## accumulate tests
 
 add_test( [ qq{$0 }.q{'"'} ], ( q{"} ) ); 	#"
-add_test( [ qq{$0 }.q{'"'}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
-add_test( [ qq{$0 }.q{"\\""}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
+#add_test( [ qq{$0 }.q{'"'}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
+#add_test( [ qq{$0 }.q{"\\""}, { dosify => 1 }  ], ( q{"\\""} ) ); 	#"
+add_test( [ qq{$0 }.q{'"'}, { dosquote => 1 }  ], ( q{"\\""} ) ); 	#"
+add_test( [ qq{$0 }.q{"\\""}, { dosquote => 1 }  ], ( q{"\\""} ) ); 	#"
 
 add_test( [ qq{$0 }.q{$""} ], ( q{} ) );
 add_test( [ qq{$0 }.q{$'\x25'} ], ( q{%} ) );
@@ -196,14 +198,14 @@ if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
 #add_test( [ qq{$0 }.q{"\\"} ], ( q{\\} ) );					## EVALUATE
 #add_test( [ qq{$0 }.q{"\\"}, { dosify => 1 } ], ( q{\\} ) );	## EVALUATE
 add_test( [ qq{$0 }.q{"\\\\"} ], ( q{\\} ) );
-add_test( [ qq{$0 }.q{"\\\\"}, { dosify => 1 } ], ( q{\\} ) );
+add_test( [ qq{$0 }.q{"\\\\"}, { dosquote => 1 } ], ( q{\\} ) );
 # double-quotes
 add_test( [ qq{$0 }.q{"\\""} ], ( q{"}) );
-add_test( [ qq{$0 }.q{"\\""}, { dosify => 1 } ], ( q{"\\""} ) );
+add_test( [ qq{$0 }.q{"\\""}, { dosquote => 1 } ], ( q{"\\""} ) );
 #add_test( [ qq{$0 }.q{"\\\\""} ], ( q{\\"},0) );							#CORRECT: ERROR: Unbalanced quotes...
 #add_test( [ qq{$0 }.q{"\\\\""}, { dosify => 1 } ], ( q{"\\\\""},0 ) );		#CORRECT: ERROR: Unbalanced quotes...
 add_test( [ qq{$0 }.q{"\\\\\\""} ], ( q{\\"} ) );
-add_test( [ qq{$0 }.q{"\\\\\\""}, { dosify => 1 } ], ( q{"\\\\\\""} ) );
+add_test( [ qq{$0 }.q{"\\\\\\""}, { dosquote => 1 } ], ( q{"\\\\\\""} ) );
 
 
 # rule tests
