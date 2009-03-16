@@ -1983,8 +1983,15 @@ return %home_paths;
 
 This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing. With the use of the companion script (x.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any command.
 
-	doskey type=x type $*
+	[cmd.exe]
+	doskey type=call xx type $*
 	type [a-c]*.pl
+	doskey perl=call xx perl
+	perl -e 'print "test"'		[o/w FAILS without commandline reinterpretation]
+
+	[TCC/CMD/4NT]
+	alias perl=call xx perl
+	perl -e 'print "test"'		[o/w FAILS without commandline reinterpretation]
 
 Note the bash compatible character expansion and globbing available, including meta-notations a{b,c}* ...
 
@@ -2018,7 +2025,7 @@ Globbing:
 
 ~       Expand to user home directory
 
-~<name> Expands to user <name> home directory for any defined user [ ONLY if File::HomeDir::Win32 is installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
+~<name> Expands to user <name> home directory for any defined user [ ONLY if {Win32, Win32::Security::SID, Win32::TieRegistry} are installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
 
 ~<text> Expands to value of environment variable "~<text>", if defined
 
