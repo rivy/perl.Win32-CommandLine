@@ -7,11 +7,6 @@ package Win32::CommandLine;
 ## ---- policies to REVISIT later
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
-## BUG:
-#C:\...\perl\build
-#>xx -e perl -e "$x = split( /x/, q{}); print $x;"
-#perl -e "$x = split( \x\, q{}); print $x;"
-
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
 # TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
@@ -46,16 +41,20 @@ This document describes C<Win32::CommandLine> ($Version$).
 
 ## ref: Good Practices/Playing Safe in 'perldoc Exporter'
 ## URLrefs: [base.pm vs @ISA: http://www.perlmonks.org/?node_id=643366]; http://search.cpan.org/perldoc?base; http://search.cpan.org/perldoc?parent; http://perldoc.perl.org/DynaLoader.html; http://perldoc.perl.org/Exporter.html
+## TODO?: look into using Readonly::Array and Readonly::Hash for EXPORT_OK and EXPORT_TAGS
 #use base qw( DynaLoader Exporter );	# use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
 #use parent qw( DynaLoader Exporter );	# use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
 #our @EXPORT = qw( );	# no default exported symbols
 our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
-BEGIN {require DynaLoader; require Exporter; our @ISA = qw( DynaLoader Exporter );}
+BEGIN {require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter );}
+{no strict 'refs';
+#our @EXPORT = qw( );   # no default exported symbols
 %EXPORT_TAGS = (
-	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],  	## no critic ( ProhibitComplexRegexes ) ## all public symbols [Note: private/internal symbols are ALL_CAPS or start with a leading '_']
-#	'PRIVATE'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]+$/s } keys %Win32::CommandLine::) ],   					## no critic ( ProhibitComplexRegexes ) ## all private/internal functions [Note: private/internal functions start with a leading '_']
-);
+    'ALL'       => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %{__PACKAGE__.'::'}) ],  # all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_'] ## no critic ( ProhibitComplexRegexes )
+#   '_INTERNAL' => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ }  keys %{__PACKAGE__.'::'}) ],  # all internal functions [Note: internal functions start with a leading '_'] ## no critic ( ProhibitComplexRegexes )
+    );
 @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
+}
 
 # Module Interface
 
@@ -2466,6 +2465,55 @@ TODO: UPDATE THIS $"..." and "..." not exactly accurate now [2009-02-23]
 =end IMPLEMENTATION-NOTES
 
 This began as a simple need to reparse the commandline and grew into an odyssey to lend some bash shell magic to the CMD shell (and, additionally, then make it compatible with the excellent (and free) TCC-LE shell from JPSoft).
+
+TODO
+
+Check VCC compilation. Currently, after vcvars.bat setup: 1) compilation proceeds to completion without error, 2) loading the .dll causes a GPF[ perl.exe - Unable to Locate Component == This application has failed to start because MSVCR90.dll was not found. Re-installing the application may fix this problem. ]
+
+Note that a similar GPF occurs for 'test.exe' when test.exe.manifest is removed => [ perl.exe - Unable to Locate Component == This application has failed to start because MSVCR90.dll was not found. Re-installing the application may fix this problem. ]
+
+[test.c]
+int main(int argc, char **argv, char **env)
+{
+}
+[test.exe.manifest]
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<assembly xmlns='urn:schemas-microsoft-com:asm.v1' manifestVersion='1.0'>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level='asInvoker' uiAccess='false' />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type='win32' name='Microsoft.VC90.CRT' version='9.0.21022.8' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b' />
+    </dependentAssembly>
+  </dependency>
+</assembly>
+
+SOLUTION (why needed? and is it fixed with later v of ActivePerl?)
+
+** create perl.exe.manifest in same directory as perl.exe executable [c:\perl\bin]
+
+[perl.exe.manifest]
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<assembly xmlns='urn:schemas-microsoft-com:asm.v1' manifestVersion='1.0'>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level='asInvoker' uiAccess='false' />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type='win32' name='Microsoft.VC90.CRT' version='9.0.21022.8' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b' />
+    </dependentAssembly>
+  </dependency>
+</assembly>
+
 
 =cut
 

@@ -153,6 +153,17 @@ B<xx> will read expand the command line and execute the COMMAND.
 NOTE: B<xx> is designed for use with legacy commands to graft on better command line interpretation behaviors. It shouldn't generally be necessary to use B<xx> on commands which already use Win32::CommandLine::argv() internally as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
 ??? what about pl2bat'ed perl scripts? Since the command line is used within the wrapping batch file, is it clean for the .pl file or does it need x wrapping as well?
 
+=head1 EXAMPLES
+
+Here are some examples of what's possible in the standard cmd and tcc shells:
+
+=over
+
+xx $( perl -MConfig -e "print $Config{cc}" ) $(perl -MExtUtils::Embed -e ccopts) foo.c -o foo
+
+xx $( perl -MConfig -e "print $Config{cc}" ) $(perl -MExtUtils::Embed -e ccopts) -c bar.c -o bar.o
+#xx $( perl -MConfig -e "print $Config{ld}" ) $("perl -MExtUtils::Embed -e ldopts 2>nul") bar.o
+
 =cut
 
 use strict;

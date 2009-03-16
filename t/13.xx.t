@@ -131,6 +131,24 @@ add_test( [ q{perl -e 'print "test"'} ], ( q{perl -e "print \"test\""} ) );
 add_test( [ q{TEST -m "VERSION: update to 0.3.11"} ], ( q{TEST -m "VERSION: update to 0.3.11"} ) );
 add_test( [ q{perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new('lib/Win32/CommandLine.pm'); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}"} ], ( q{perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new('lib/Win32/CommandLine.pm'); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}"} ) );
 add_test( [ q{perl -e "$_ = 'abc'; s/a/bb/; print"} ], ( q{perl -e "$_ = 'abc'; s/a/bb/; print"} ) );
+add_test( [ q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ], ( q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ) );		# WAS a BUG
+
+# design decision = should non-quoted/non-glob expanded tokens be dosified or not
+add_test( [ q{/NOT_A_FILE} ], ( q{\NOT_A_FILE} ) );		# non-files (can screw up switches)
+add_test( [ q{c:/windows} ], ( q{c:\windows} ) );		# non-expanded files
+add_test( [ q{c:/windows/system*} ], ( q{c:\windows\system c:\windows\system.ini c:\windows\system32} ) );		# non-expanded files
+
+# /dev/nul vs nul (?problem or ok)
+add_test( [ q{$( echo > nul )} ], ( ) );
+add_test( [ q{$( echo > /dev/nul )} ], ( q{The system cannot find the path specified.} ) );
+
+add_test( [ q{perl -e 'print 0'} ], ( q{perl -e "print 0"} ) );
+add_test( [ q{perl -e "print 0"} ], ( q{perl -e "print 0"} ) );
+#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ) );	## ERROR -- ? fixable, ? should it be fixed? ## design decision = ?attempt to fix the single quote issue == NOTE: with xx alias of perl, q{perl -e 'print 0'} WORKS, so shouldn't q{$( perl -e 'print 0' )} work as well?
+add_test( [ q{$( perl -e "print 0" )} ], ( q{0} ) );
+
+add_test( [ q{$( echo 0 )} ], ( q{0} ) );
+add_test( [ q{$( echo TEST )} ], ( q{TEST} ) );
 
 ## do tests
 
@@ -145,4 +163,4 @@ my @tests;
 sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }		## NOTE: caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
-sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; my ($got_stdout, $got_stderr); eval { IPC::Run3::run3( "$perl $script -e @args", \undef, \$got_stdout, \$got_stderr ); chomp($got_stdout); chomp($got_stderr); if ($got_stdout) { push @got, $got_stdout }; if ($got_stderr) {push @got, $got_stderr}; 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
+sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; my ($got_stdout, $got_stderr); eval { IPC::Run3::run3( "$perl $script -e @args", \undef, \$got_stdout, \$got_stderr ); chomp($got_stdout); chomp($got_stderr); if ($got_stdout ne q{}) { push @got, $got_stdout }; if ($got_stderr ne q{}) {push @got, $got_stderr}; 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
