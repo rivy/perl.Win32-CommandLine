@@ -93,7 +93,8 @@ use Env::Path qw(PATH);
 # getopt
 my %ARGV = ();
 GetOptions (\%ARGV, 'where|w|all|a', 'help|h|?|usage', 'man', 'version|ver|v', 'dosify|dos|d') or pod2usage(2);
-Getopt::Long::VersionMessage() if $ARGV{'version'};
+#Getopt::Long::VersionMessage() if $ARGV{'version'};
+pod2usage(-verbose => 99, -sections => '', -message => (File::Spec->splitpath($0))[2]." v$::VERSION") if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage(-verbose => 2) if $ARGV{'man'};
 

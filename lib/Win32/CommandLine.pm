@@ -2220,6 +2220,8 @@ None reported.
 	limitations on the size of data sets, special cases that are not
 	(yet) handled, etc.
 
+Please report any bugs or feature requests to bug-test-command at rt.cpan.org, or through the web interface at http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-CommandLine. I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
+
 Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 
 GOTCHA: ** Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must still be **double-quoted**. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before any process can get a look at the command line.
@@ -2237,17 +2239,36 @@ GOTCHA: Note this behavior (ending \" => ", which is probably not what is desire
 	>t\prelim\echo.exe "\\sethra\C$\"win*
 	[0]\\sethra\C$"win*
 
+Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at L<http://rt.cpan.org>.
+
 No bugs have been reported.
-
-
-Please report any bugs or feature requests to
-C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org>.
 
 =head1 SUPPORT
 
 =for author_to_fill_in
 	Added from example for 'Touch' on CPAN. Possibly use a modified form.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Win32::CommandLine
+
+You can also look for information at:
+
+    * AnnoCPAN: Annotated CPAN documentation
+
+      http://annocpan.org/dist/Win32-CommandLine
+
+    * CPAN Ratings
+
+      http://cpanratings.perl.org/d/Test-Command
+
+    * RT: CPAN's request tracker
+
+      http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Command
+
+    * Search CPAN
+
+      http://search.cpan.org/dist/Test-Command
 
 #EX from 'Touch'
 #You can find documentation for this module with the perldoc command.
@@ -2269,6 +2290,11 @@ L<http://rt.cpan.org>.
 #* Search CPAN
 #
 #    http://search.cpan.org/dist/Touch
+
+=head1 ACKNOWLEDGEMENTS
+
+#EX
+#Test::Builder by Michael Schwern allowed me to focus on the specifics related to testing system commands by making it easy to produce proper test output.
 
 =for readme continue
 

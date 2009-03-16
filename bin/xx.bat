@@ -5,10 +5,10 @@
 :: eXpand and eXecute command line
 :: similar to linux xargs
 :: ToDO: clean up documentation/comments
-:: contains batch file tricks to allow 'sourcing' of target executable output
-:: :'sourcing' => running commands in the parents environmental context, allowing modification of parents environment and CWD
+:: contains batch file tricks to allow "sourcing" of target executable output
+:: :"sourcing" => running commands in the parents environmental context, allowing modification of parents environment and CWD
 
-:: NOTE: 4nt/TCC/TCMD quirk => use %% for %, whereas cmd.exe % => as long as it doesn't introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
+:: NOTE: 4nt/TCC/TCMD quirk => use %% for %, whereas cmd.exe % => as long as it does not introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
 
 :: localize ENV changes until sourcing is pending
 setlocal
@@ -30,7 +30,7 @@ echo @:: %_xx_bat% file > %_xx_bat%
 ::echo _xx_bat=%_xx_bat%
 
 :: 4NT/TCC
-::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize it's arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
+::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize its arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
 if 01 == 1.0 ( setdos /x-14567 )
 
 if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
@@ -182,7 +182,8 @@ use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_comp
 my %ARGV = ();
 # NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by the wrapping .bat script by executing the output of the perl script.
 GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
-Getopt::Long::VersionMessage() if $ARGV{'version'};
+#Getopt::Long::VersionMessage() if $ARGV{'version'};
+pod2usage(-verbose => 99, -sections => '', -message => (File::Spec->splitpath($0))[2]." v$::VERSION") if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage(-verbose => 2) if $ARGV{'man'};
 
