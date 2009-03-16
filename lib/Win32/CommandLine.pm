@@ -27,7 +27,7 @@ use 5.006;			# earliest tested perl version
 # generate VERSION from $Version$ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 # Module Summary
 
@@ -43,17 +43,18 @@ This document describes C<Win32::CommandLine> ($Version$).
 
 # Module base/ISA and Exports
 
+## ref: Good Practices/Playing Safe in 'perldoc Exporter'
 ## URLrefs: [base.pm vs @ISA: http://www.perlmonks.org/?node_id=643366]; http://search.cpan.org/perldoc?base; http://search.cpan.org/perldoc?parent; http://perldoc.perl.org/DynaLoader.html; http://perldoc.perl.org/Exporter.html
 #use base qw( DynaLoader Exporter );	# use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
 #use parent qw( DynaLoader Exporter );	# use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
-BEGIN { require DynaLoader; require Exporter; our @ISA = qw( DynaLoader Exporter ); }
-
 #our @EXPORT = qw( );	# no default exported symbols
-our %EXPORT_TAGS = (
+our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
+BEGIN {require DynaLoader; require Exporter; our @ISA = qw( DynaLoader Exporter );}
+%EXPORT_TAGS = (
 	'ALL'		=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/s } keys %Win32::CommandLine::) ],  	## no critic ( ProhibitComplexRegexes ) ## all public symbols [Note: private/internal symbols are ALL_CAPS or start with a leading '_']
 #	'PRIVATE'	=> [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]+$/s } keys %Win32::CommandLine::) ],   					## no critic ( ProhibitComplexRegexes ) ## all private/internal functions [Note: private/internal functions start with a leading '_']
-	);
-our @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
+);
+@EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
 
 # Module Interface
 

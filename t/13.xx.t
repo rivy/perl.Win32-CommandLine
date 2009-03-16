@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-use Test::More;				# included with perl
-use Test::Differences;		# included with perl
+use Test::More;				# included with perl [see Standard Modules in perlmodlib]
+use Test::Differences;		# included with perl [see Standard Modules in perlmodlib]
 
 my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
@@ -22,17 +22,11 @@ foreach (@modules) { if (!eval "use $_; 1;") { $haveRequired = 0; diag("$_ is no
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
 
-sub add_test;
-sub test_num;
-sub do_tests;
-
-# Tests
-
 # autoflush to keep output in order
-my $stdout = select(STDERR);
-$|=1;
-select($stdout);
-$|=1;
+my $stdout = select(STDERR);		## no critic (ProhibitOneArgSelect)
+$|=1;								## no critic (RequireLocalizedPunctuationVars)
+select($stdout);					## no critic (ProhibitOneArgSelect)
+$|=1;								## no critic (RequireLocalizedPunctuationVars)
 
 #plan tests =>  9 ;
 #my $perl = Probe::Perl->find_perl_interpreter;
@@ -115,6 +109,12 @@ $|=1;
 #is( $got_stdout, expected("STDOUT"),
 #    "hello world program output (tee file1 file2 [2])"
 #);
+
+sub add_test;
+sub test_num;
+sub do_tests;
+
+# Tests
 
 ## setup
 my $perl = Probe::Perl->find_perl_interpreter;
