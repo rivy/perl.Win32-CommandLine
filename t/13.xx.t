@@ -131,7 +131,7 @@ add_test( [ q{perl -e 'print "test"'} ], ( q{perl -e "print \"test\""} ) );
 add_test( [ q{TEST -m "VERSION: update to 0.3.11"} ], ( q{TEST -m "VERSION: update to 0.3.11"} ) );
 add_test( [ q{perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new('lib/Win32/CommandLine.pm'); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}"} ], ( q{perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new('lib/Win32/CommandLine.pm'); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}"} ) );
 add_test( [ q{perl -e "$_ = 'abc'; s/a/bb/; print"} ], ( q{perl -e "$_ = 'abc'; s/a/bb/; print"} ) );
-add_test( [ q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ], ( q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ) );		# WAS a BUG
+add_test( [ q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ], ( q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ) );		## prior BUG
 
 # design decision = should non-quoted/non-glob expanded tokens be dosified or not
 add_test( [ q{/NOT_A_FILE} ], ( q{\NOT_A_FILE} ) );		# non-files (can screw up switches)
@@ -144,11 +144,23 @@ add_test( [ q{$( echo > /dev/nul )} ], ( q{The system cannot find the path speci
 
 add_test( [ q{perl -e 'print 0'} ], ( q{perl -e "print 0"} ) );
 add_test( [ q{perl -e "print 0"} ], ( q{perl -e "print 0"} ) );
-#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ) );	## ERROR -- ? fixable, ? should it be fixed? ## design decision = ?attempt to fix the single quote issue == NOTE: with xx alias of perl, q{perl -e 'print 0'} WORKS, so shouldn't q{$( perl -e 'print 0' )} work as well?
+#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ) );	## ERROR -- ? fixable, ? should it be fixed? ## design decision = ?attempt to fix the single quote issue == NOTE: _with xx alias of perl_, q{perl -e 'print 0'} WORKS, so shouldn't q{$( perl -e 'print 0' )} work as well?
 add_test( [ q{$( perl -e "print 0" )} ], ( q{0} ) );
 
 add_test( [ q{$( echo 0 )} ], ( q{0} ) );
 add_test( [ q{$( echo TEST )} ], ( q{TEST} ) );
+
+add_test( [ q{perl -e "print `xx -e t/*.t`"} ], ( q{perl -e "print `xx -e t/*.t`"} ) );
+add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`"} ) );	## prior BUG
+
+add_test( [ q{~} ], ( q{"}.$ENV{USERPROFILE}.q{"} ) );	## ? FRAGILE
+$ENV{'~TEST'} = "/test";
+add_test( [ q{~TEST} ], ( "\\test" ) );	## ? FRAGILE
+
+my $version_output = `ver`;	## no critic (ProhibitBacktickOperators)
+chomp( $version_output );
+$version_output =~ s/^\n//s;		# NOTE: initial \n is removed by subshell expansion ## design decision: should the initial NL be removed?
+add_test( [ q{set os_version=$(ver)} ], ( "set os_version=".$version_output ) );
 
 ## do tests
 

@@ -60,7 +60,7 @@ endlocal & call %_xx_bat% & erase %_xx_bat% 1>nul 2>nul
 :done
 goto endofperl
 @rem ';
-#!perl -w   -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 #line 65
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
