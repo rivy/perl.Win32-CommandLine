@@ -7,6 +7,8 @@ package Win32::CommandLine;
 ## ---- policies to REVISIT later
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching )
 
+# TODO: check under MSVC, seems to compile and test fine but to.bat seems not to operate correctly
+
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
 # TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
@@ -1112,6 +1114,7 @@ sub	_zero_position{
 	# find $0 in the ARGV array
 	#print "0 =	$0\n";
 	#win32 - filenames are case-preserving but case-insensitive	[so, solely case difference compares equal => convert to lowercase]
+	# TODO: for use in C# programs under PerlScript => if $PROGRAM_NAME eq q{}, assume 0 position is correct (any other ramifications?)
 	my $zero = $PROGRAM_NAME;	   ## no critic	(Variables::ProhibitPunctuationVars)
 	my $zero_lc	= lc($zero);
 	my $zero_dq	= _dequote($zero_lc, { allowed_quotes_re => $opt{quote_re} } );  # dequoted $0
@@ -1120,8 +1123,10 @@ sub	_zero_position{
 	#print "zero_lc	= $zero_lc\n";
 	#print "zero_dq	= $zero_dq\n";
 
+	if ($zero eq q{}) { return 0 };	# if $0/$zero eq q{} then the script may be running under some scripting harness, assume the 1st arg is the command name and return (allows use in C# under MSScriptControl.ScriptControlClass harness)
+
 	#print "#args	= $#args\n";
-	#print "$me:starting search\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:starting search\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 #	while (my $arg = shift @a) {
 	for	($pos=0; $pos<=$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
 		my $arg	= $args[$pos]->{token};
@@ -1202,7 +1207,7 @@ sub	_argv{
 	my @args = _argv_parse( $command_line, { _glob_within_qq => $opt{_glob_within_qq}, _carp_unbalanced => $opt{_carp_unbalanced}, _die_subshell_error => $opt{_die_subshell_error} } );
 	#@args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
-	#print "$me:pre-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:pre-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
 	if ($opt{remove_exe_prefix})
 		{# remove $0	(and any prior entries)	from ARGV array	(and the matching glob_ok signal array)
@@ -1214,7 +1219,7 @@ sub	_argv{
 		#print "$me:pre-removing\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 		}
 
-	#print "$me:post-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
+	#print "$me:post-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
 
 	if ($opt{glob})
 		{# do globbing
@@ -1246,7 +1251,7 @@ sub	_argv{
 
 
 	my @g;
-	#print "$me:gather globs\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; #print "args[$pos]->{globs} = `$args[$pos]->{globs}`\n"; my @globs = $args[$pos]->{globs}; for (my $xpos=0; $xpos<$#globs; $xpos++) { #print "globs[$pos] = `$globs[$pos]`\n"; } }
+	#print "$me:gather globs\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; print "args[$pos]->{globs} = `$args[$pos]->{globs}`\n"; my @globs = $args[$pos]->{globs}; for (my $xpos=0; $xpos<$#globs; $xpos++) { print "globs[$pos] = `$globs[$pos]`\n"; } }
 	for my $arg (@args)
 		{
 		my @globs = @{$arg->{globs}};
@@ -1254,7 +1259,7 @@ sub	_argv{
 		}
 
 	#@g = ('this', 'that', 'the other');
-	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { #print "g[$pos] = `$g[$pos]`\n"; }
+	#print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "g[$pos] = `$g[$pos]`\n"; }
 
 	return @g;
 }

@@ -24,6 +24,8 @@
 
 # :: compiler detrus in the lib directory
 (?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
+# :: MSVC compiler detrus
+(?:^|/)vc90\.pdb$
 
 # :: other possible/optional generated PACKAGE FILES to avoid
 

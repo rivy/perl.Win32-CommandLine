@@ -43,7 +43,9 @@ ADD NOTE to installation that any perl alias using x.bat must be deleted/unalias
 I don't see any way around this as x.bat will be wrapping any perl call ... would need a hand off to a non-wrapped execution with termination of the current process before the unwrapped execution gets to changing x.bat.
 
 if perl is aliased to 'x perl ...' then installs will fail with:
-	"ppm install failed: Can't rename as C:/Perl/site/bin/x.bat.ppmbak: Permission denied"
+	"ppm install failed: Can't rename as C:/Perl/site/bin/x.bat.ppmbak: Permission denied"	{xx.bat is in-use}
+	_or_
+	"ppm install failed: Can't save to C:/Perl/site/lib/auto/Win32/CommandLine/CommandLine.dll.ppmbak since it exists" {CommandLine.dll was in-use and not removed}
 because x.bat is in use and can't be renamed
 ppm is a batch file which uses perl internally ... so an alias to 'x perl ...' will keep x.bat in use while executing the install command
 
@@ -161,3 +163,8 @@ quote
 ADD to documentation
 
 build sign => signs current build contents (can check with 'cpansign')
+
+NOTE/TODO
+
+NOTE: CS usablility though msscript.ocx
+	* give steps to add reference and compile example code (from perl-in-cs tests)
