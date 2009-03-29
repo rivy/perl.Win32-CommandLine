@@ -7,13 +7,14 @@ use Test::More;
 
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{AUTOMATED_TESTING} or $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL};
 
-my @modules = ( 'Test::MinimumVersion 0.008' );
+#my @modules = ( 'Test::MinimumVersion 0.008' );	## TODO: add version support
+my @modules = ( 'Test::MinimumVersion' );
 my $haveRequired = 1;
 foreach (@modules) { if (!eval "require $_; 1;") { $haveRequired = 0; diag("$_ is not available");} }	## no critic (ProhibitStringyEval)
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
 
-all_minimum_version_from_metayml_ok();
+Test::MinimumVersion::all_minimum_version_from_metayml_ok();
 
 #to find hints for specific versions: perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new( 'lib/<NAME.pm>' ); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}
 

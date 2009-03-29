@@ -7,13 +7,14 @@ use Test::More;
 
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{AUTOMATED_TESTING} or $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL};
 
-my @modules = ( 'Test::CPAN::Meta 0.12' );
+#my @modules = ( 'Test::CPAN::Meta 0.12' );		## TODO: add version support
+my @modules = ( 'Test::CPAN::Meta' );
 my $haveRequired = 1;
 foreach (@modules) { if (!eval "require $_; 1;") { $haveRequired = 0; diag("$_ is not available");} }	## no critic (ProhibitStringyEval)
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
 
-meta_yaml_ok();
+Test::CPAN::Meta::meta_yaml_ok();
 
 #FROM Test-SubCalls-1.08
 #!/usr/bin/perl

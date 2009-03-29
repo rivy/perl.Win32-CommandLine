@@ -15,7 +15,7 @@ plan skip_all => 'Test::Strict required to check strictness' if !$haveTestStrict
 
 $Test::Strict::TEST_WARNINGS = $Test::Strict::TEST_WARNINGS = 1;	# ENABLE testing of warnings as well [ weird construct to block 'used only once' warning ]
 
-#all_perl_files_ok( @mydirs );
-all_perl_files_ok( 'lib', 'bin' );
-#all_perl_files_ok( );
+#Test::Strict::all_perl_files_ok( @mydirs );
+Test::Strict::all_perl_files_ok( 'lib', 'bin' );
+#Test::Strict::all_perl_files_ok( );
 
