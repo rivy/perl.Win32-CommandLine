@@ -25,18 +25,20 @@ sub do_tests;
 
 ## accumulate tests
 
-##
-## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
-## use TEST_FRAGILE
-add_test( [ qq{$0 ~*} ], ( q{~*} ) );
-add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
-add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
-add_test( [ qq{$0 ~ ~Administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~ ~ADMINistrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~ ~ADMINISTRATOR} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-##
+if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+	##
+	## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
+	## use TEST_FRAGILE
+	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+	add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+	add_test( [ qq{$0 ~ ~Administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~ ~ADMINistrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~ ~ADMINISTRATOR} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	##
+	}
 
 ## TODO: check for correct expansion of ~ to "%USERPROFILE" { note: this could be fragile, if ~ is defined as something else or if there is some asynchrony between %userprofile% and the registry (( can this happen? or is %userprofile% set from the registry? prob could happen if the registry is changed after the shell is started... ))
 	## unset ~ before checking
