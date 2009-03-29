@@ -100,12 +100,16 @@ pod2usage(-verbose => 2) if $ARGV{'man'};
 
 pod2usage(1) if @ARGV < 1;
 
+if ($^O eq "MSWin32") { PATH->Prepend( q{.} ); }
+
+PATH->Uniqify();
+
 foreach (@ARGV)
 	{
 	#print '#args = '.scalar(@ARGV)."\n";
 	##if (@ARGV > 1) { print "$_:\n"; }
 #	my @w = ($ARGV{where} ? which( $_ ) : scalar(which( $_ )) );
-	my @w = 	PATH->Whence( $_ );
+	my @w = PATH->Whence( $_ );
 	if (! $ARGV{where} && @w) { @w = $w[0]; }
 	my %printed;
 #	# output full path for all matches (and no repeats [repeats can happen if the PATH contains multiple references to the same location])

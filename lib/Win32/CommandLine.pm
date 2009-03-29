@@ -2,6 +2,18 @@
 package Win32::CommandLine;
 #$Id$
 
+# Module Summary
+
+=head1 NAME
+
+Win32::CommandLine - Retrieve and reparse the Win32 command line
+
+=head1 VERSION
+
+This document describes C<Win32::CommandLine> ($Version$).
+
+=cut
+
 ## Perl::Critic policy exceptions
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls RequirePodAtEnd )
 ## ---- policies to REVISIT later
@@ -26,18 +38,6 @@ use 5.006;			# earliest tested perl version
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) versions; see 'perldoc version']
 use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+\.\d+?$/) {$VERSION .= '.0'}; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
-
-# Module Summary
-
-=head1 NAME
-
-Win32::CommandLine - Retrieve and reparse the Win32 command line
-
-=head1 VERSION
-
-This document describes C<Win32::CommandLine> ($Version$).
-
-=cut
 
 # Module base/ISA and Exports
 
@@ -1987,21 +1987,26 @@ return %home_paths;
 	Write a full description of the module and its features here.
 	Use subsections (=head2, =head3) as appropriate.
 
-This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing. With the use of the companion script (x.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any command.
+This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing, including subshell expansions. With the use of the companion script (xx.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any Win32 command.
+
+This module is compatible with both cmd.exe and 4nt/tcc shells.
+
 
 	[cmd.exe]
 	doskey type=call xx type $*
 	type [a-c]*.pl
-	doskey perl=call xx perl
+	doskey perl=call xx perl $*
 	perl -e 'print "test"'		[o/w FAILS without commandline reinterpretation]
 
-	[TCC/CMD/4NT]
+	[TCC/TCMD/4NT]
+	alias type=call xx type
+	type [a-c]*.pl
 	alias perl=call xx perl
 	perl -e 'print "test"'		[o/w FAILS without commandline reinterpretation]
 
-Note the bash compatible character expansion and globbing available, including meta-notations a{b,c}* ...
+Note the bash compatible character expansion and globbing available, including meta-notations a{b,c}*.
 
-Character expansion:
+String/character expansion:
 
 =over 2
 
@@ -2012,6 +2017,10 @@ $'...'	=> ANSI	C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}
 "..."	  => literal (no escapes and no	globbing within	quotes)
 
 $"..."  => same as "..."
+
+$( ... ) => subshell expansion
+
+$("...") => subshell expansion
 
 =back
 
@@ -2029,11 +2038,11 @@ Globbing:
 
 ?       Match any single character
 
-~       Expand to user home directory
+~       Expand to current user home directory
 
 ~<name> Expands to user <name> home directory for any defined user [ ONLY if {Win32, Win32::Security::SID, Win32::TieRegistry} are installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
 
-~<text> Expands to value of environment variable "~<text>", if defined
+~<text> Expands to value of environment variable "~<text>" (if defined) [OVERRIDES ~<name> expansion] #?? verify and document which has priority
 
 =back
 
@@ -2053,7 +2062,7 @@ Or, if you're on a platform (like DOS or Windows) that doesn't require the "./" 
 	Build test
 	Build install
 
-The standard make idiom ( "perl Makefile.PL" -> "make" -> "make test" -> "make install") is also available (using a Makefile.PL passthrough script). Module::Build is ultimately required for installation. However, the Makefile.PL script will work just as well (offering to download and install Module::Build if it is missing from your current installation).
+The standard make idiom ( "perl Makefile.PL" -> "make" -> "make test" -> "make install") is also available (though deprecated) via a Makefile.PL passthrough script. Module::Build is still ultimately required for installation, and Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
 
 =for readme stop
 
@@ -2317,9 +2326,7 @@ Roy Ivy III <rivy[at]cpan[dot]org>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2007-2008, Roy Ivy III <rivy[at]cpan[dot]org>.
-All rights reserved.
-
+Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
 

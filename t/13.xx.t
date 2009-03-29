@@ -155,19 +155,30 @@ add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`
 
 add_test( [ q{~} ], ( q{"}.$ENV{USERPROFILE}.q{"} ) );	## ? FRAGILE
 $ENV{'~TEST'} = "/test";
-add_test( [ q{~TEST} ], ( "\\test" ) );	## ? FRAGILE
+add_test( [ q{~TEST} ], ( q{\\test} ) );	## ? FRAGILE
 
 my $version_output = `ver`;	## no critic (ProhibitBacktickOperators)
 chomp( $version_output );
 $version_output =~ s/^\n//s;		# NOTE: initial \n is removed by subshell expansion ## design decision: should the initial NL be removed?
 add_test( [ q{set os_version=$(ver)} ], ( "set os_version=".$version_output ) );
 
+## TODO: add additional test for each add_test which checks double expansion (xx -e xx <TEST> should equal xx -e <TEST> EXCEPT for some special characters which can't be represented on cmd.exe commandline even with quotes (eg, CTRL-CHARS, TAB, NL))
+
 ## do tests
 
 #plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
-plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0) + 1;
+plan tests => 1 + test_num() + ($haveTestNoWarnings ? 1 : 0);
 
 ok( -r $script, "script readable" );
+
+#my (@args, @exp, @got, $got_stdout, $got_stderr);
+#$ENV{'~TEST'} = "/test";
+#@args = ( q{~TEST} );
+## check multiple expansion (for NORMAL characters)
+#@exp = ( q{\\test} );
+#eval { IPC::Run3::run3( "$perl $script $script -e @args", \undef, \$got_stdout, \$got_stderr ); chomp($got_stdout); chomp($got_stderr); if ($got_stdout ne q{}) { push @got, $got_stdout }; if ($got_stderr ne q{}) {push @got, $got_stderr}; 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, '[line:'.__LINE__."] testing: `@args`";
+
+# TODO: check multiple expansion (for NON-PRINTABLE characters) -- SHOULD FAIL
 
 do_tests(); # test
 ##

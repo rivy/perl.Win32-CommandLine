@@ -194,9 +194,9 @@ my %ARGV = ();
 # NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by the wrapping .bat script by executing the output of the perl script.
 GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
 #Getopt::Long::VersionMessage() if $ARGV{'version'};
-pod2usage(-verbose => 99, -sections => '', -message => (File::Spec->splitpath($0))[2]." v$::VERSION") if $ARGV{'version'};
+pod2usage({-verbose => 99, -sections => '', -message => (File::Spec->splitpath($0))[2].qq{ v$::VERSION}}) if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
-pod2usage(-verbose => 2) if $ARGV{'man'};
+pod2usage({-verbose => 2}) if $ARGV{'man'};
 
 pod2usage(1) if @ARGV < 1;
 
