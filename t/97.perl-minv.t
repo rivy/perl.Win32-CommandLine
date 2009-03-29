@@ -9,7 +9,7 @@ plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{AUTOMATED_
 
 my @modules = ( 'Test::MinimumVersion 0.008' );
 my $haveRequired = 1;
-foreach (@modules) { if (!eval "use $_; 1;") { $haveRequired = 0; diag("$_ is not available");} }	## no critic (ProhibitStringyEval)
+foreach (@modules) { if (!eval "require $_; 1;") { $haveRequired = 0; diag("$_ is not available");} }	## no critic (ProhibitStringyEval)
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
 
