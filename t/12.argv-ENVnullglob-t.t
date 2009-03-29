@@ -116,14 +116,16 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( ) );
 #
 
-##
-## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
-add_test( [ qq{$0 ~*} ], ( ) );
-add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
-add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
-##
+if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+	##
+	## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
+	add_test( [ qq{$0 ~*} ], ( ) );
+	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+	add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
+	add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+	##
+	}
 
 # rule tests
 # non-globbed tokens should stay the same

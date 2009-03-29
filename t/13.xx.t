@@ -135,8 +135,11 @@ add_test( [ q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ], ( q{xx -e per
 
 # design decision = should non-quoted/non-glob expanded tokens be dosified or not
 add_test( [ q{/NOT_A_FILE} ], ( q{\NOT_A_FILE} ) );		# non-files (can screw up switches)
-add_test( [ q{c:/windows} ], ( q{c:\windows} ) );		# non-expanded files
-add_test( [ q{c:/windows/system*} ], ( q{c:\windows\system c:\windows\system.ini c:\windows\system32} ) );		# non-expanded files
+
+if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+	add_test( [ q{c:/windows} ], ( q{c:\windows} ) );		# non-expanded files									## FRAGILE (b/c case differences between WINDOWS)
+	add_test( [ q{c:/windows/system*} ], ( q{c:\windows\system c:\windows\system.ini c:\windows\system32} ) );		# non-expanded files ## FRAGILE (b/c case differences between WINDOWS)
+	}
 
 # /dev/nul vs nul (?problem or ok)
 add_test( [ q{$( echo > nul )} ], ( ) );
@@ -153,7 +156,10 @@ add_test( [ q{$( echo TEST )} ], ( q{TEST} ) );
 add_test( [ q{perl -e "print `xx -e t/*.t`"} ], ( q{perl -e "print `xx -e t/*.t`"} ) );
 add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`"} ) );	## prior BUG
 
-add_test( [ q{~} ], ( q{"}.$ENV{USERPROFILE}.q{"} ) );	## ? FRAGILE
+if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+	add_test( [ q{~} ], ( q{"}.$ENV{USERPROFILE}.q{"} ) );	## FRAGILE (b/c quotes are dependent on internal spaces)
+	}
+
 $ENV{'~TEST'} = "/test";
 add_test( [ q{~TEST} ], ( q{\\test} ) );	## ? FRAGILE
 
