@@ -33,7 +33,7 @@ use 5.006;			# earliest tested perl version
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0_3'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+\.\d+?$/) {$VERSION .= '.0'}; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.4'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+\.\d+?$/) {$VERSION .= '.0'}; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 # Module base/ISA and Exports
 
@@ -1986,7 +1986,7 @@ return %home_paths;
 
 This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing, including subshell expansions. With the use of the companion script (xx.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any Win32 command.
 
-This module is compatible with both cmd.exe and 4nt/tcc/tcmd shells.
+This module is compatible with both cmd.exe and 4nt/tcc/tcmd shells, adding better parsing and bash glob expansion to B<any> external command, by using the included C<xx> batch script.
 
 =head2 C<CMD.EXE>
 
@@ -2002,7 +2002,7 @@ This module is compatible with both cmd.exe and 4nt/tcc/tcmd shells.
 	alias perl=call xx perl
 	perl -e 'print "test"'	[o/w FAILS without commandline reinterpretation]
 
-Note the bash compatible character expansion and globbing available, including meta-notations such as C<a[bc]*> or C<foo.{bat,pl,exe,o}>.
+Note that bash compatible character expansion and globbing is available, including meta-notations such as C<a[bc]*> or C<foo.{bat,pl,exe,o}>.
 
 =head2 Command line string/character expansion
 
@@ -2116,7 +2116,11 @@ C<parse( $ )> takes a string argument and returns the parsed argument string as 
 
 =head1 RATIONALE
 
-This began as a simple need to reparse the maddeningly inconsistent C<COMMAND.COM>/C<CMD.EXE> command line parser, in order to do more `correct` quotation interpretation. It then grew into a small odyssey to lend some of the C<bash> shell magic to the CMD shell (and then, additionally, make it compatible with the excellent (and free) TCC-LE shell from JPSoft (find it at L<http://jpsoft.com/>).
+This began as a simple need to work-around the less-than-stellar C<COMMAND.COM>/C<CMD.EXE> command line parser, just to accomplish more `correct` quotation interpretation.
+It then grew into a small odyssey: learning XS and how to create a perl module, learning the perl build process and creating a customized build script/environment,
+researching tools and developing methods for revision control and versioning, learning and creating perl testing processes, and finally learning about PAUSE
+and perl publishing practices. And, somewhere in the middle, adding some of the C<bash> shell magic to the CMD shell (and, additionally, making it
+compatible with the excellent [and free] TCC-LE shell from JPSoft [find it at L<http://jpsoft.com/>]).
 
 Some initial attempts were made using C<Win32::API> and C<Inline::C>. For example (C<Win32::API> attempt [caused GPFs]):
 
@@ -2145,9 +2149,11 @@ Some initial attempts were made using C<Win32::API> and C<Inline::C>. For exampl
     __END__
     :endofperl
 
-Unfortunately, C<Win32::API> and C<Inline::C> were shown to be too fragile at the time (in 2007). C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> is very brittle on Win32 systems (not compensating for paths with embedded strings). See L<http://www.perlmonks.org/?node_id=625182> for a more full explanation of the problem and initial attempts at a solution. So, an initial XS solution was implemented.
+Unfortunately, C<Win32::API> and C<Inline::C> were shown to be too fragile at the time (in 2007).
+C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> is very brittle on Win32 systems (not compensating for paths with embedded strings).
+[ See L<http://www.perlmonks.org/?node_id=625182> for a more full explanation of the problem and initial attempts at a solution. ]
 
-From that point, the lure of C<bash>-like command line parsing led inexorably to today's fairly full implementation. The parsing logic is unfortunately complex, but seems to be holding up under testing.
+So, an initial XS solution was implemented. And from that point, the lure of C<bash>-like command line parsing led inexorably to the full implementation. The parsing logic is unfortunately still complex, but seems to be holding up under testing.
 
 =for readme stop
 
@@ -2247,19 +2253,19 @@ None reported.
 	limitations on the size of data sets, special cases that are not
 	(yet) handled, etc.
 
-Please report any bugs or feature requests to bug-test-command at rt.cpan.org, or through the web interface at http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-CommandLine. I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
+Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-CommandLine. The developers will be notified, and you'll automatically be notified of progress on your bug as any changes are made.
 
 =head2 Operational Notes
 
-IMPORTANT NOTE: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') characters must be **double-quoted** to escape shell interpretation. The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before _any_ process can get a look at the command line.
+IMPORTANT NOTE: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') must be B<**DOUBLE-quoted**> to escape shell interpretation (eg, C<"...>...">). The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by DOUBLE-quoting them.
+
+C<%<x>> is also replaced by the corresponding %ENV variable by the CMD shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line, eg: C<perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }">.
 
 Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 
-%<x> is still replaced by ENV vars and %% must be used to place single %'s in the command line, eg: C<perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }">.
-
 Some programs may expect their arguments to maintain their surrounding quotes, but argv() parsing only quotes arguments which require it for shell parsing (i.e., those containing spaces, special characters, etc).
 
-Be careful with backslashed quotes within quoted strings. Note that "...\" is an _unbalanced_ string containing a double quote. Place the backslash outside of the quotation ("...\"") or use a double backslash ("...\\") to include it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark ("...\..." works as expected).
+Be careful with backslashed quotes within quoted strings. Note that "...\" is an B<unbalanced> string containing a double quote. Place the backslash outside of the quotation ("...\"") or use a double backslash (C<"...\\">) to include it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark (C<"...\..."> works as expected).
 
 =for further_expansion
 	GOTCHA: Note this behavior (ending \" => ", which is probably not what is desired or expected in this case (? what about other cases, should this be "fixed" or would it break something else?)
@@ -2267,13 +2273,11 @@ Be careful with backslashed quotes within quoted strings. Note that "...\" is an
 	>t\prelim\echo.exe "\\sethra\C$\"win*
 	[0]\\sethra\C$"win*
 
-4NT/TCC/TCMD NOTE: The shell interprets and _removes_ backquote characters before executing the command. You must quote backquote characters with **double-quotes** to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
+4NT/TCC/TCMD NOTE: The shell interprets and B<removes> backquote characters before executing the command. You must quote backquote characters with B<**double-quotes**> to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
 
 =for possible_future_codefix
 		??? fix this by using $ENV{CMDLINE} which is set by TCC? => attempts to workaround this using $ENV{CMDLINE} fail because TCC doesn't have control between processes and can't set the new CMDLINE value if one process directly creates another (and I'm not sure how to detect that TCC started the process)
 		-- can try PPIDs if Win32::API is present... => DONE [2009-02-18] [seems to be working now... if Win32::API is available, parentEXE is checked and $ENV{CMDLINE} is used if the parent process matches 4nt/tcc/tcmd]
-
-Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at L<http://rt.cpan.org>.
 
 =head2 Bugs
 
@@ -2296,15 +2300,30 @@ You can also look for information at:
 
     * CPAN Ratings
 
-      http://cpanratings.perl.org/d/Test-Command
+      http://cpanratings.perl.org/dist/Win32-CommandLine
 
-    * RT: CPAN's request tracker
+    * RT: CPAN's request tracker (aka buglist)
 
-      http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Command
+      http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine
 
     * Search CPAN
 
-      http://search.cpan.org/dist/Test-Command
+      http://kobesearch.cpan.org/dist/Win32-CommandLine
+      _or_
+      http://search.cpan.org/dist/Win32-CommandLine
+
+    * CPANTS: CPAN Testing Service
+
+      [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
+      [used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
+
+    * CPANTESTERS: Test results
+
+      http://www.cpantesters.org/show/Win32-CommandLine.html
+
+=for possible_future
+	* CPANFORUM: Forum discussing Win32::CommandLine
+	  http://www.cpanforum.com/dist/Win32-CommandLine
 
 =head1 ACKNOWLEDGEMENTS
 

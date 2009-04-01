@@ -116,7 +116,7 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( ) );
 #
 
-if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
 	##
 	## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
 	add_test( [ qq{$0 ~*} ], ( ) );

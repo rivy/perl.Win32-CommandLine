@@ -118,11 +118,19 @@ Options:
 
 =item -s
 
-Expand the commandline and then source the resultant expanded command, causing possible modification of the current process environment. MUST be the first argument.
+Expand the command line (using Win32::CommandLine) and then B<source> the resulting expanded command. This is to allow B<modification of the current process environment> by the expanded command line. NOTE: MUST be the first argument.
 
 =item -so
 
-Expand the commandline and then source the resulting output of executing the expanded command, causing possible modification of the current process environment. MUST be the first argument.
+Expand the command line (using Win32::CommandLine) and then B<source> the OUTPUT of the execution of the expanded command. This is to allow B<modification of the current process environment> directed by the OUTPUT of the execution of the expanded command line. NOTE: MUST be the first argument.
+
+=item --echo, -e
+
+Print (but do not execute) the results of expanding the command line.
+
+=item --args, -a
+
+Print detailed information about the command line and it's expansion, including all resulting ARGS (B<without> executing the resultant expansion).
 
 =item --version
 

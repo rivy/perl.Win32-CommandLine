@@ -25,7 +25,7 @@ sub do_tests;
 
 ## accumulate tests
 
-if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
 	##
 	## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
 	## use TEST_FRAGILE

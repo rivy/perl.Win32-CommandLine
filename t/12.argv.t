@@ -155,7 +155,7 @@ add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
 ### TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
 ### TEST_FRAGILE == tests which require a specific environment setup to work
 ### use TEST_FRAGILE
-if ($ENV{TEST_FRAGILE} or $ENV{TEST_ALL}) {
+if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
 	# SLIGHTLY-FRAGILE
 	add_test( [ qq{$0 }.q{c:/{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
 	add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
