@@ -7,7 +7,7 @@
 
 =head1 NAME
 
-which - Find and print the executable path
+which - Find and print the executable path(s)
 
 =head1 VERSION
 
@@ -62,7 +62,7 @@ FILENAMES...
 
 =head1 DESCRIPTION
 
-B<which> will read each FILENAME, find, and then print the executable path for the filename.
+B<which> will read each FILENAME, find, and then print the executable path for the FILENAME.
 
 =cut
 

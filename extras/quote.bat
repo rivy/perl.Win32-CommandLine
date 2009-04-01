@@ -23,7 +23,7 @@ goto endofperl
 
 =head1 NAME
 
-quote - Convert STDIN to dosified strings
+quote - Convert STDIN to dos quoted strings
 
 =head1 VERSION
 
@@ -80,7 +80,7 @@ Print the usual program information
 
 =head1 DESCRIPTION
 
-B<quote> will read INPUT (either STDIN or B<<filename(s)>> and "quote" each input line, printing the results to STDOUT.
+B<quote> will read INPUT (either STDIN or B<<filename(s)>> and "quote" each input line, printing the results to STDOUT. "Quoting" each argument converts it into a token which, when interpreted by C<CMD.EXE>, results in the original token.
 
 =cut
 

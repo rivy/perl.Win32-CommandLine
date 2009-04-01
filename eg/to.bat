@@ -3,6 +3,8 @@
 :: cd with command line expansion
 :: note: removes any initial '~' for convenience
 ::  * if removal of the initial '~' isn't required, the entire batch file can be compressed to a single alias (cmd.exe: 'doskey to=x -S cd ~$*'; 4nt/tcc/tcmd: 'alias to=x -S cd ~%%$')
+:: compatible with CMD, 4NT/TCC/TCMD
+:: NOT compatible with COMMAND
 @echo off
 setlocal
 
