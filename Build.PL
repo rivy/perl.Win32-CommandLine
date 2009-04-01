@@ -6,7 +6,11 @@
 ## TODO?: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META.yml
 ## TODO?: .. or just remove VERSION code generating the alpha '_' within the version? does it matter? does the '_' interfere with version comparisons on CPAN?
 
+## TODO: add an 'upload' action to use cpan_upload... to upload the basic distribution to CPAN
+
 ## TODO: flesh out stub documentation for additional custom actions
+
+## TODO: add/check compatibility for use of module PPM when installed (for non-ActiveState perl distributions)
 
 use strict;
 use warnings;
