@@ -2226,7 +2226,9 @@ $ENV{NULLGLOB} = 0/1 => overrides default 'nullglob' setting
 
 C<Win32::CommandLine> requires C<Carp::Assert> for internal error checking and warnings.
 
-The optional modules C<Win32>, C<Win32::API>, C<Win32::Security::SID>, and C<Win32::TieRegistry> are recommended for installation to allow full glob tilde expansions for user home directories (eg, C<~administrator> expands to C<C:\Users\Administrator>). The basic expansion of ~ for the current user has a backup implementation based on %ENV vars, and therefore will still work even without the optional modules.
+The optional modules C<Win32>, C<Win32::API>, C<Win32::Security::SID>, and C<Win32::TieRegistry> are recommended to allow full glob tilde expansions
+for user home directories (eg, C<~administrator> expands to C<C:\Users\Administrator>). Expansion of the single tilde (C<~>) has a backup
+implementation based on %ENV variables, and therefore will still work even without the optional modules.
 
 =for readme stop
 
@@ -2283,9 +2285,6 @@ Be careful with backslashed quotes within quoted strings. Note that "...\" is an
 No bugs have been reported.
 
 =head1 SUPPORT
-
-=for author_to_fill_in
-	Added from example for 'Touch' on CPAN. Possibly use a modified form.
 
 You can find documentation for this module with the perldoc command.
 

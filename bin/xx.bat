@@ -194,7 +194,7 @@ use ExtUtils::MakeMaker;
 #-- config
 #my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) );	#"
 
-@ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } ) if eval { require Win32::CommandLine; };
+@ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );	# if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine so we want the error if its missing or unable to load
 
 #-- getopt
 use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
