@@ -28,6 +28,9 @@
 (?:^|/)vc90\.pdb$
 
 # :: other possible/optional generated PACKAGE FILES to avoid
+# :: : needed for clean testing after 'build install' which uses PPM for install (and generates -PPM.tar.gz and .ppd files).
+(?:^|/).*-PPM\.tar\.gz$
+(?:^|/).*\.ppd$
 
 # Avoid Module::Build generated and utility files
 (?:^|/)Build$
@@ -47,10 +50,10 @@
 # Avoid META-build files (ANT/NANT)
 # :: regexp matches .build/.build.xml in any directory (including subs)
 (?:^|/)\.build$
-(?:^|/)\.build.xml$
+(?:^|/)\.build\.xml$
 # :: regexp matches .build/.build.xml ONLY in main directory; unfortunately, other tools complain => eg, causes MANIFEST mismatches for SIGNATURE
 #^${dist_path}/\.build$
-#^${dist_path}/\.build.xml$
+#^${dist_path}/\.build\.xml$
 
 # Avoid version control files
 # :: TODO: check on correcting the trailing '\b' to a '/' for the SCS directories
