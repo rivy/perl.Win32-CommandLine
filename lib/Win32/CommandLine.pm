@@ -2063,11 +2063,7 @@ Or, if you're on a platform (like DOS or Windows) that doesn't require the "./" 
 	Build test
 	Build install
 
-The standard make idiom ( "perl Makefile.PL" -> "make" -> "make test" -> "make install") is also available (though deprecated) via a Makefile.PL passthrough script. Module::Build is still ultimately required for installation, and Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
-
-=for readme stop
-
-Alternatively, using the standard make idiom (if you do not have Module::Build installed):
+Alternatively, the standard make idiom is also available (though deprecated):
 
 	perl Makefile.PL
 	make
@@ -2076,11 +2072,14 @@ Alternatively, using the standard make idiom (if you do not have Module::Build i
 
 (On Windows platforms you should use C<nmake> instead.)
 
-=for readme continue
+As Makefile.PL is just a pass-through script, Module::Build is still ultimately required for installation. Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
 
 Note: On ActivePerl installations, './Build install' will do a full installation using C<ppm> (see L<ppm>).
+
+=for future_possibles
+	Check into using the PPM perl module, if installed, for installation of this module (removes the ActiveState requirement).
 
 =for readme stop
 
