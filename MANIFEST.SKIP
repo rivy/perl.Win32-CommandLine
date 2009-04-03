@@ -28,7 +28,7 @@
 (?:^|/)vc90\.pdb$
 
 # :: other possible/optional generated PACKAGE FILES to avoid
-# :: : needed for clean testing after 'build install' which uses PPM for install (and generates -PPM.tar.gz and .ppd files).
+# :: : needed for clean testing after 'build install' which uses PPM for install (and generates -PPM.tar.gz and .ppd files) [also works 'build ppmdist']
 (?:^|/).*-PPM\.tar\.gz$
 (?:^|/).*\.ppd$
 
