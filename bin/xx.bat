@@ -194,6 +194,8 @@ use ExtUtils::MakeMaker;
 #-- config
 #my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) );	#"
 
+use Win32::CommandLine;
+
 @ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );	# if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine so we want the error if its missing or unable to load
 
 #-- getopt

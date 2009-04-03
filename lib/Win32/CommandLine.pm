@@ -2313,7 +2313,7 @@ You can also look for information at:
     * CPANTS: CPAN Testing Service
 
       [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
-      [used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
+       [used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
 
     * CPANTESTERS: Test results
 
