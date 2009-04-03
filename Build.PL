@@ -1,5 +1,5 @@
 #!perl -w   -- -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.3.3.2071459 ( r65:d0292da03bdc [mercurial] ) 2009/04/02 06:20:14 rivy $
+#$Id: Build.PL,v 0.3.3.2136136 ( r66:f72d74f9ad95 [mercurial] ) 2009/04/03 00:18:11 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -19,10 +19,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.3.3.2071459 $ SCS tag
+# generate VERSION from $Version: 0.3.3.2136136 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.3.2071459 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.3.2136136 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -320,6 +320,7 @@ $code{'ACTION_sign@_sign_dir'} = q{
 		#$self->_add_to_manifest($manifest, "SIGNATURE    Added here by Module::Build");
 		#[CHANGED] == removed comment to prevent altering MANIFEST, when possible (to preserve correct signatures as long as possible)
 		$self->_add_to_manifest($manifest, 'SIGNATURE');	# SKIP any comment, it can alter the MANIFEST when/if it is auto-regenerated
+		$self->_sort_manifest($manifest);	# keep MANIFEST sorted (to preserve correct signatures as much as possible)
 		}
 
 		#[ADD] create the dist_meta prior to signature
@@ -587,7 +588,7 @@ $code{'ACTION_install'} = q{
 		my ($self) = @_;
 
         ###[ADD] update all distmeta info when installing
-        ##$self->depends_on('distmeta');	## NOT NEEDED and causes a MANIFEST rebuild which can cause SIGNATURE issues on tests after installs
+        ##$self->depends_on('distmeta');	## NOT NEEDED and causes a MANIFEST rebuild which can cause SIGNATURE issues on tests after installs ## may be fixed with sorted MANIFEST
 
 		if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
 
@@ -637,7 +638,7 @@ $code{'ACTION_distmeta'} = q{
 
         #[ADD] update the MANIFEST when building 'distmeta'
         #$self->depends_on('manifest');
-		$self->ACTION_manifest;		## TODO: ?? needed here? or only after SUPER::ACTION_distmeta?
+		$self->ACTION_manifest;		# needed prior to ACTION_distmeta to make sure there is a MANIFEST o/w META.yml creation has errors
 
 		#[ADD]
 		#$self->do_create_makefile_pl if $self->create_makefile_pl;
@@ -661,6 +662,43 @@ $code{'ACTION_testall'} = q{
 
         return $self->SUPER::ACTION_testall;
       }
+};
+$code{'ACTION_manifest@sort_manifest'} = q{
+	sub _sort_manifest {
+		my ($self, $manifest) = @_;
+
+		my $fh;
+
+		$fh = IO::File->new("< $manifest") or die "Can't read $manifest: $!";
+		my @lines = <$fh>;
+		$fh->close;
+
+		return unless @lines;
+
+		my @sorted_lines = sort { lc $a cmp lc $b } @lines;
+
+		#print "sorted_lines = ".@sorted_lines."\n";
+		#print "lines = ".@lines."\n";
+		my $are_equal = (@sorted_lines == @lines);
+		for (my $i = 0; $i < @sorted_lines; $i++)
+			{
+			#print "sl[$i] = $sorted_lines[$i]\n";
+			#print " l[$i] = $lines[$i]\n";
+			if ($sorted_lines[$i] ne $lines[$i]) { $are_equal = 0; last; }
+			}
+
+		return if $are_equal;
+
+		my $mode = (stat $manifest)[2];
+		chmod($mode | oct(222), $manifest) or die "Can't make $manifest writable: $!";
+
+		$fh = IO::File->new("> $manifest") or die "Can't write to $manifest: $!";
+		print $fh map "$_", @sorted_lines;
+		close $fh;
+		chmod($mode, $manifest);
+
+		$self->log_info("Sorted $manifest\n");
+	}
 };
 $code{'ACTION_manifest'} = q{
   {
@@ -760,8 +798,9 @@ $code{'ACTION_manifest'} = q{
 		#$dist_path =~ s:\\\\:\/:g;
 		#$self->_sign_dir($dist_path);
 
-        ##my $manifest = File::Spec->catfile($dist_path, $ExtUtils::Manifest::MANIFEST);
-        ##$self->_sort_manifest( $manifest );
+        #my $manifest = File::Spec->catfile($dist_path, $ExtUtils::Manifest::MANIFEST);
+        #$self->_sort_manifest( $manifest );
+        $self->_sort_manifest( $ExtUtils::Manifest::MANIFEST );
 	  }
 	##?? add Sub::Override for maniskip here?? for all subs in the new Build
 	#require ExtUtils::Manifest;
