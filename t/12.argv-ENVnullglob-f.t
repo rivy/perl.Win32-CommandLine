@@ -97,15 +97,15 @@ add_test( [ qq{$0 '//foo\\bar'} ], ( q{//foo\\bar} ) );
 
 add_test( [ qq{$0 '/a\a' /foo\\\\bar} ], ( qq{/a\a}, q{/foo\\\\bar} ) );
 
-add_test( [ qq{$0 1 't\\glob-file tests'/*} ], ( 1, glob('t/glob-file\ tests/*') ) );
+add_test( [ qq{$0 1 't\\glob-file.tests'/*} ], ( 1, glob('t/glob-file.tests/*') ) );
 
-add_test( [ qq{$0 2 't\\glob-file tests'\\*} ], ( 2, glob('t/glob-file\ tests/*') ) );
+add_test( [ qq{$0 2 't\\glob-file.tests'\\*} ], ( 2, glob('t/glob-file.tests/*') ) );
 
-add_test( [ qq{$0 3 't\\glob-file tests/'*} ], ( 3, glob('t/glob-file\ tests/*') ) );
+add_test( [ qq{$0 3 't\\glob-file.tests/'*} ], ( 3, glob('t/glob-file.tests/*') ) );
 
-add_test( [ qq{$0 4 't\\glob-file tests\\'*} ], ( 4, glob('t/glob-file\ tests/*') ) );
+add_test( [ qq{$0 4 't\\glob-file.tests\\'*} ], ( 4, glob('t/glob-file.tests/*') ) );
 
-add_test( [ qq{$0 5 't\\glob-file tests\\*'} ], ( 5, q{t\\glob-file tests\\*} ) );
+add_test( [ qq{$0 5 't\\glob-file.tests\\*'} ], ( 5, q{t\\glob-file.tests\\*} ) );
 
 add_test( [ qq{$0 t ""} ], ( q{t}, q{} ) );
 
@@ -113,7 +113,7 @@ add_test( [ qq{$0 t 0} ], ( q{t}, q{0} ) );
 
 add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
-add_test( [ qq{$0 't\\glob-file tests\\'*x} ], ( q{t\\glob-file tests\\*x} ) );
+add_test( [ qq{$0 't\\glob-file.tests\\'*x} ], ( q{t\\glob-file.tests\\*x} ) );
 #
 
 if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
@@ -131,7 +131,7 @@ if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $E
 # non-globbed tokens should stay the same
 add_test( [ qq{$0 1 foo\\bar} ], ( 1, q{foo\\bar} ) );
 add_test( [ qq{$0 2 \\foo/bar} ], ( 2, q{\\foo/bar} ) );
-add_test( [ qq{$0 1 't\\glob-file tests\\'*} ], ( 1, glob('t/glob-file\ tests/*') ) );
+add_test( [ qq{$0 1 't\\glob-file.tests\\'*} ], ( 1, glob('t/glob-file.tests/*') ) );
 
 # dosify
 add_test( [ qq{$0 foo\\bar} ], ( q{foo\\bar} ) );

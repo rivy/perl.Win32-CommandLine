@@ -21,7 +21,7 @@ This document describes C<Win32::CommandLine> ($Version$).
 
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
-# DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by x.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
+# DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by xx.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
 
 use strict;
 use warnings;
@@ -78,7 +78,7 @@ sub command_line{
 }
 
 sub argv{
-	# argv( $ [,\%] ): returns @
+	# argv( [\%] ): returns @
 	return parse( command_line(), @_ );		# get commandline and reparse it returning the new ARGV array
 }
 
@@ -1821,7 +1821,11 @@ sub _home_paths
 
 # modified from File::HomeDir::Win32 (v0.04)
 
-my $have_all_needed_modules = eval { require Win32; require Win32::Security::SID; require Win32::TieRegistry; 1; };
+# CHANGED: eval optional modules as strings to avoid Kwalitee 'prereq_matches_use' ding for 'Win32::Security::SID' missing as a requirement in META.yml
+##my $have_all_needed_modules = eval { require Win32; require Win32::Security::SID; require Win32::TieRegistry; 1; };
+my @modules = ( 'Win32', 'Win32::Security::SID', 'Win32::TieRegistry' );
+my $have_all_needed_modules = 1;
+foreach (@modules) { if (!eval "require $_; 1;") { $have_all_needed_modules = 0; last; } }	## no critic (ProhibitStringyEval)
 
 my %home_paths = ();
 
@@ -1968,7 +1972,7 @@ return %home_paths;
 =for author_to_fill_in
 	Brief code example(s) here showing commonest usage(s).
 	This section will be as far as many users bother reading
-	so make it as educational and exeplary as possible.
+	so make it as educational and exemplary as possible.
 
 	@ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
 
@@ -1984,9 +1988,9 @@ return %home_paths;
 	Write a full description of the module and its features here.
 	Use subsections (=head2, =head3) as appropriate.
 
-This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing, including subshell expansions. With the use of the companion script (xx.bat) and doskey for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to any Win32 command.
+This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing, including subshell expansions. With the use of the companion script (B<C<xx.bat>>) and B<C<doskey>> for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to I<any> Win32 executable.
 
-This module is compatible with both cmd.exe and 4nt/tcc/tcmd shells, adding better parsing and bash glob expansion to B<any> external command, by using the included C<xx> batch script.
+This module is compatible with both B<C<cmd.exe>> and B<C<4nt/tcc/tcmd>> shells, and adds better parsing and bash glob expansion to I<any> external command (by using the included B<C<xx.bat>> batch script).
 
 =head2 C<CMD.EXE>
 
@@ -2002,50 +2006,38 @@ This module is compatible with both cmd.exe and 4nt/tcc/tcmd shells, adding bett
 	alias perl=call xx perl
 	perl -e 'print "test"'	[o/w FAILS without commandline reinterpretation]
 
-Note that bash compatible character expansion and globbing is available, including meta-notations such as C<a[bc]*> or C<foo.{bat,pl,exe,o}>.
+Note that bash compatible character expansion and globbing is available, including glob meta-notations such as "C<a[bc]*>" or "C<foo.{bat,pl,exe,o}>".
 
 =head2 Command line string/character expansion
 
-=over 2
+ '...'    literal (no escapes and no globbing within quotes)
+ "..."    literal (no escapes and no globbing within quotes)
+ $'...'   string including all ANSI C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other escaped characters: \<x> =>\<x>); no globbing within quotes
+ $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
+ $( ... ) subshell expansion [subshell commandline is _not_ expanded]
+ $("...") subshell expansion (quotes removed) [subshell commandline is _not_ expanded]
 
-'...'	=> literal (no escapes and no globbing within quotes)
+=head2 GLOB META CHARACTERS
 
-"..."	=> literal (no escapes and no globbing within quotes)
+  \       Quote the next metacharacter
+  []      Character class
+  {}      Multiple pattern
+  *       Match any string of characters
+  ?       Match any single character
+  ~       Current user home directory
+  ~USER   User NAME home directory
+  ~TEXT   Environment variable named ~TEXT ( $ENV{~TEXT} ) [overrides ~USER expansion]
 
-$'...'	=> string including all ANSI C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other escaped characters: \<x> =>\<x>); no globbing within quotes
 
-$"..."	=> literal (no escapes and no globbing within quotes) [same as "..."]
+The metanotation C<a{b,c,d}e> is a shorthand for C<abe ace ade>.  Left to
+right order is preserved, with results of matches being sorted separately
+at a low level to preserve this order.
 
-$( ... )	=> subshell expansion [subshell commandline is _not_ expanded]
+=for CHECK-THIS
+	As a special case C<{>, C<}>, and C<{}> are passed undisturbed.
 
-$("...")	=> subshell expansion (quotes removed) [subshell commandline is _not_ expanded]
-
-=back
-
-=head2 Command line globbing
-
-=over 2
-
-\	Quote the next metacharacter
-
-[]	Character class
-
-{}	Multiple pattern
-
-*	Match any string of characters
-
-?	Match any single character
-
-~	Expand to current user home directory
-
-~<name>	Expands to user <name> home directory for any defined user [ ONLY if {Win32, Win32::Security::SID, Win32::TieRegistry} are installed; o/w no expansion => pull off any leading non-quoted ~[name] (~ followed by word characters) => replace with home dir of [name] if exists, otherwise replace the characters)
-
-~<text>	Expands to value of environment variable "~<text>" (if defined) [OVERRIDES ~<name> expansion]
-
-=for further_documentation
+=for CHECK-THIS
 	 verify and document ~<text> overrides ~<name> ## verify and document which has priority
-
-=back
 
 =head1 INSTALLATION
 
@@ -2070,13 +2062,16 @@ Alternatively, the standard make idiom is also available (though deprecated):
 	make test
 	make install
 
-(On Windows platforms you should use C<nmake> instead.)
+(On Windows platforms you should use B<C<nmake>> instead.)
 
-As Makefile.PL is just a pass-through script, Module::Build is still ultimately required for installation. Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
+The Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
+Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
 
-Note: On ActivePerl installations, './Build install' will do a full installation using C<ppm> (see L<ppm>).
+Note: On ActivePerl installations, "C<./Build install>" will do a full installation using B<C<ppm>> (see L<ppm>).
+During the installation, a PPM package is constructed locally and then subsequently used for the final module install.
+This allows for uninstalls (using "C<ppm uninstall >I<C<MODULE>>" and also keeps local HTML documentation current.
 
 =for future_possibles
 	Check into using the PPM perl module, if installed, for installation of this module (removes the ActiveState requirement).
@@ -2101,15 +2096,15 @@ Note: On ActivePerl installations, './Build install' will do a full installation
 
 =head2 command_line( )
 
-C<command_line()> returns the full Win32 command line as a string.
+C<command_line()>: returns $ :: returns the full Win32 command line as a string.
 
-=head2 argv( )
+=head2 argv( [\%] )
 
-C<argv()> returns the reparsed command line as an array.
+C<argv( [\%] )>: returns @ :: get the current command line and reparse/glob-expand it; returning a new ARGV array
 
-=head2 parse( $ )
+=head2 parse( $ [,\%] )
 
-C<parse( $ )> takes a string argument and returns the parsed argument string as an array.
+C<parse( $ [,\%] )>: returns @ :: takes a string argument and returns the parsed argument string as an array.
 
 =for readme continue
 
@@ -2202,17 +2197,13 @@ Pending documentation...
 
 C<Win32::CommandLine> requires no configuration files or environment variables.
 
-=over
-
-=item Optional Environment Variables
+=head2 OPTIONAL Environment Variables
 
 $ENV{NULLGLOB} = 0/1 => overrides default 'nullglob' setting
 
 =for the_possible_future
 	$ENV{WIN32_COMMANDLINE_RULE} = "sh" | "bash" (case doesn't matter) => argv will parse in "sh/bash" manner if set to "default"|"undef"
 	- will warn (not carp) if value unrecognized
-
-=back
 
 =for readme continue
 
@@ -2258,9 +2249,9 @@ Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.or
 
 =head2 Operational Notes
 
-IMPORTANT NOTE: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') must be B<**DOUBLE-quoted**> to escape shell interpretation (eg, C<"...>...">). The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by DOUBLE-quoting them.
+IMPORTANT NOTE: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "...>..." >>). The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by DOUBLE-quoting them.
 
-C<%<x>> is also replaced by the corresponding %ENV variable by the CMD shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line, eg: C<perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }">.
+C<< %<x> >> is also replaced by the corresponding %ENV variable by the CMD shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line, eg: C<< perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>.
 
 Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
 

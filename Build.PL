@@ -12,6 +12,12 @@
 
 ## TODO: add/check compatibility for use of module PPM when installed (for non-ActiveState perl distributions)
 
+## TODO: bring up to date with most recent META.yml spec and include all fields in DEFAULTS
+
+# URLrefs:
+# [META.yml Specification] http://module-build.sourceforge.net/META-spec-current.html
+# [Module::Install] http://search.cpan.org/~ADAMK/Module-Install (see README info)
+
 use strict;
 use warnings;
 use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
@@ -37,10 +43,12 @@ $config{'license'} = undef;							# must be chosen by the author of the module/d
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends_href'} = {};					# module recommendations (no obvious default)
 $config{'build_requires_href'} = { 'perl' => '5.6.0', 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
+$config{'configure_requires_href'} = {};			# module requirements for configuration (no obvious default)
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
 $config{'create_makefile_pl'} = 'passthrough';		# passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
 $config{'recursive_test_files'} = undef;			# scan the ./t directory recursively for *.t perl files to execute during testing (no obvious default)
+$config{'no_index_href'} = {};						# private files/directories/packages/namespaces (no obvious default)
 $config{'script_files_aref'} = [];					# alternate script/executable file locations
 $config{'pm_files_href'} = {};						# alternate PM file locations [to help with MakeMaker transitions]
 $config{'pod_files_href'} = {};						# alternate POD file locations [to help with MakeMaker transitions]
@@ -135,10 +143,12 @@ if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $fo
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my %optional_args = ();		# Module::Build::new() optional args (only included if they are non-empty; otherwise, if included as empty list(s)/hash(es) in new(), Module::Build carps that the specified [and needed] files are missing)
-if ( @{$config{'script_files_aref'}} )   { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
-if ( keys %{$config{'pm_files_href'}} )  { %optional_args = ( %optional_args, pm_files =>  { %{$config{'pm_files_href'}} }); }
-if ( keys %{$config{'pod_files_href'}} ) { %optional_args = ( %optional_args, pod_files => { %{$config{'pod_files_href'}} }); }
-if ( keys %{$config{'xs_files_href'}} )  { %optional_args = ( %optional_args, xs_files =>  { %{$config{'xs_files_href'}} }); }
+if ( keys %{$config{'configure_requires_href'}} ) { %optional_args = ( %optional_args, configure_requires =>  { %{$config{'configure_requires_href'}} }); }
+if ( keys %{$config{'no_index_href'}} )           { %optional_args = ( %optional_args, no_index =>  { %{$config{'no_index_href'}} }); }
+if ( @{$config{'script_files_aref'}} )            { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
+if ( keys %{$config{'pm_files_href'}} )           { %optional_args = ( %optional_args, pm_files =>  { %{$config{'pm_files_href'}} }); }
+if ( keys %{$config{'pod_files_href'}} )          { %optional_args = ( %optional_args, pod_files => { %{$config{'pod_files_href'}} }); }
+if ( keys %{$config{'xs_files_href'}} )           { %optional_args = ( %optional_args, xs_files =>  { %{$config{'xs_files_href'}} }); }
 my $build = $class->new(
 	module_name    => $config{'module_name'},
 	dist_author    => $config{'dist_author'},
@@ -154,7 +164,7 @@ my $build = $class->new(
 	create_readme        => $config{'create_readme'},
 	create_makefile_pl   => $config{'create_makefile_pl'},
 
-	%optional_args,		## script_files, pm_files, pod_files, xs_files
+	%optional_args,		## configure_requires, no_index, script_files, pm_files, pod_files, xs_files
 
 	config        		 => { %{$config{'config_href'}} },
 
