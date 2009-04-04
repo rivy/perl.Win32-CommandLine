@@ -1,5 +1,5 @@
 #!perl -w   -- -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.3.3.2136136 ( r66:f72d74f9ad95 [mercurial] ) 2009/04/03 00:18:11 rivy $
+#$Id: Build.PL,v 0.3.4.15 ( r68:119536bcb98f [mercurial] ) 2009/04/04 08:40:43 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -25,10 +25,10 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.3.3.2136136 $ SCS tag
+# generate VERSION from $Version: 0.3.4.15 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.3.2136136 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.4.15 $ ))[-2]; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version::qv( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
