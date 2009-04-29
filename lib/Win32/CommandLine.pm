@@ -33,7 +33,7 @@ use 5.006;			# earliest tested perl version
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.4'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+\.\d+?$/) {$VERSION .= '.0'}; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+\.\d+?$/) {$VERSION .= '.0'}; if ($generate_alphas) { $VERSION =~ /(\d+)\.(\d+)\.(\d+)(?:\.)?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 # Module base/ISA and Exports
 
