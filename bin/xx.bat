@@ -1,6 +1,5 @@
-@rem = '--*-Perl-*--
+@rem = q{--*-Perl-*--
 @::# $Id$
-:: rename? xx.bat
 @echo off
 :: eXpand and eXecute command line
 :: similar to linux xargs
@@ -17,16 +16,17 @@ set _xx_bat=nul
 
 ::echo *=%*
 
-if [%1]==[-s] ( goto :findUniqueTemp )
-if [%1]==[-so] ( goto :findUniqueTemp )
-goto :pass_findUniqueTemp
+if [%1]==[-s] ( goto :find_unique_temp )
+if [%1]==[-so] ( goto :find_unique_temp )
+goto :find_unique_temp_PASS
 
 :: find bat file for sourcing and instantiate it with 1st line of text
-:findUniqueTemp
-set _xx_bat="%temp%\x.bat.source.%RANDOM%.bat"
-if EXIST %_xx_bat% ( goto :findUniqueTemp )
-echo @:: %_xx_bat% file > %_xx_bat%
-:pass_findUniqueTemp
+:find_unique_temp
+set _xx_bat="%temp%\xx.bat.source.%RANDOM%.bat"
+if EXIST %_xx_bat% ( goto :find_unique_temp )
+echo @:: %_xx_bat% TEMPORARY file > %_xx_bat%
+:find_unique_temp_PASS
+:: %_xx_bat% is now QUOTED [or it's "nul" and doesn't need quotes]
 ::echo _xx_bat=%_xx_bat%
 
 :: TCC/4NT
@@ -34,37 +34,58 @@ echo @:: %_xx_bat% file > %_xx_bat%
 if 01 == 1.0 ( setdos /x-14567 )
 
 if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
-::echo "perl output"
+::echo "perl output - no -s/-so"
 perl -x -S %0 %*
-if NOT %errorlevel% == 0 (
+if %errorlevel% NEQ 0 (
 ::	endlocal & exit /B %errorlevel%
 	exit /B %errorlevel%
 	)
-endlocal
-goto :done
+endlocal																						s
+goto :_DONE
 
 :source_expansion
-if 01 == 1.0 ( setdos /x0 )		&:: needed? how about for _xx_bat execution? anyway to save RESET back to prior settings without all env vars reverting too? check via TCC help on setdos and endlocal
+:: setdos /x0 needed? how about for _xx_bat execution? anyway to save RESET back to prior settings without all env vars reverting too? check via TCC help on setdos and endlocal
+if 01 == 1.0 ( setdos /x0 )
 echo @echo OFF >> %_xx_bat%
-::echo "perl output"
+::echo perl output [source expansion { perl -x -S %0 %* }]
 perl -x -S %0 %* >> %_xx_bat%
-::echo "sourcing - started"
-if NOT %errorlevel% == 0 (
-::	endlocal &  erase %_xx_bat% 1>nul 2>nul & exit /B %errorlevel%
-	erase %_xx_bat% 1>nul 2>nul & exit /B %errorlevel%
+::echo "sourcing - BAT created"
+if %errorlevel% NEQ 0 (
+	set _ERROR=%errorlevel%
+::	echo _ERROR=%ERROR%
+	erase %_xx_bat% 1>nul 2>nul
+	exit /B %_ERROR%
 	)
 ::echo "sourcing & cleanup..."
 :: how to propagate exit code from _xx_bat?
 :: :: needed?
 ::    :: maybe not, since _xx_bat is a file of shell statements
 ::    :: but probably, since any error code generated in _xx_bat would be removed by erase (?confirm this).
-endlocal & call %_xx_bat% & erase %_xx_bat% 1>nul 2>nul
+:: :: %errorlevel% is set upon line read (not after %_xx_bat% execution
+:: :: erase RESETS %errorlevel% depending on outcome (overriding any %_xx_bat% errors
+:: :: if ERRORLEVEL N doesn't check for negative ERRORLEVELs
+::endlocal & call %_xx_bat% & erase %_xx_bat% 1>nul 2>nul
+:: use subroutines to preserve ENVIRONMENT (can use %N instead of polluting ENV)
+endlocal & call :source_expansion_FINAL %_xx_bat%
+goto :_DONE
+::
+:source_expansion_FINAL
+::echo in FINAL [exec "%1%"]
+call %1
+call :source_expansion_CLEANUP %1 %errorlevel%
+goto :EOF
+:source_expansion_CLEANUP
+::echo FINAL [erase TEMP (file=%1), ERRORLEVEL=%2]
+erase %1 1>nul 2>nul
+exit /B %2
+goto :EOF
 
-:done
-goto endofperl
-@rem ';
-#!perl -w   -- -*- tab-width: 4; mode: perl -*-
-#line 65
+:_DONE
+goto :endofperl
+@rem };
+#!perl -w  -- -*- tab-width: 4; mode: perl -*-
+#NOTE: #line NN (where NN = LINE#+1)
+#line 89
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
 
@@ -242,7 +263,7 @@ if ( $ARGV{args} )
 if ( not $ARGV{args} )
 	{
 	## TODO: REDO this comment -- unfortunately the args (which are correct at this point) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
-	if ($ARGV{echo} ) { print join(" ",@ARGV); } else { if ($ARGV{so}) { my $x = join(" ",@ARGV); print `$x`; exit($?>> 8);} else { exit(system @ARGV); }}
+	if ($ARGV{echo} ) { print join(" ",@ARGV); } else { if ($ARGV{so}) { my $x = join(" ",@ARGV); print `$x`; exit($? >> 8);} else { exit((system @ARGV) >> 8); }}
 	}
 
 __END__

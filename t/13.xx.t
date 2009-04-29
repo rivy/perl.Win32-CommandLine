@@ -91,7 +91,8 @@ add_test( [ q{~TEST} ], ( q{\\test} ) );	## ? FRAGILE
 
 ## TODO: add additional test for each add_test which checks double expansion (xx -e xx <TEST> should equal xx -e <TEST> EXCEPT for some special characters which can't be represented on cmd.exe commandline even with quotes (eg, CTRL-CHARS, TAB, NL))
 
-## TODO: add tests for exit code propagation
+## TODO: add tests for exit code propagation (internal/perl script _and_ source BAT script errors)
+## eg: 'xx -so foobar', 'xx -so echo perl -e 1', 'xx -so echo perl -e "exit(1)"', 'xx -so echo perl -e "exit(-1)"', 'xx -so echo perl -e "exit(255)"', 'xx -so echo perl -e "exit(100)"', 'xx -so echo foobar', 'xx -so exit /B 1', 'xx -so exit /B 2', 'xx -so exit /B 255', 'xx -so exit /B -1'
 
 ## do tests
 
