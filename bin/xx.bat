@@ -3,8 +3,9 @@
 @echo off
 :: eXpand and eXecute command line
 :: similar to linux xargs
-:: ToDO: clean up documentation/comments
-:: contains batch file tricks to allow "sourcing" of target executable output
+:: TODO: clean up documentation/comments
+:: parent environment is kept untouched except as modified by "sourcing" of target command line text or executable output
+:: contains batch file techniques to allow "sourcing" of target command line text or executable output
 :: :"sourcing" => running commands in the parents environmental context, allowing modification of parents environment and CWD
 
 :: NOTE: TCC/4NT quirk => use %% for %, whereas CMD.exe % => as long as it does not introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
@@ -26,7 +27,7 @@ set _xx_bat="%temp%\xx.bat.source.%RANDOM%.bat"
 if EXIST %_xx_bat% ( goto :find_unique_temp )
 echo @:: %_xx_bat% TEMPORARY file > %_xx_bat%
 :find_unique_temp_PASS
-:: %_xx_bat% is now QUOTED [or it's "nul" and doesn't need quotes]
+:: %_xx_bat% is now quoted [or it is simply "nul" and doesn't need quotes]
 ::echo _xx_bat=%_xx_bat%
 
 :: TCC/4NT
@@ -85,7 +86,7 @@ goto :endofperl
 @rem };
 #!perl -w  -- -*- tab-width: 4; mode: perl -*-
 #NOTE: #line NN (where NN = LINE#+1)
-#line 89
+#line 90
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
 
