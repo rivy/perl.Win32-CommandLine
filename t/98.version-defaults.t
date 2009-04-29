@@ -1,4 +1,5 @@
-#!perl -w   -- -*- tab-width: 4; mode: perl -*-
+#!perl -w  -- -*- tab-width: 4; mode: perl -*-
+# [no -T]: MM->parse_version() is EVAL tainted
 
 # check that CPAN/PAUSE parsable VERSIONs have correctly corresponding default versions
 

@@ -23,7 +23,7 @@
 ^${dist_path}/${dist_name}-${dist_version}/
 
 # :: compiler detrus in the lib directory
-(?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds)$
+(?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds|lib|ccs)$
 # :: MSVC compiler detrus
 (?:^|/)vc90\.pdb$
 

@@ -42,7 +42,7 @@ $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends_href'} = {};					# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => '5.6.0', 'version' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
+$config{'build_requires_href'} = { 'perl' => '5.6.2', 'version' => 0, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 $config{'configure_requires_href'} = {};			# module requirements for configuration (no obvious default)
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
@@ -58,7 +58,7 @@ $config{'c_source'} = undef;						# c source files to compile
 $config{'config_href'} = {};						# modify Config.pm values for the build
 $config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];		# extra files to clean up during "build clean"
 $config{'add_to_realcleanup_aref'} = [];			# extra files to clean up during "build realclean"
-$config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS)
+$config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS) [NOTE: entries are used as REGEXs for comparison VS $^O]
 $config{'custom_code_href'} = {};					# custom code overrides from config
 $config{'custom_ENV_href'} = { '_BUILD_module_name' => '' };	# custom environment overrides (set before each dispatch) [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
 
@@ -138,8 +138,8 @@ if (!$config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'}) { $config{'cus
 #use lib 'inc';
 #require Devel::AssertOS; import Devel::AssertOS ( @{$config{'assert_os_aref'}} );
 
-# TODO: check with CPAN testers whether the current failure output string is close enough to the 'standard' "OS unsupported\n" string so that test failures are NA for unsupported OS's
-if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O eq $os; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n"; }; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
+# [DONE: WORKS fine] TODO: check with CPAN testers whether the current failure output string is close enough to the 'standard' "OS unsupported\n" string so that test failures are NA for unsupported OS's
+if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O =~ /$os/; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n"; }; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my %optional_args = ();		# Module::Build::new() optional args (only included if they are non-empty; otherwise, if included as empty list(s)/hash(es) in new(), Module::Build carps that the specified [and needed] files are missing)
@@ -600,9 +600,12 @@ $code{'ACTION_install'} = q{
         ###[ADD] update all distmeta info when installing
         ##$self->depends_on('distmeta');	## NOT NEEDED and causes a MANIFEST rebuild which can cause SIGNATURE issues on tests after installs ## may be fixed with sorted MANIFEST
 
-		if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
+		#if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
+		## this is an ActivePerl installation (and ppm is available)
 
-		# this is an ActivePerl installation (and ppm is available)
+		if (!_has_ppm() || ($^O eq 'cygwin')) { return $self->SUPER::ACTION_install; }		# cygwin PPM doesn't work correctly
+
+		# PPM is available for install (should work for ActivePerl and Strawberry/Vanilla perl)
 
 		# build ppd and ppm
 		$self->depends_on('build');
@@ -642,6 +645,59 @@ $code{'ACTION_fakeinstall'} = q{
 		#`ppm install $ppd_name`;
 	  }
 };
+$code{'ACTION_distmeta@FILES_up_to_date'} = q{
+	sub FILES_up_to_date {
+		# FILES_up_to_date( \%:SELF, $|\@:DEPENDENT_FILE(s), $|\@:ANTECEDENT(s) [, \%:OPTIONAL_ARGS] ): returns $:TRUE/FALSE
+		#print "_ = [ @_ ]\n";
+
+		my ($self) = shift;
+		my %opt	= (
+			ignore_case => 'auto',	# = [undef/0]/true/'auto'		## 0/undef/false = match case always; 'auto' = match case dependent on File::Spec->case_tolerant(), o/w true = ignore case for matches
+			);
+
+		use File::Glob qw();
+		use File::Spec qw();
+
+		my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+		my $opt_ref;
+		$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last argument only if it's a HASH reference (assumed to be options for our function)
+		if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' for function ".$me; return; } } }
+
+		#custom_code_href => { 'ACTION_test' => q[sub ACTION_test{ use File::Glob qw(:glob); my ($self) = @_; $self->depends_on('build'); if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { if (!bsd_glob('Makefile.PL',GLOB_NOCASE) or !bsd_glob('README',GLOB_NOCASE) or !bsd_glob('META.yml',GLOB_NOCASE)) {$self->depends_on('distmeta')}; if (!bsd_glob('SIGNATURE',GLOB_NOCASE)) {$self->depends_on('sign')};}; return $self->SUPER::ACTION_test;}] }
+
+		my $GLOB_FLAGS = 0;
+		if ($opt{ignore_case} eq 'auto') { $GLOB_FLAGS |= ( File::Spec->case_tolerant()? 0 : File::Glob::GLOB_NOCASE ); }
+		else { $GLOB_FLAGS |= ( $opt{ignore_case} ? File::Glob::GLOB_NOCASE : 0 ); }		# any value resets GLOB_FLAG defaults to 0 => implies nullglob = true
+
+		#my @dependent_files = map { File::Glob::bsd_glob( $_, $GLOB_FLAGS ) } ( ref $_[0] ? @{shift @_} : shift );
+		#my @antecedents = map { File::Glob::bsd_glob( $_, $GLOB_FLAGS ) } ( ref $_[0] ? @{shift @_} : shift );
+
+		#if (not @dependent_files) { return 0; }	 # no dependency files found
+
+		my @dependent_files;
+		my @files = ( ref $_[0] ? @{shift @_} : shift );	# dependent_files
+		for my $file ( @files )
+			{
+			my @globs = File::Glob::bsd_glob( $file, $GLOB_FLAGS );
+			if (not @globs) { return 0; } 	# ALL dependent file entries must return at least one file or return NOT FILES_up_to_date
+			push @dependent_files, @globs;
+			}
+		my @antecedents = map { File::Glob::bsd_glob( $_, $GLOB_FLAGS ) } ( ref $_[0] ? @{shift @_} : shift );		#??: design?: should missing antecedents cause a NOT FILES_up_to_date return?
+
+		my $oldest = @dependent_files ? -M $dependent_files[0] : 0;
+		my $youngest = @antecedents ? -M $antecedents[0]: 0;
+		for ( @dependent_files ) { if (-M $_ > $oldest) { $oldest = -M $_; } }
+		for ( @antecedents ) { if (-M $_ < $youngest) { $youngest = -M $_; } }
+
+		#print "dep = [ @dependent_files ]\n";
+		#print "ant = [ @antecedents ]\n";
+		#print "oldest = ".24*60*60*$oldest."\n";
+		#print "youngest = ".24*60*60*$youngest."\n";
+		#print "youngest >= oldest = ".($youngest >= $oldest)."\n";
+
+		return ( $youngest >= $oldest );
+		}
+};
 $code{'ACTION_distmeta'} = q{
     sub ACTION_distmeta {
         my ($self) = @_;
@@ -656,7 +712,96 @@ $code{'ACTION_distmeta'} = q{
 		#$self->do_create_license if $self->create_license;
 		#$self->do_create_metafile;
         #return $self->SUPER::ACTION_distmeta;
-        $self->SUPER::ACTION_distmeta;
+        #$self->SUPER::ACTION_distmeta;
+
+		#FILES_up_to_date( $|\@ dependent_file(s), $|\@ antecedent(s) [, \%] ) {...}
+
+		$self->do_create_makefile_pl if ($self->create_makefile_pl and not $self->FILES_up_to_date('Makefile.PL', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));	## worry about _main_docfile(), ASSERT?
+		$self->do_create_readme if ($self->create_readme and not $self->FILES_up_to_date('README', $self->dist_version_from, { ignore_case => 1 }));	## worry about _main_docfile(), ASSERT?
+		$self->do_create_license if ($self->create_license and not $self->FILES_up_to_date('LICENSE', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));	## worry about _main_docfile(), ASSERT?
+		$self->do_create_metafile if (not $self->FILES_up_to_date('META.yml', [ 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));	## worry about _main_docfile(), ASSERT?
+
+        # TODO: check file(s) for up-to-date before recreation of files (and DON'T call SUPER)
+        ## Makefile.PL [ check create_makefile_pl ... ]
+			#sub do_create_makefile_pl {
+			#  my $self = shift;
+			#  require Module::Build::Compat;
+			#  $self->delete_filetree('Makefile.PL');
+			#  $self->log_info("Creating Makefile.PL\n");
+			#  Module::Build::Compat->create_makefile_pl($self->create_makefile_pl, $self, @_);
+			#  $self->_add_to_manifest('MANIFEST', 'Makefile.PL');
+			#}
+
+        ## 'README' [ MODULE files... : check do_create_readme and POD::ReadMe to find the correct files ]
+        	# README created from _main_docfile
+			#my $docfile = $self->_main_docfile;
+			#sub _main_docfile {
+			#  my $self = shift;
+			#  if ( my $pm_file = $self->dist_version_from ) {
+			#	(my $pod_file = $pm_file) =~ s/.pm$/.pod/;
+			#	return (-e $pod_file ? $pod_file : $pm_file);
+			#  } else {
+			#	return undef;
+			#  }
+			#}
+
+        ## License [ check create_license ... ]
+			#sub do_create_license {
+			#  my $self = shift;
+			#  $self->log_info("Creating LICENSE file");
+			#
+			#  my $l = $self->license
+			#	or die "No license specified";
+			#
+			#  my $key = $self->valid_licenses->{$l}
+			#	or die "'$l' isn't a license key we know about";
+			#  my $class = "Software::License::$key";
+			#
+			#  eval "use $class; 1"
+			#	or die "Can't load Software::License to create LICENSE file: $@";
+			#
+			#  $self->delete_filetree('LICENSE');
+			#
+			#  my $author = join " & ", @{ $self->dist_author };
+			#  my $license = $class->new({holder => $author});
+			#  my $fh = IO::File->new('> LICENSE')
+			#	or die "Can't write LICENSE file: $!";
+			#  print $fh $license->fulltext;
+			#  close $fh;
+			#
+			#  $self->_add_to_manifest('MANIFEST', 'LICENSE');
+			#}
+
+        ## META.yml [ check create_metafile ... ]
+        	#sub do_create_metafile {
+			#  my $self = shift;
+			#  return if $self->{wrote_metadata};
+			#
+			#  my $p = $self->{properties};
+			#  my $metafile = $self->metafile;
+			#
+			#  unless ($p->{license}) {
+			#    $self->log_warn("No license specified, setting license = 'unknown'\n");
+			#    $p->{license} = 'unknown';
+			#  }
+			#  unless (exists $self->valid_licenses->{ $p->{license} }) {
+			#    die "Unknown license type '$p->{license}'";
+			#  }
+			#
+			#  # If we're in the distdir, the metafile may exist and be non-writable.
+			#  $self->delete_filetree($metafile);
+			#  $self->log_info("Creating $metafile\n");
+			#
+			#  # Since we're building ourself, we have to do some special stuff
+			#  # here: the ConfigData module is found in blib/lib.
+			#  local @INC = @INC;
+			#  if (($self->module_name || '') eq 'Module::Build') {
+			#    $self->depends_on('config_data');
+			#    push @INC, File::Spec->catdir($self->blib, 'lib');
+			#  }
+			#
+			#  $self->write_metafile;
+			#}
 
         #[ADD] re-update the MANIFEST with any new files
         #$self->depends_on('manifest');
@@ -667,8 +812,15 @@ $code{'ACTION_testall'} = q{
     sub ACTION_testall {
         my ($self) = @_;
 
+		use File::Glob qw(:glob);
+
+		$ENV{TEST_ALL} = 1;
+
         #[ADD] build dependency (to make sure we're testing the most recent incarnation of the package)
         $self->depends_on('build');
+        #$self->depends_on('distmeta');
+        if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { $self->depends_on('distmeta'); }		# NOT strictly necessary since distmeta rebuilds are now dependency gated; but must avoid recreating distmeta files on installation tests (rebuilds on other platforms can change minor things such as quote characters or links which all will invalidate the SIGNATURE)
+        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign') };			# [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
 
         return $self->SUPER::ACTION_testall;
       }
@@ -731,13 +883,20 @@ $code{'ACTION_manifest'} = q{
 		## BUGFIX: trailing comments were being interpreted into the regexp ## TODO: ExtUtils::Manifest docs say whitespace may be included in regexp if single quoted o/w whitespace and anything following are discarded as comments (see perldoc ExtUtils::Manifest, MANIFEST section)
 		## NOTE: this repairs the BUG for this Build.PL, however, other tools (such as 'cpansign') use the bugged ExtUtils::Manifest and so won't interpret the MANIFEST.SKIP file in the same manner (basically breaking any line with a trailing comment)
 		##       ** so, best practice is to avoid ANY trailing comments in MANIFEST.SKIP
-		s/\s+(#.*)?$//;	# remove trailing whitespace and comments (any whitespace followed by '#')
-		#TODO: leave whitespace within single quotes alone (need a balanced single quote regexp here)
-			s/^'//;
-			s/'$//;
-		#print "skip: regexp = '$_'\n";
+		#?: s/\s+(#[^']*)?$//;	# remove trailing whitespace and comments (any whitespace followed by '#')
+		##s/\s+(#.*)?$//;	# remove trailing whitespace and comments (any whitespace followed by '#')
+		#TODO: leave whitespace/comment characters within single quotes alone (need a balanced single quote regexp here)
+		##	s/^'//;
+		##	s/'$//;
+		$_ =~ qr{^\s*(?:(?:'([^\\\\']*(?:\\\\.[^\\\\']*)*)')|([^#\s]\S*))?(?:(?:\s*)|(?:\s+(.*?)\s*))$};
+		#my $comment = $3;
+		my $filename = $2;
+		if ( defined($1) ) { $filename = $1; $filename =~ s/\\\\(['\\\\])/$1/g; }
+		next if (not defined($filename) or not $filename);
+		#print "skip: regexp = '$filename'\n";
 		#TODO: check for bad regexps
-		push @skip, ExtUtils::Manifest::_macify($_);
+		#push @skip, ExtUtils::Manifest::_macify($_);
+		push @skip, ExtUtils::Manifest::_macify($filename);
 		}
 		close M;
 		# bring $dist_name, $dist_version, $dist_path into current scope
@@ -864,8 +1023,13 @@ $code{'ACTION_test'} = q{
     sub ACTION_test {
         my ($self) = @_;
 
+		use File::Glob qw(:glob);
+
         #[ADD] build dependency (to make sure we're testing the most recent incarnation of the package)
         $self->depends_on('build');
+        #$self->depends_on('distmeta');
+        if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { $self->depends_on('distmeta'); }	# NOT strictly necessary since distmeta rebuilds are now dependency gated; but must avoid recreating distmeta files on installation tests (rebuilds on other platforms can change minor things such as quote characters or links which all will invalidate the SIGNATURE)
+        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign') };			# [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
 
         return $self->SUPER::ACTION_test;
       }

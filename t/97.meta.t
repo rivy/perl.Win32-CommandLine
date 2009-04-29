@@ -1,4 +1,4 @@
-#!perl -wT   -- -*- tab-width: 4; mode: perl -*-
+#!perl -wT  -- -*- tab-width: 4; mode: perl -*-
 
 use strict;
 use warnings;
@@ -7,10 +7,10 @@ use Test::More;
 
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{AUTOMATED_TESTING} or $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL};
 
-#my @modules = ( 'Test::CPAN::Meta 0.12' );		## TODO: add version support
-my @modules = ( 'Test::CPAN::Meta' );
+use version qw();
+my @modules = ( 'Test::CPAN::Meta 0.12' );	# @modules = ( '<MODULE> [[<MIN_VERSION>] <MAX_VERSION>]', ... )
 my $haveRequired = 1;
-foreach (@modules) { if (!eval "require $_; 1;") { $haveRequired = 0; diag("$_ is not available");} }	## no critic (ProhibitStringyEval)
+foreach (@modules) {my ($module, $min_v, $max_v) = split(' '); my $v = eval "require $module; $module->VERSION();"; if ( !$v || ($min_v && ($v < version->new($min_v))) || ($max_v && ($v > version->new($max_v))) ) { $haveRequired = 0; my $out = $module . ($min_v?' [v'.$min_v.($max_v?" - $max_v":'+').']':''); diag("$out is not available"); }}	## no critic (ProhibitStringyEval)
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
 

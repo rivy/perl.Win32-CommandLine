@@ -1,4 +1,4 @@
-#!perl -wT   -- -*- tab-width: 4; mode: perl -*-
+#!perl -wT  -- -*- tab-width: 4; mode: perl -*-
 
 use strict;
 use warnings;
@@ -8,9 +8,14 @@ use Test::More;
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
 #my $haveTestPod = eval { require 'Test::Pod 1.14'; 1; };	## TODO: add version support
-my $haveTestPod = eval { require Test::Pod; 1; };
+use version qw();
+my @modules = ( 'Test::Pod 1.14' );	# @modules = ( '<MODULE> [[<MIN_VERSION>] <MAX_VERSION>]', ... )
+my $haveRequired = 1;
+foreach (@modules) {my ($module, $min_v, $max_v) = split(' '); my $v = eval "require $module; $module->VERSION();"; if ( !$v || ($min_v && ($v < version->new($min_v))) || ($max_v && ($v > version->new($max_v))) ) { $haveRequired = 0; my $out = $module . ($min_v?' [v'.$min_v.($max_v?" - $max_v":'+').']':''); diag("$out is not available"); }}	## no critic (ProhibitStringyEval)
 
-plan skip_all => "Test::Pod 1.14 required for testing POD" if !$haveTestPod;
+plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
+
+(undef) = eval { require Test::Pod; 1; };	## REPEATED for kwalitee testing
 
 #all_pod_coverage_ok();
 Test::Pod::all_pod_files_ok( Test::Pod::all_pod_files(qw( . )) );

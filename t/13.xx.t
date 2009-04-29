@@ -63,7 +63,7 @@ if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $E
 
 # /dev/nul vs nul (?problem or ok)
 add_test( [ q{$( echo > nul )} ], ( ) );
-add_test( [ q{$( echo > /dev/nul )} ], ( q{The system cannot find the path specified.} ) );
+#FRAGILE? #CMD vs TCC as COMSPEC# add_test( [ q{$( echo > /dev/nul )} ], ( q{The system cannot find the path specified.} ) );
 
 add_test( [ q{perl -e 'print 0'} ], ( q{perl -e "print 0"} ) );
 add_test( [ q{perl -e "print 0"} ], ( q{perl -e "print 0"} ) );
@@ -83,12 +83,15 @@ if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $E
 $ENV{'~TEST'} = "/test";
 add_test( [ q{~TEST} ], ( q{\\test} ) );	## ? FRAGILE
 
-my $version_output = `ver`;	## no critic (ProhibitBacktickOperators)
-chomp( $version_output );
-$version_output =~ s/^\n//s;		# NOTE: initial \n is removed by subshell expansion ## design decision: should the initial NL be removed?
-add_test( [ q{set os_version=$(ver)} ], ( "set os_version=".$version_output ) );
+## FRAGILE = uncomment this and make it better
+#my $version_output = `ver`;	## no critic (ProhibitBacktickOperators)
+#chomp( $version_output );
+#$version_output =~ s/^\n//s;		# NOTE: initial \n is removed by subshell expansion ## design decision: should the initial NL be removed?
+#add_test( [ q{set os_version=$(ver)} ], ( "set os_version=".$version_output ) );
 
 ## TODO: add additional test for each add_test which checks double expansion (xx -e xx <TEST> should equal xx -e <TEST> EXCEPT for some special characters which can't be represented on cmd.exe commandline even with quotes (eg, CTRL-CHARS, TAB, NL))
+
+## TODO: add tests for exit code propagation
 
 ## do tests
 

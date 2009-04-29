@@ -407,7 +407,7 @@ sub	_decode_dollarqq {
 sub	_is_const { my $is_const = !eval { ($_[0]) = $_[0]; 1; }; return $is_const; }
 
 sub	_ltrim {
-	# _ltrim( $|@ [,\%] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
+	# _ltrim( $|@:STRING(s) [,\%:OPTIONAL_ARGS] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
 	# trim leading characters (defaults to whitespace)
 	# NOTE: not able to currently determine the difference between a function call with a zero arg list {"f(());"} and a function call with no arguments {"f();"}
 	#		so, by the Principle of Least Surprise, f() in void context is disallowed instead of being an alias of "f($_)" so that f(@array) doesn't silently perform f($_) when @array has zero elements
@@ -1732,7 +1732,8 @@ sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 		if ( $opt{nullglob} )
 			{
-			$glob_flags	|= GLOB_NOMAGIC;
+			#$glob_flags	|= GLOB_NOMAGIC;	# TEST: returns pattern ONLY if doesn't contain "*", "?" or "["? ## should this be something else instead?
+			#$glob_flags	&= ~GLOB_NOCHECK;
 			}
 		else
 			{
@@ -1990,7 +1991,7 @@ return %home_paths;
 
 This module is used to reparse the Win32 command line, automating better quoting and globbing of the command line. Globbing is full bash POSIX compatible globbing, including subshell expansions. With the use of the companion script (B<C<xx.bat>>) and B<C<doskey>> for macro aliasing, you can add full-fledged bash compatible string quoting/expansion and file globbing to I<any> Win32 executable.
 
-This module is compatible with both B<C<cmd.exe>> and B<C<4nt/tcc/tcmd>> shells, and adds better parsing and bash glob expansion to I<any> external command (by using the included B<C<xx.bat>> batch script).
+This module is compatible with both B<C<cmd.exe>> and B<C<4nt/tcc/tcmd>> shells, and can be used to add better parsing and bash glob expansion to I<any> external command (by using the included B<C<xx.bat>> batch script).
 
 =head2 C<CMD.EXE>
 
@@ -2012,10 +2013,15 @@ Note that bash compatible character expansion and globbing is available, includi
 
  '...'    literal (no escapes and no globbing within quotes)
  "..."    literal (no escapes and no globbing within quotes)
- $'...'   string including all ANSI C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other escaped characters: \<x> =>\<x>); no globbing within quotes
+ $'...'   string including all ANSI C string escapes (see NOTE); no globbing within quotes
  $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
  $( ... ) subshell expansion [subshell commandline is _not_ expanded]
  $("...") subshell expansion (quotes removed) [subshell commandline is _not_ expanded]
+
+NOTE: ANSI C string escapes are  (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other escaped characters: \<x> =>\<x>).
+
+=for TODO
+	Explain that $("...") with quote removal was added to allow redirection and continuation characters within the subshell
 
 =head2 GLOB META CHARACTERS
 
@@ -2026,7 +2032,7 @@ Note that bash compatible character expansion and globbing is available, includi
   ?       Match any single character
   ~       Current user home directory
   ~USER   User NAME home directory
-  ~TEXT   Environment variable named ~TEXT ( $ENV{~TEXT} ) [overrides ~USER expansion]
+  ~TEXT   Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USER expansion]
 
 
 The metanotation C<a{b,c,d}e> is a shorthand for C<abe ace ade>.  Left to
@@ -2055,7 +2061,7 @@ Or, if you're on a platform (like DOS or Windows) that doesn't require the "./" 
 	Build test
 	Build install
 
-Alternatively, the standard make idiom is also available (though deprecated):
+Alternatively, the standard make idiom is also available (though it is deprecated):
 
 	perl Makefile.PL
 	make
@@ -2064,7 +2070,7 @@ Alternatively, the standard make idiom is also available (though deprecated):
 
 (On Windows platforms you should use B<C<nmake>> instead.)
 
-The Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
+Note that the Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
 Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
@@ -2144,7 +2150,7 @@ Some initial attempts were made using C<Win32::API> and C<Inline::C>. For exampl
     :endofperl
 
 Unfortunately, C<Win32::API> and C<Inline::C> were shown to be too fragile at the time (in 2007).
-C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> is very brittle on Win32 systems (not compensating for paths with embedded strings).
+C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> was very brittle on Win32 systems (not compensating for paths with embedded strings).
 [ See L<http://www.perlmonks.org/?node_id=625182> for a more full explanation of the problem and initial attempts at a solution. ]
 
 So, an initial XS solution was implemented. And from that point, the lure of C<bash>-like command line parsing led inexorably to the full implementation. The parsing logic is unfortunately still complex, but seems to be holding up under testing.
@@ -2249,15 +2255,15 @@ Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.or
 
 =head2 Operational Notes
 
-IMPORTANT NOTE: Special shell characters (shell redirection [ '<', '>' ] and continuation '&') must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "...>..." >>). The CMD shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by DOUBLE-quoting them.
+IMPORTANT NOTE: Special shell characters (shell redirection [ '|', '<', '>' ] and continuation '&') must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "foo | bar" >>). The shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by quoting them with double-quote characters.
 
-C<< %<x> >> is also replaced by the corresponding %ENV variable by the CMD shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line, eg: C<< perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>.
+C<< %<X> >> is also replaced by the corresponding %ENV variable by the shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line (eg, C<< perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>).
 
-Brackets ('{' and '}') and braces ('[' and ']') must be quoted to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, the standard Win32 shell (cmd.exe) will automatically surround the entire path with spaces (which corrects the issue).
+Brackets ('{' and '}') and braces ('[' and ']') must be quoted (single or double quotes) to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, tab expansion of filenames for the standard Win32 shell (cmd.exe) ot 4NT/TCC/TCMD will automatically surround the entire path with spaces (which corrects the issue).
 
-Some programs may expect their arguments to maintain their surrounding quotes, but argv() parsing only quotes arguments which require it for shell parsing (i.e., those containing spaces, special characters, etc).
+Some programs may expect their arguments to maintain their surrounding quotes, but argv() parsing only quotes arguments which require it to maintain equivalence for shell parsing (i.e., those containing spaces, special characters, etc). And, since single quotes have no special meaning to the shell, all arguments which require quoting for correct shell interpretation will be quoted with double-quote characters, even if they were originally quoted with single-quotes. Neither of these issues should be a problem for programs using Win32::CommandLine, but may be an issue for 'legacy' applications which have their command line expanded with B<C<xx.bat>>.
 
-Be careful with backslashed quotes within quoted strings. Note that "...\" is an B<unbalanced> string containing a double quote. Place the backslash outside of the quotation ("...\"") or use a double backslash (C<"...\\">) to include it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark (C<"...\..."> works as expected).
+Be careful with backslashed quotes within quoted strings. Note that C<"foo\"> is an B<unbalanced> string containing a double quote. Place the backslash outside of the quotation (C<"foo"\>) or use a double backslash within (C<"foo\\">) to include the backslash it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark (C<"foo\bar"> will work as expected).
 
 =for further_expansion
 	GOTCHA: Note this behavior (ending \" => ", which is probably not what is desired or expected in this case (? what about other cases, should this be "fixed" or would it break something else?)
@@ -2265,7 +2271,8 @@ Be careful with backslashed quotes within quoted strings. Note that "...\" is an
 	>t\prelim\echo.exe "\\sethra\C$\"win*
 	[0]\\sethra\C$"win*
 
-4NT/TCC/TCMD NOTE: The shell interprets and B<removes> backquote characters before executing the command. You must quote backquote characters with B<**double-quotes**> to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
+=for FIXED
+	4NT/TCC/TCMD NOTE: The shell interprets and B<removes> backquote characters before executing the command. You must quote backquote characters with B<**double-quotes**> to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
 
 =for possible_future_codefix
 		??? fix this by using $ENV{CMDLINE} which is set by TCC? => attempts to workaround this using $ENV{CMDLINE} fail because TCC doesn't have control between processes and can't set the new CMDLINE value if one process directly creates another (and I'm not sure how to detect that TCC started the process)
@@ -2281,7 +2288,7 @@ You can find documentation for this module with the perldoc command.
 
     perldoc Win32::CommandLine
 
-You can also look for information at:
+You can also look for further information at:
 
     * AnnoCPAN: Annotated CPAN documentation
 
@@ -2304,7 +2311,7 @@ You can also look for information at:
     * CPANTS: CPAN Testing Service
 
       [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
-       [used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
+      [ used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
 
     * CPANTESTERS: Test results
 
@@ -2314,46 +2321,52 @@ You can also look for information at:
 	* CPANFORUM: Forum discussing Win32::CommandLine
 	  http://www.cpanforum.com/dist/Win32-CommandLine
 
-=head1 ACKNOWLEDGEMENTS
+=head1 TODO
 
-=for example
-	#Test::Builder by Michael Schwern allowed me to focus on the specifics related to testing system commands by making it easy to produce proper test output.
+Expand and polish the documentation. Add argument/option explanations and examples for interface functions.
+
+=for TODO
+	=head1 SEE ALSO
 
 =for readme continue
+
+=head1 LICENSE AND COPYRIGHT
+
+  Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
+
+This module is free software; you can redistribute it and/or modify it under the
+Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
+
+=head1 DISCLAIMER OF WARRANTY
+
+THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
+AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
+ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
+BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
+THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+[REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
+
+=head1 ACKNOWLEDGEMENTS
+
+Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas and an initial XS starting
+point for the module during a discussion on PerlMonks (see L<http://www.perlmonks.org/?node_id=625182>).
+
+=for TODO
+	POST in REPLY to http://www.perlmonks.org/?parent=625182;node_id=3333
+	I just wanted to drop you a note to let you know that I used your post here as a starting point and ultimately went in for the full monty. After a lot of research, investigation, and coding, I've just released Win32::CommandLine [1] on CPAN last week.
+	It does a little more than just grab the command line now. :)
+	Thanks for the help and encouragement.
+	- Roy
+	[1] http://search.cpan.org/~rivy/Win32-CommandLine
+	POST in reply to http://www.perlmonks.org/?parent=625151;node_id=3333
+	I wanted to thank both BrowserUK and syphilis
 
 =head1 AUTHOR
 
 Roy Ivy III <rivy[at]cpan[dot]org>
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
-This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See L<perlartistic>.
-
-
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE ''AS IS'' WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
 
 =for readme stop
 

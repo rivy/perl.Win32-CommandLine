@@ -109,6 +109,103 @@ foreach (@ARGV)
 	#print '#args = '.scalar(@ARGV)."\n";
 	##if (@ARGV > 1) { print "$_:\n"; }
 #	my @w = ($ARGV{where} ? which( $_ ) : scalar(which( $_ )) );
+
+	# TODO: aliases
+	# how to note these? include entire text/options? what about aliases with multiple commands?
+	# CMD = 'doskey /macros'
+	# perl -e "$o = qx{doskey /macros}; print $o;"
+	# [format]
+    # cpan=wrap-cpan $*
+    # command=cmd $*
+    # to-hex=perl -e "printf q{%x},$1"
+    # vdiff=winmerge $*
+    # bt=b test --test_files $*
+    # b=ant+build $*
+    # ant="c:/program files/ant/bin/ant" $*
+    # oh=handle $*
+    # morehelp=hh ntcmds.chm $*
+    # cdg=x -S cd $*
+    # lag=x msls -lA $*
+    # llg=x msls -l $*
+    # lsg=x msls $*
+    # dirg=x msls $*
+    # la=msls -lA $*
+    # ll=msls -l $*
+    # ls=msls $*
+    # dir=msls -l $*
+    # args=xx -a $*
+    # perl=call xx perl $*
+    # pdh=start c:\perl\html\index.html $*
+    # pd=perldoc $*
+    # fs=findstr /s /i $*
+    # ds=dir /s /b $*
+    # e=edit $*
+    # .....=cd ..\..\..\.. $*
+    # ....=cd ..\..\.. $*
+    # ...=cd ..\.. $*
+    # ..=cd .. $*
+    # whois=pwhois -s -S -c -C $*
+    # rn=rename $*
+    # mv=move $*
+    # rm=erase $*
+    # cp=copy $*
+    # NOTE: trailing $* is optional; $T is a command seperator (multiple commands are possible); $1-$9 batch parameters are possible
+
+	# TCC = 'alias'
+	# perl -e "$o = qx{tcc /c alias}; print $o;"
+	# [format]
+	# cp=copy
+	# rm=erase
+	# mv=move
+	# rn=rename
+	# whois=pwhois -s -S -c -C
+	# ..=cd ..
+	# ...=cd ..\..
+	# ....=cd ..\..\..
+	# .....=cd ..\..\..\..
+	# e=edit
+	# ds=dir /s /b
+	# fs=findstr /s /i
+	# pd=perldoc
+	# pdh=start c:\perl\html\index.html
+	# perl=call xx perl
+	# args=xx -a
+	# dir=msls -l
+	# ls=msls
+	# ll=msls -l
+	# la=msls -lA
+	# dirg=x msls
+	# lsg=x msls
+	# llg=x msls -l
+	# lag=x msls -lA
+	# cdg=x -S cd
+	# morehelp=hh ntcmds.chm
+	# oh=handle
+	# ant="c:/program files/ant/bin/ant"
+	# b=*ant+build
+	# bt=b test --test_files
+	# vdiff=winmerge
+	# to-hex=perl -e "printf q{%%x},%1"
+	# command=cmd
+	# cpan=wrap-cpan
+
+	# bash = 'alias'
+	# perl -e "\$o = qx{/bin/bash -ic alias}; print \$o;"
+	# NOTE: this only finds aliases defined in .bashrc (not the current shell)
+	# [format]
+	# alias ant='c:/program\ files/ant/bin/ant'
+	# alias b='c:/users/public/documents/\@bin/ant+build.pl'
+	# alias bt='b test --test_files'
+	# alias df='df -h'
+	# alias dir='ls'
+	# alias du='du -h'
+	# alias la='ls -A'
+	# alias ll='ls -l'
+	# alias ls='ls --color=auto -hF'
+	# alias mc='. /usr/share/mc/bin/mc-wrapper.sh'
+	# alias pd='perldoc'
+	# NOTE: mc is aliased to a sourced shell script [? return '.', '. /usr/share/mc/bin/mc-wrapper.sh', or '/usr/share/mc/bin/mc-wrapper.sh']
+
 	my @w = PATH->Whence( $_ );
 	if (! $ARGV{where} && @w) { @w = $w[0]; }
 	my %printed;

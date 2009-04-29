@@ -8,7 +8,7 @@
 :: contains batch file tricks to allow "sourcing" of target executable output
 :: :"sourcing" => running commands in the parents environmental context, allowing modification of parents environment and CWD
 
-:: NOTE: 4nt/TCC/TCMD quirk => use %% for %, whereas cmd.exe % => as long as it does not introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
+:: NOTE: TCC/4NT quirk => use %% for %, whereas CMD.exe % => as long as it does not introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
 
 :: localize ENV changes until sourcing is pending
 setlocal
@@ -29,7 +29,7 @@ echo @:: %_xx_bat% file > %_xx_bat%
 :pass_findUniqueTemp
 ::echo _xx_bat=%_xx_bat%
 
-:: 4NT/TCC
+:: TCC/4NT
 ::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize its arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
 if 01 == 1.0 ( setdos /x-14567 )
 
@@ -44,17 +44,20 @@ endlocal
 goto :done
 
 :source_expansion
-if 01 == 1.0 ( setdos /x0 )
+if 01 == 1.0 ( setdos /x0 )		&:: needed? how about for _xx_bat execution? anyway to save RESET back to prior settings without all env vars reverting too? check via TCC help on setdos and endlocal
 echo @echo OFF >> %_xx_bat%
 ::echo "perl output"
 perl -x -S %0 %* >> %_xx_bat%
 ::echo "sourcing - started"
 if NOT %errorlevel% == 0 (
-	erase %_xx_bat% 1>nul 2>nul
-::	endlocal &  exit /B %errorlevel%
-	exit /B %errorlevel%
+::	endlocal &  erase %_xx_bat% 1>nul 2>nul & exit /B %errorlevel%
+	erase %_xx_bat% 1>nul 2>nul & exit /B %errorlevel%
 	)
 ::echo "sourcing & cleanup..."
+:: how to propagate exit code from _xx_bat?
+:: :: needed?
+::    :: maybe not, since _xx_bat is a file of shell statements
+::    :: but probably, since any error code generated in _xx_bat would be removed by erase (?confirm this).
 endlocal & call %_xx_bat% & erase %_xx_bat% 1>nul 2>nul
 
 :done
@@ -239,7 +242,7 @@ if ( $ARGV{args} )
 if ( not $ARGV{args} )
 	{
 	## TODO: REDO this comment -- unfortunately the args (which are correct at this point) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
-	if ($ARGV{echo} ) { print join(" ",@ARGV); } else { if ($ARGV{so}) { my $x = join(" ",@ARGV); print `$x`; } else { system @ARGV; }}
+	if ($ARGV{echo} ) { print join(" ",@ARGV); } else { if ($ARGV{so}) { my $x = join(" ",@ARGV); print `$x`; exit($?>> 8);} else { exit(system @ARGV); }}
 	}
 
 __END__

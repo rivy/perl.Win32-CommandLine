@@ -1,9 +1,10 @@
-#!perl -w   -- -*- tab-width: 4; mode: perl -*-
+#!perl -w  -- -*- tab-width: 4; mode: perl -*-
+# [no -T]: Module::Signature::SIGNATURE_OK() is File::Find tainted
 
 use strict;
 use warnings;
 
-use Test::More;		# included with perl
+use Test::More;		# included with perl v5.6.2+
 
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 
