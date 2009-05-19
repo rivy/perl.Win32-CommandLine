@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- ANT Build file -->
-<project name="Win32-CommandLine" default="build" xmlns:ac="antlib:net.sf.antcontrib">
+<project name="Win32-CommandLine" default="copy" xmlns:ac="antlib:net.sf.antcontrib">
 
 <target name="*" depends="build"/><!-- BUILD if no target recognized -->
 
@@ -8,7 +8,7 @@
 
 <property name="bin.dir" value="c:\users\public\documents\@bin"/>
 
-<target name="build">
+<target name="copy">
 	<ant antfile=".build.xml" dir=".." inheritAll="false"/>
 
 	<property name="bat.source.dir" value="..\..\bat\advanced"/>
@@ -194,6 +194,7 @@
 
 </target>
 
+<target name="build" />
 <target name="install" />
 
 </project>

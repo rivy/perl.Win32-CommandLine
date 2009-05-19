@@ -72,7 +72,7 @@ sub command_line{
 
 	# 4NT/TCC/TCMD compatibility
 	my $parentEXE = _getparentname();
-	if (($parentEXE =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
+	if ($parentEXE && ($parentEXE =~ /(?:4nt|tcc|tcmd)\.(?:com|exe|bat)$/i) && $ENV{CMDLINE}) { $retVal = $ENV{CMDLINE}; }
 
 	return $retVal;
 }
@@ -207,8 +207,9 @@ sub _getparentname {
 			##$parentEXE = $exes{$ppids{$$}};
 			return $exes{$ppids{$$}};
 			}
-		return undef;
+		#return undef;
 		}
+	return undef;
 }
 
 sub	_dosify {
@@ -2257,13 +2258,22 @@ Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.or
 
 IMPORTANT NOTE: Special shell characters (shell redirection [ '|', '<', '>' ] and continuation '&') must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "foo | bar" >>). The shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by quoting them with double-quote characters.
 
+=for CORRECTION
+	special characters need to be DOUBLE-QUOTED or escaped (usually the escape character is ^)...
+
 C<< %<X> >> is also replaced by the corresponding %ENV variable by the shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line (eg, C<< perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>).
 
-Brackets ('{' and '}') and braces ('[' and ']') must be quoted (single or double quotes) to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, tab expansion of filenames for the standard Win32 shell (cmd.exe) ot 4NT/TCC/TCMD will automatically surround the entire path with spaces (which corrects the issue).
+=for CORRECTION
+	for TCC: %X and %X% are replaced prior to expansion
+	for CMD: %X% is replaced but %X is left alone ( and not whitespace is not a barrier to interpretation ... '%o = (t=>1); @k = keys %o;' => 'o;'
+	for TCC: %NOT_AN_ENV_VAR% => <null>
+	for CMD: %NOT_AN_ENV_VAR% => %NOT_AN_ENV_VAR%
+
+Brackets ('{' and '}') and braces ('[' and ']') must be quoted (single or double quotes) to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, tab expansion of filenames for the standard Win32 shell (cmd.exe) or 4NT/TCC/TCMD will automatically surround the entire path with spaces (which corrects the issue).
 
 Some programs may expect their arguments to maintain their surrounding quotes, but argv() parsing only quotes arguments which require it to maintain equivalence for shell parsing (i.e., those containing spaces, special characters, etc). And, since single quotes have no special meaning to the shell, all arguments which require quoting for correct shell interpretation will be quoted with double-quote characters, even if they were originally quoted with single-quotes. Neither of these issues should be a problem for programs using Win32::CommandLine, but may be an issue for 'legacy' applications which have their command line expanded with B<C<xx.bat>>.
 
-Be careful with backslashed quotes within quoted strings. Note that C<"foo\"> is an B<unbalanced> string containing a double quote. Place the backslash outside of the quotation (C<"foo"\>) or use a double backslash within (C<"foo\\">) to include the backslash it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark (C<"foo\bar"> will work as expected).
+Be careful with backslashed quotes within quoted strings. Note that "foo\" is an B<unbalanced> string containing a double quote. Place the backslash outside of the quotation ("foo"\) or use a double backslash within ("foo\\") to include the backslash it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark ("foo\bar" will work as expected).
 
 =for further_expansion
 	GOTCHA: Note this behavior (ending \" => ", which is probably not what is desired or expected in this case (? what about other cases, should this be "fixed" or would it break something else?)
@@ -2273,10 +2283,9 @@ Be careful with backslashed quotes within quoted strings. Note that C<"foo\"> is
 
 =for FIXED
 	4NT/TCC/TCMD NOTE: The shell interprets and B<removes> backquote characters before executing the command. You must quote backquote characters with B<**double-quotes**> to pass them into the command line (eg, {perl -e "print `dir`"} NOT {perl -e 'print `dir`'} ... the single quotes do not protect the backquotes which are removed leaving just {dir}).
-
-=for possible_future_codefix
 		??? fix this by using $ENV{CMDLINE} which is set by TCC? => attempts to workaround this using $ENV{CMDLINE} fail because TCC doesn't have control between processes and can't set the new CMDLINE value if one process directly creates another (and I'm not sure how to detect that TCC started the process)
-		-- can try PPIDs if Win32::API is present... => DONE [2009-02-18] [seems to be working now... if Win32::API is available, parentEXE is checked and $ENV{CMDLINE} is used if the parent process matches 4nt/tcc/tcmd]
+		-- can try PPIDs if Win32::API is present...
+			=> DONE [2009-02-18] [seems to be working now... if Win32::API is available, parentEXE is checked and $ENV{CMDLINE} is used if the parent process matches 4nt/tcc/tcmd]
 
 =head2 Bugs
 

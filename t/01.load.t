@@ -8,7 +8,7 @@ use warnings;
 
 {
 ## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
-my $fh = select(STDERR); $| = 1; select($fh); $| = 1;	# DISABLE buffering on STDIN and STDERR
+my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;	# DISABLE buffering on STDIN, STDOUT, and STDERR
 }
 
 use Test::More tests => 1;

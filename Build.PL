@@ -42,7 +42,7 @@ $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends_href'} = {};					# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => '5.6.2', 'version' => 0, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
+$config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 $config{'configure_requires_href'} = {};			# module requirements for configuration (no obvious default)
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
@@ -108,7 +108,7 @@ if ( -e $config_filename )
 				$SIG{'__WARN__'} = sub { if (!$w) {chomp($w = $_[0]);} };
 				$e = !eval "$ev; 1";
 				#print "w = $w\n";
-				$SIG{'__WARN__'} = undef;
+				$SIG{'__WARN__'} = 'DEFAULT';	## NOTE: 'IGNORE' is not supported by $SIG{'__WARN__'} [URLrefs: [perlvar - %SIG] http://perldoc.perl.org/perlvar.html#%SIG , [Perl's Warn and Die Signals] http://www.perlmonks.org/?node_id=51097 , http://www.perlmonks.org/?node_id=673637 ]
 				if ($w || $e) {warn "build: warning, malformed configuration entry: $config{'rc_filename'}, line $line\n";}
 				}
 			if ($key eq 'module_name') { $config{'lib_path'} = 'lib/' . join( q{/}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) ); }	# relative path to the modules lib location (using standard Module::Builder rules)

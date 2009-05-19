@@ -8,7 +8,7 @@
 :: contains batch file techniques to allow "sourcing" of target command line text or executable output
 :: :"sourcing" => running commands in the parents environmental context, allowing modification of parents environment and CWD
 
-:: NOTE: TCC/4NT quirk => use %% for %, whereas CMD.exe % => as long as it does not introduce a known variable (eg, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
+:: NOTE: TCC/4NT quirk => use %% for %, whereas CMD.exe % => as long as it does not introduce a known variable (eg, for CMD, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
 
 :: localize ENV changes until sourcing is pending
 setlocal
@@ -17,34 +17,37 @@ set _xx_bat=nul
 
 ::echo *=%*
 
-if [%1]==[-s] ( goto :find_unique_temp )
+if [%1]==[-s]  ( goto :find_unique_temp )
 if [%1]==[-so] ( goto :find_unique_temp )
 goto :find_unique_temp_PASS
 
-:: find bat file for sourcing and instantiate it with 1st line of text
+:: find bat file for sourcing and instantiate it with a 1st line of text
 :find_unique_temp
 set _xx_bat="%temp%\xx.bat.source.%RANDOM%.bat"
 if EXIST %_xx_bat% ( goto :find_unique_temp )
 echo @:: %_xx_bat% TEMPORARY file > %_xx_bat%
 :find_unique_temp_PASS
+
 :: %_xx_bat% is now quoted [or it is simply "nul" and doesn't need quotes]
 ::echo _xx_bat=%_xx_bat%
 
 :: TCC/4NT
-::DISABLE command aliasing (aliasing may loop if perl is aliased to use this script to sanitize its arguments); over-interpretation of % characters; disable redirection; backquote removal from commands
+:: DISABLE [1] TCC command aliasing (aliasing may loop if perl is aliased to use this script to sanitize its arguments), [2] over-interpretation of % characters, [3] redirection, [4] backquote removal from commands
 if 01 == 1.0 ( setdos /x-14567 )
 
 if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
 ::echo "perl output - no -s/-so"
 perl -x -S %0 %*
 if %errorlevel% NEQ 0 (
+::  propagate %errorlevel%
 ::	endlocal & exit /B %errorlevel%
 	exit /B %errorlevel%
 	)
-endlocal																						s
+endlocal
 goto :_DONE
 
 :source_expansion
+:: sourcing COMMAND vs command OUTPUT is handled within the perl portion of the script (so, handle both the same within the BAT)
 :: setdos /x0 needed? how about for _xx_bat execution? anyway to save RESET back to prior settings without all env vars reverting too? check via TCC help on setdos and endlocal
 if 01 == 1.0 ( setdos /x0 )
 echo @echo OFF >> %_xx_bat%
@@ -58,15 +61,10 @@ if %errorlevel% NEQ 0 (
 	exit /B %_ERROR%
 	)
 ::echo "sourcing & cleanup..."
-:: how to propagate exit code from _xx_bat?
-:: :: needed?
-::    :: maybe not, since _xx_bat is a file of shell statements
-::    :: but probably, since any error code generated in _xx_bat would be removed by erase (?confirm this).
-:: :: %errorlevel% is set upon line read (not after %_xx_bat% execution
-:: :: erase RESETS %errorlevel% depending on outcome (overriding any %_xx_bat% errors
-:: :: if ERRORLEVEL N doesn't check for negative ERRORLEVELs
-::endlocal & call %_xx_bat% & erase %_xx_bat% 1>nul 2>nul
-:: use subroutines to preserve ENVIRONMENT (can use %N instead of polluting ENV)
+:: propagate exit code from _xx_bat after it is sourced
+:: NOTES: :: erase RESETS %errorlevel% depending on outcome (overriding any %_xx_bat% errors
+::        :: if ERRORLEVEL N doesn't check for negative ERRORLEVELs
+:: use subroutines to preserve ENVIRONMENT variables and %ERRORLEVEL% (can use %N instead of polluting ENVIRONMENT to save %ERRORLEVEL%)
 endlocal & call :source_expansion_FINAL %_xx_bat%
 goto :_DONE
 ::
@@ -85,14 +83,14 @@ goto :EOF
 goto :endofperl
 @rem };
 #!perl -w  -- -*- tab-width: 4; mode: perl -*-
-#NOTE: #line NN (where NN = LINE#+1)
-#line 90
+#NOTE: use '#line NN' (where NN = actual_line_number + 1) to set perl line # for errors/warnings
+#line 88
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
 
 # xx [OPTIONS] <command> <arg(s)>
 # execute <command> with parsed <arg(s)>
-# a .bat file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see documentation for pl2bat [ADVANTAGES, specifically Method 5] for further explanation)
+# BAT file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see URLref: [pl2bat : ADVANTAGES] http://search.cpan.org/dist/perl/win32/bin/pl2bat.pl#ADVANTAGES , specifically regarding pipelines and redirection for further explanation)
 # see linux 'xargs' and 'source' commands for something similar
 # FIXED (for echo): note: command line args are dequoted so commands taking string arguments and expecting them quoted might not work exactly the same (eg, echo 'a s' => 'a s' vs xx echo 'a s' => "a s")
 #	NOTE: using $"<string>" => "<string>" quote preservation behavior can overcome this issue (eg, xx perl -e $"print 'test'")
@@ -212,7 +210,7 @@ use Pod::Usage;
 
 use Carp::Assert;
 
-use FindBin;	## NOCPAN :: BEGIN used in FindBin, so incompatible with any other modules using it; !!!: don't use within any CPAN package/module that will be 'use'd or 'require'd by other code [ok for executables] (does another way exist using File::Spec rel2abs()??); ??? any problem with this since it's not loaded and only calls outside executables
+use FindBin; # NOTE: BEGIN is used in FindBin; this can incompatible with any other modules using FindBin; DON'T use with any module submitted to CPAN; ## URLref: [perldoc::FindBin - Known Issues] http://perldoc.perl.org/FindBin.html#KNOWN-ISSUES
 
 use ExtUtils::MakeMaker;
 
@@ -226,10 +224,10 @@ use Win32::CommandLine;
 #-- getopt
 use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
 my %ARGV = ();
-# NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by the wrapping .bat script by executing the output of the perl script.
+# NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by wrapping the BAT script by executing the output of the perl script.
 GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
 #Getopt::Long::VersionMessage() if $ARGV{'version'};
-pod2usage({-verbose => 99, -sections => '', -message => (File::Spec->splitpath($0))[2].qq{ v$::VERSION}}) if $ARGV{'version'};
+do {print q{}.(File::Spec->splitpath($0))[2].qq{ v$::VERSION}.qq{\n}; exit(0);} if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage({-verbose => 2}) if $ARGV{'man'};
 

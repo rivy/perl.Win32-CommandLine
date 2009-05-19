@@ -4,6 +4,11 @@
 use strict;
 use warnings;
 
+{
+## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
+my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;	# DISABLE buffering on STDIN, STDOUT, and STDERR
+}
+
 use Test::More;		# included with perl v5.6.2+
 
 ## no critic ( RequireCarping )

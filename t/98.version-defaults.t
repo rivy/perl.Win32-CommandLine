@@ -6,6 +6,11 @@
 use strict;
 use warnings;
 
+{
+## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
+my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;	# DISABLE buffering on STDIN, STDOUT, and STDERR
+}
+
 use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
 
 use Test::More;
@@ -23,7 +28,7 @@ plan tests => scalar( @files ) * 3 + 1;
 ok( (scalar(@files) > 0), "Found ".scalar(@files)." files to check");
 ok( (version_non_alpha_form(parse_default_version($_)) =~ /[0-9_]+\.[0-9_]+/), "'$_' has at least M.m default version") for @files;
 ok( (index (version_non_alpha_form(MM->parse_version($_)), version_non_alpha_form(parse_default_version($_))) == 0), "'$_' has default version which is a subset prefix of it's ExtUtils::MakeMaker version") for @files;
-is( is_alpha_version(MM->parse_version($_)), is_alpha_version(parse_default_version($_)), "'$_' has correct correspondance of alpha/release versions") for @files;
+is( is_alpha_version(MM->parse_version($_)), is_alpha_version(parse_default_version($_)), "'$_' has correct correspondance of alpha/release versions between default and ExtUtils::MakeMaker version") for @files;
 
 #-----------------------------------------------------------------------------
 

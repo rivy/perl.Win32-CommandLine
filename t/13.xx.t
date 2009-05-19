@@ -43,10 +43,21 @@ my $script = File::Spec->catfile( 'bin', 'xx.bat' );
 # TODO: organize tests, add new tests for 'xx.bat'
 # TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
 
-if ($haveExtUtilsMakeMaker)
-	{# ExtUtilsMakeMaker present
-	add_test( [ q{-v} ], ( q{xx.bat v}.MM->parse_version($script) ) );
-	}
+# TODO: test expansions
+# PROBLEM: subshell execution no preserving setdos /x-which, any other changes in subshells? is there a setdos /x0 in the AutoRun somewhere?
+# >which which
+# C:\Users\Public\Documents\@bin\which.pl
+# >xx -e $(which which)
+# which is an internal command
+# NOTES: occurs with both TCC and CMD shells and dependent on PERL5SHELL
+# $ENV{PERL5SHELL}='tcc.exe /x/d/c' is the usual value => no AutoRun and the PROBLEM noted
+# $ENV{PERL5SHELL}='tcc.exe /x/c' => AutoRun is executed and no difference between "which which" and "xx -e $(which which)" [or "xx -s echo $(which which)"]
+#
+# FRAGILE: test for differences between "COMMAND" and "xx -s echo $(COMMAND)" ## should be no differences but PERL5SHELL='tcc.exe /x/d/c' can introduce issues because of environmental differences arising from skipping AutoRuns (with the '/d' switch
+
+# TODO: PROBLEM: "xx -s echo $(alias)" => EXCEPTION: Assertion (Parsing is not proceeding ($s is unchanged)) failed!
+#		## also, probably need to rename the assertion to claim the opposite in the assertion text
+
 add_test( [ q{perl -e 'print "test"'} ], ( q{perl -e "print \"test\""} ) );
 add_test( [ q{TEST -m "VERSION: update to 0.3.11"} ], ( q{TEST -m "VERSION: update to 0.3.11"} ) );
 add_test( [ q{perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new('lib/Win32/CommandLine.pm'); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}"} ], ( q{perl -MPerl::MinimumVersion -e "$pmv = Perl::MinimumVersion->new('lib/Win32/CommandLine.pm'); @m=$pmv->version_markers(); for ($i = 0; $i<(@m/2); $i++) {print qq{$m[$i*2] = { @{$m[$i*2+1]} }\n};}"} ) );
@@ -57,6 +68,10 @@ add_test( [ q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ], ( q{xx -e per
 add_test( [ q{/NOT_A_FILE} ], ( q{\NOT_A_FILE} ) );		# non-files (can screw up switches)
 
 if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
+	if ($haveExtUtilsMakeMaker)
+		{# ExtUtilsMakeMaker present
+		add_test( [ q{-v} ], ( q{xx.bat v}.MM->parse_version($script) ) );
+		}
 	add_test( [ q{c:/windows} ], ( q{c:\windows} ) );		# non-expanded files									## FRAGILE (b/c case differences between WINDOWS)
 	add_test( [ q{c:/windows/system*} ], ( q{c:\windows\system c:\windows\system.ini c:\windows\system32} ) );		# non-expanded files ## FRAGILE (b/c case differences between WINDOWS)
 	}
