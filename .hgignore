@@ -9,7 +9,10 @@ lib/Win32/CommandLine.c
 lib/Win32/CommandLine.o
 lib/Win32/CommandLine.xs
 Win32-CommandLine*
+vc60.pdb
+vc70.pdb
 vc80.pdb
+vc90.pdb
 MANIFEST
 MANIFEST.bak
 Makefile.PL
@@ -17,3 +20,4 @@ Makefile
 README
 META.yml
 SIGNATURE
+CHANGES.log.tmp
