@@ -1,0 +1,58 @@
+; hgext.keyword: Note: this can kill repository efficiency if too many files are checked for keyword expansion (as all files marked for expansion will be checked with every update).
+; * generally, to preserve normal efficiency, enable keyword expansion only in specific repositories with specific (small population) target files using '.hg/hgrc'
+
+[DEFAULT]
+#HOME = /home/myuser
+
+[ui]
+; TODO: make this a local file in '.hg'
+style = mini.template.txt		
+;style = .hg/mini.t.txt		## only works when running hg from the main repository directory (? is there an escape from the main repository directory)
+##ignore.mine = %(HOME)s/.hgignore.mine
+##style = %(HOME)s/.hg-styles/hg-map-cmdline.color
+
+
+[extensions]
+#hgext.color = 
+#hgext.fold =
+hgext.morefilters = 
+hgext.keyword = 
+# Avoid the [DEFAULT] extension bug
+#HOME = !
+# move to main .ini
+graphlog = 
+#pager = 
+#color =
+#hgext.rebase = 
+
+[keyword]
+; examples:
+; 	expand keywords in all files
+;	** =
+; 	do not expand keywords in files matching "x*" in main directory
+;	x* = ignore
+; expand keywords in all perl files (case insensitive extensions) in all respository directories
+**.{p,P}{l,L} =
+**.{p,P}{m,M} =
+**.{x,X}{s,S} =
+; expand keywords installable scripts and examples (NOT extras which are imported from other repositories using nant)
+bin/** =
+eg/** =
+;extras/** =
+; _do not_ expand keywords in "Build.PL" (code is from different repository) in the main repository directory
+Build.PL = ignore
+; ignore inc and t/lib directories (included code from different packages)
+inc/** = ignore
+inc/** = ignore
+inc/** = ignore
+t/lib/** = ignore
+t/lib/** = ignore
+t/lib/** = ignore
+
+[keywordmaps]
+# any duplicates here will override any corresponding global default
+#Id = {file|basename},v {node|version_dated_compressed} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
+Id = {file|basename},v {node|working|version_vtdiff} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
+# use version_vtdiff for perl build (version_dated_compressed leads to an integer overflow while build.PL builds the initial build scripts)
+Version = {node|working|version_vtdiff}
+#Version = v{node|working|version_dated_compressed|v_mmr} (build {node|working|version_dated_compressed|v_build})
