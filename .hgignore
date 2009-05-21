@@ -7,7 +7,7 @@ _build/*
 blib/*
 lib/Win32/CommandLine.c
 lib/Win32/CommandLine.o
-Win32-CommandLine*
+Win32-CommandLine.*
 vc60.pdb
 vc70.pdb
 vc80.pdb
@@ -20,3 +20,4 @@ README
 META.yml
 SIGNATURE
 CHANGES.log.tmp
+.*.pyc
