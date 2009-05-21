@@ -17,7 +17,10 @@ style = mini.template.txt
 #hgext.fold =
 hgext.keyword = 
 #hgext.morefilters = 
+# v0.9.4
 morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.morefilters.v0.9.4.py
+# v1.2.1
+#morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.morefilters.v1.2.1.py
 # Avoid the [DEFAULT] extension bug
 #HOME = !
 # move to main .ini
