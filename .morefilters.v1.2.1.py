@@ -24,24 +24,17 @@
 #   re_escape_2 = s/(^|\s)#(\d+)\b/ <b>#\2<\/b> /
 
 import re, time
+from hgext import keyword
 #from mercurial.hgweb import hgweb_mod
 #from mercurial import templater
 from mercurial import templatefilters, extensions
 from mercurial import context
 from mercurial import node, util
+#from mercurial import commands
 #from mercurial import ui, localrepo
 #from node import *
 #import binascii
 from datetime import datetime, timedelta, tzinfo
-
-
-# import keyword.expand (if present) for update hook
-try:
-    import keyword
-    morefilters_kwexpand = keyword.expand
-except ImportError:
-    morefilters_kwexpand = None
-
 
 config_section = 'morefilters'
 
@@ -494,31 +487,7 @@ templatefilters.filters["minidate"] = filters_minidate
 templatefilters.filters["working"] = filters_working
 
 # hook for updates (to prevent 'working' filter lag for keyword expansion when using update)
-#def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
-def hook_preupdate(ui, repo, hooktype, **kwargs):
-    global morefilters_update_destination_parent
-    if hooktype != 'preupdate':
-        raise util.Abort(_('config error - hook type "%s" cannot stop '
-                           'incoming changesets') % hooktype)
-    morefilters_update_destination_parent = kwargs["parent1"]
-    #u = morefilters_ui
-    #u.warn ( "m:preupdate:parent1:   %s\n" % kwargs["parent1"] )
-    #u.warn ( "m:preupdate:parent2:   %s\n" % kwargs["parent2"] )
-    #u.warn ( "m:preupdate:morefilters_update_destination_parent:   %s\n" % morefilters_update_destination_parent )
-
-def hook_update(ui, repo, hooktype, **kwargs):
-    # hook update to keep 'working' filter current during an update (note: this is _only_ needed to correctly expand keywords during a repository update)
-    global morefilters_update_destination_parent
-    if hooktype != 'update':
-        raise util.Abort(_('config error - hook type "%s" cannot stop '
-                           'incoming changesets') % hooktype)
-    #u = morefilters_ui
-    #u.warn ( "m:update:nulling\n" )
-    #u.warn ( "m:preupdate:morefilters_update_destination_parent:   %s\n" % morefilters_update_destination_parent )
-
-    # kwexpand full repository to update any dangling keywords (such as $Version$)
-    ## Note: this can kill repository efficiency if too many files are checked for keyword expansion (as all files marked for expansion will be checked with every update)
-    ## * generally, to preserve normal efficiency, enable keyword expansion (and this hook) only in specific repositories with specific (small population) target files using '.hg/hgrc'.
-    if ( morefilters_kwexpand != None ):
-            morefilters_kwexpand( ui, repo )
-    morefilters_update_destination_parent = None
+# [use hgrc post-commit and post-update to engage expansion]
+def expand(ui, repo, hooktype, **args):
+    #ui.warn ( "morefilters.expanding [using keyword.expand]" )
+    keyword.expand ( ui, repo )

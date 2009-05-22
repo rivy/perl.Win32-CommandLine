@@ -18,9 +18,9 @@ style = mini.template.txt
 hgext.keyword = 
 #hgext.morefilters = 
 # v0.9.4
-morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.morefilters.v0.9.4.py
+#morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.morefilters.v0.9.4.py
 # v1.2.1
-#morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.morefilters.v1.2.1.py
+morefilters = C:\Users\Owner\Documents\TEST\Win32-CommandLine\.morefilters.v1.2.1.py
 # Avoid the [DEFAULT] extension bug
 #HOME = !
 # move to main .ini
@@ -55,8 +55,15 @@ t/lib/** = ignore
 
 [keywordmaps]
 # any duplicates here will override any corresponding global default
-#Id = {file|basename},v {node|version_dated_compressed} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
+#Id = {file|basename},v {node} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
 Id = {file|basename},v {node|working|version_vtdiff} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
 # use version_vtdiff for perl build (version_dated_compressed leads to an integer overflow while build.PL builds the initial build scripts)
+#Version = {node}
 Version = {node|working|version_vtdiff}
 #Version = v{node|working|version_dated_compressed|v_mmr} (build {node|working|version_dated_compressed|v_build})
+
+[hooks]
+#post-commit = hg kwexpand
+#post-update = hg kwexpand
+post-commit = python:morefilters.expand
+post-update = python:morefilters.expand

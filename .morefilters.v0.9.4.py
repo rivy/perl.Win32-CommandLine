@@ -35,7 +35,7 @@ from datetime import datetime, timedelta, tzinfo
 
 # import keyword.expand (if present) for update hook
 try:
-    from mercurial import keyword
+    from hgext import keyword
     morefilters_kwexpand = keyword.expand
 except ImportError:
     morefilters_kwexpand = None
@@ -519,3 +519,11 @@ def hook_update(ui, repo, hooktype, **kwargs):
     if ( morefilters_kwexpand != None ):
             morefilters_kwexpand( ui, repo )
     morefilters_update_destination_parent = None
+
+# [DUMMY]
+# hook for updates (to prevent 'working' filter lag for keyword expansion when using update)
+# [use hgrc post-commit and post-update to engage expansion]
+def expand(ui, repo, hooktype, **args):
+    #ui.warn ( "morefilters.expanding [using keyword.expand]" )
+    #keyword.expand ( ui, repo )
+    no_error = ''
