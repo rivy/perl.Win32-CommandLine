@@ -6,21 +6,19 @@
 
 [ui]
 ; TODO: make this a local file in '.hg'
-style = mini.template.txt		
+;style = mini.template.txt		
 ;style = .hg/mini.t.txt		## only works when running hg from the main repository directory (? is there an escape from the main repository directory)
 ##ignore.mine = %(HOME)s/.hgignore.mine
 ##style = %(HOME)s/.hg-styles/hg-map-cmdline.color
 
 
 [extensions]
+hgext.win32text =
 #hgext.color = 
 #hgext.fold =
 hgext.keyword = 
-#hgext.morefilters = 
-# v0.9.4
-#morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.morefilters.v0.9.4.py
-# v1.2.1
-morefilters = C:\Users\Owner\Documents\TEST\Win32-CommandLine\.morefilters.v1.2.1.py
+#hgext.morefilters =
+morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.hg\.morefilters.py
 # Avoid the [DEFAULT] extension bug
 #HOME = !
 # move to main .ini
@@ -28,6 +26,16 @@ graphlog =
 #pager = 
 #color =
 #hgext.rebase = 
+
+[encode]
+# URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension
+# Encode files that don't contain NUL characters.
+** = cleverencode:
+
+#[decode]
+# URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension
+# Decode files that don't contain NUL characters.
+#** = cleverdecode:
 
 [keyword]
 ; examples:
@@ -56,14 +64,22 @@ t/lib/** = ignore
 [keywordmaps]
 # any duplicates here will override any corresponding global default
 #Id = {file|basename},v {node} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
+#Id = {file|basename},v {node|version_dated_compressed} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
 Id = {file|basename},v {node|working|version_vtdiff} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
+; $Version$ is expanded to the version of the current working directory revision (a "repository wide" version) by using 'working' filter
+; BUG?: keywords are only expanded between revisions with changesets for the specific file, so $Version$ will not be updated to the current "repository version" unless there is a changeset associated with the file.
+; * FIXED: keyword expansion is re-done on each update with hooks [see morefilters.hook_update or morefilters.expand]
+#Version = {node|working|version}
 # use version_vtdiff for perl build (version_dated_compressed leads to an integer overflow while build.PL builds the initial build scripts)
-#Version = {node}
-Version = {node|working|version_vtdiff}
 #Version = v{node|working|version_dated_compressed|v_mmr} (build {node|working|version_dated_compressed|v_build})
+Version = {node|working|version_vtdiff}
 
 [hooks]
 #post-commit = hg kwexpand
 #post-update = hg kwexpand
-post-commit = python:morefilters.expand
-post-update = python:morefilters.expand
+; connect morefilters update hooks to keep $Version$ tag in sync with working directory for updates
+commit.morefilters = python:morefilters.expand
+update.morefilters = python:morefilters.expand
+#post-commit.morefilters = python:hgext.keyword.expand
+#post-update.morefilters = python:hgext.keyword.expand
+#pretxncommit.crlf = python:win32text.forbidcrlf
