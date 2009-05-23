@@ -25,13 +25,11 @@
 
 import re, time
 #from mercurial.hgweb import hgweb_mod
-from mercurial import templater
 from mercurial import node, util
 #from mercurial import ui, localrepo
 #from node import *
 #import binascii
 from datetime import datetime, timedelta, tzinfo
-
 
 # import keyword.expand (if present) for update hook
 try:
@@ -39,7 +37,13 @@ try:
     morefilters_kwexpand = keyword.expand
 except ImportError:
     morefilters_kwexpand = None
-
+#
+try:
+    from mercurial import templater
+    morefilters_filters = templater.common_filters
+except ImportError:
+    from mercurial import templatefilters
+    morefilters_filters = templatefilters.filters
 
 config_section = 'morefilters'
 
@@ -470,25 +474,25 @@ def filters_working(n):
 
 
 # add filters to templater
-templater.common_filters["re_escape"] = filters_re_escape
-templater.common_filters["version"] = filters_version
-templater.common_filters["version_full"] = filters_version_full
+morefilters_filters["re_escape"] = filters_re_escape
+morefilters_filters["version"] = filters_version
+morefilters_filters["version_full"] = filters_version_full
 #
-templater.common_filters["version_net"] = filters_version_net
-templater.common_filters["version_dated"] = filters_version_dated
-templater.common_filters["version_dated_compressed"] = filters_version_dated_compressed
-templater.common_filters["version_vtdiff"] = filters_version_vtdiff
+morefilters_filters["version_net"] = filters_version_net
+morefilters_filters["version_dated"] = filters_version_dated
+morefilters_filters["version_dated_compressed"] = filters_version_dated_compressed
+morefilters_filters["version_vtdiff"] = filters_version_vtdiff
 #
-templater.common_filters["v_major"] = _v_major
-templater.common_filters["v_minor"] = _v_minor
-templater.common_filters["v_release"] = _v_release
-templater.common_filters["v_build"] = _v_build
-templater.common_filters["v_mm"] = _v_mm
-templater.common_filters["v_mmr"] = _v_mmr
+morefilters_filters["v_major"] = _v_major
+morefilters_filters["v_minor"] = _v_minor
+morefilters_filters["v_release"] = _v_release
+morefilters_filters["v_build"] = _v_build
+morefilters_filters["v_mm"] = _v_mm
+morefilters_filters["v_mmr"] = _v_mmr
 #
-#templater.common_filters["utcdate"] = filters_utcdate
-templater.common_filters["minidate"] = filters_minidate
-templater.common_filters["working"] = filters_working
+#morefilters_filters["utcdate"] = filters_utcdate
+morefilters_filters["minidate"] = filters_minidate
+morefilters_filters["working"] = filters_working
 
 # hook for updates (to prevent 'working' filter lag for keyword expansion when using update)
 #def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
@@ -526,4 +530,6 @@ def hook_update(ui, repo, hooktype, **kwargs):
 def expand(ui, repo, hooktype, **args):
     #ui.warn ( "morefilters.expanding [using keyword.expand]" )
     #keyword.expand ( ui, repo )
-    pass
+    if ( morefilters_kwexpand != None ):
+            morefilters_kwexpand( ui, repo )
+    #pass

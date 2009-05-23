@@ -27,7 +27,8 @@ import re, time
 from hgext import keyword
 #from mercurial.hgweb import hgweb_mod
 #from mercurial import templater
-from mercurial import templatefilters, extensions
+from mercurial import templatefilters
+#from mercurial import extensions
 from mercurial import context
 from mercurial import node, util
 #from mercurial import commands
