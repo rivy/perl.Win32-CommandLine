@@ -520,10 +520,10 @@ def hook_update(ui, repo, hooktype, **kwargs):
             morefilters_kwexpand( ui, repo )
     morefilters_update_destination_parent = None
 
-# [DUMMY]
+# [v0.9.4 DUMMY function]
 # hook for updates (to prevent 'working' filter lag for keyword expansion when using update)
 # [use hgrc post-commit and post-update to engage expansion]
 def expand(ui, repo, hooktype, **args):
     #ui.warn ( "morefilters.expanding [using keyword.expand]" )
     #keyword.expand ( ui, repo )
-    no_error = ''
+    pass
