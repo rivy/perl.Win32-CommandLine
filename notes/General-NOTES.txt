@@ -1,5 +1,7 @@
 TODO
 
+see perl's notes RE:command line usage from cmd/Win32: URLref: http://www.perl.com/doc/manual/html/Porting/README.win32.html#item_Using
+
 Notify Module::Build folks about extensively customized Build.PL used in this distribution.
 Notify Module::Build folks RE: BUGS found: (1) BUGs in ACTION_realclean (as of v0.30), (2) my_varchname problems with perl v5.10 in (v0.30) [## BUGFIX: send to Module::Build::PPMMaker and PPM] [bug copied and fixed from PPMMaker.pm]
 Notify ExtUtils::Manifest folks RE: BUGS found: (1) BUG in maniskip (as of v1.54)
