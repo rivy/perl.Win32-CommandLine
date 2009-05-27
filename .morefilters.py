@@ -22,6 +22,7 @@
 # For example:
 #
 #   re_escape_2 = s/(^|\s)#(\d+)\b/ <b>#\2<\/b> /
+'''expanded keyword filters'''
 
 import re, time
 #from mercurial.hgweb import hgweb_mod
@@ -456,6 +457,7 @@ def filters_working(n):
     # node filter
     # note: working directory will lag on updates (being source/original working revision id instead of the final/destination revision id) when using "hg update ..." ; not sure how to fix that?
     # * FIXED: using preupdate and update hooks to set the destination parent id
+    # [2009-05-25] * BETTER FIX: use post-update hook to run expand (removes the save parent process using a pre-update hook, etc)
     ## ignores input node
     ## TODO: ?follow both parents if present
     #u = morefilters_ui
