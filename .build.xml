@@ -15,7 +15,7 @@
 	<patternset id="bat.source.patternset">
 		<include name="so.bat" />
 	</patternset>
-	<copyWRO source.dir="${bat.source.dir}" source.defaultexcludes="false" source.patternset.refid="bat.source.patternset" destination.dir="extras"/>
+	<copyWRO source.dir="${bat.source.dir}" source.defaultexcludes="false" source.patternset.refid="bat.source.patternset" destination.dir="extras" failonerror="true"/>
 
 	<property name="eg.source.dir" value="eg"/>
 	<patternset id="eg.source.patternset">
@@ -45,6 +45,10 @@
 	<attribute name="destination.dir"/>
 	<attribute name="destination.flatten" default="false"/>
 	<attribute name="filename.mapper.refid" default=""/>
+	<attribute name="overwrite" default="false"/>
+	<attribute name="failonerror" default="false"/>
+	<attribute name="warn.dest.newer" default="true"/>
+	<attribute name="set.dest.readonly" default="true"/>
 	<sequential>
 	<property name="b.dir" location="."/>
 	<property name="s.dir" location="@{source.dir}"/>
@@ -99,7 +103,14 @@
 				</and>
 			</condition>
 			<!--echo message="d.isNewer = ${d.isNewer}"/-->
-			<ac:if><istrue value="${d.isNewer}"/>
+			<condition property="DO.warn">
+				<and>
+					<istrue value="${d.isNewer}"/>
+					<istrue value="@{warn.dest.newer}"/>
+				</and>
+			</condition>
+			<!--echo message="DO.warn = ${DO.warn}"/-->
+			<ac:if><istrue value="${DO.warn}"/>
 				<ac:then>
 					<pathconvert property="dir">
 						<path><pathelement location="${d.dir}"/></path>
@@ -110,17 +121,45 @@
 						<path><pathelement location="${d.fname}"/></path>
 						<mapper type="glob" from="${d.dir}${file.separator}" to=""/>
 					</pathconvert>
-					<echo level="warning" message="WARNING: In directory '${d.dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'; NOT OVERWRITTEN)."/>
+					<ac:if><not><istrue value="@{failonerror}"/></not>
+						<ac:then>
+							<condition property="overwrite.text" value="OVERWRITING" else="NOT OVERWRITTEN"><istrue value="@{overwrite}"/></condition>
+							<echo level="warning" message="WARNING: In directory '${d.dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'; ${overwrite.text})."/>
+							<ac:var name="overwrite.text" unset="true"/>
+						</ac:then>
+						<ac:else>
+							<fail message="ERROR: In directory '${d.dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'; COPY FAILED)."/>
+						</ac:else>
+					</ac:if>
 					<ac:var name="dir" unset="true"/>
 					<ac:var name="fname" unset="true"/>
 				</ac:then>
-				<ac:else>
+			</ac:if>
+			<condition property="DO.copy">
+				<or>
+					<not>
+					<uptodate srcfile="${s.fname}" targetfile="${d.fname}"/>
+					</not>
+					<and>
+						<istrue value="${d.isNewer}"/>
+						<istrue value="@{overwrite}"/>
+					</and>
+				</or>
+			</condition>
+			<ac:if><istrue value="${DO.copy}"/>
+				<ac:then>
 					<!--echo message="TASK: copy file &quot;${s.fname}&quot; tofile=&quot;${d.fname}&quot;"/-->
-					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
+					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="@{overwrite}"/>
+				</ac:then>
+			</ac:if>
+			<ac:if><istrue value="@{set.dest.readonly}"/>
+				<ac:then>
 					<!--echo message="TASK: attrib readonly=true file=&quot;${d.fname}&quot;"/-->
 					<attrib readonly="true" file="${d.fname}"/>
-				</ac:else>
+				</ac:then>
 			</ac:if>
+			<ac:var name="DO.warn" unset="true"/>
+			<ac:var name="DO.copy" unset="true"/>
 			<ac:var name="s.fname" unset="true"/>
 			<ac:var name="d.fname" unset="true"/>
 			<ac:var name="d.isNewer" unset="true"/>
