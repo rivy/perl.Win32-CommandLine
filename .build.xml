@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <!-- ANT Build file -->
-<project name="Win32-CommandLine" default="copy" xmlns:ac="antlib:net.sf.antcontrib">
+<project name="Win32-CommandLine" default="-copy" xmlns:ac="antlib:net.sf.antcontrib">
 
-<target name="*" depends="build"/><!-- BUILD if no target recognized -->
+<!--<target name="*" depends="-copy"/> : NANT ONLY --><!-- COPY if no target recognized -->
 
 <property name="build.main.dir" location="."/>
 
 <property name="bin.dir" value="c:\users\public\documents\@bin"/>
 
-<target name="copy" depends="init.macros">
+<target name="-copy" depends="-init.macros">
 	<ant antfile=".build.xml" dir=".." inheritAll="false"/>
 
 	<property name="bat.source.dir" value="..\..\bat\advanced"/>
@@ -33,11 +33,49 @@
 	<copyWRO source.dir="${extras.source.dir}" source.defaultexcludes="false" source.patternset.refid="extras.source.patternset" destination.dir="${bin.dir}"/>
 </target>
 
-<target name="build" depends="copy"/>
-<target name="install" />
+<!-- BUILD.PL targets -->
+<target name="build" depends="-copy"/>
+<target name="clean"/>
+<target name="code" depends="-copy"/>
+<target name="config_data" depends="-copy"/>
+<target name="diff" depends="-copy"/>
+<target name="dist" depends="-copy"/>
+<target name="distall" depends="-copy"/>
+<target name="distcheck" depends="-copy"/>
+<target name="distclean" depends="-copy"/>
+<target name="distdir" depends="-copy"/>
+<target name="distmeta" depends="-copy"/>
+<target name="distpar" depends="-copy"/>
+<target name="distppm" depends="-copy"/>
+<target name="distsign" depends="-copy"/>
+<target name="disttest" depends="-copy"/>
+<target name="docs" depends="-copy"/>
+<target name="fakeinstall" depends="-copy"/>
+<target name="help" depends="-copy"/>
+<target name="html" depends="-copy"/>
+<target name="install" depends="-copy"/>
+<target name="manifest" depends="-copy"/>
+<target name="manpages" depends="-copy"/>
+<target name="pardist" depends="-copy"/>
+<target name="ppd" depends="-copy"/>
+<target name="ppmdist" depends="-copy"/>
+<target name="prereq_report" depends="-copy"/>
+<target name="pure_install" depends="-copy"/>
+<target name="realclean"/>
+<target name="retest" depends="-copy"/>
+<target name="sign" depends="-copy"/>
+<target name="skipcheck" depends="-copy"/>
+<target name="test" depends="-copy"/>
+<target name="testaction" depends="-copy"/>
+<target name="testall" depends="-copy"/>
+<target name="testcover" depends="-copy"/>
+<target name="testdb" depends="-copy"/>
+<target name="testpod" depends="-copy"/>
+<target name="testpodcoverage" depends="-copy"/>
+<target name="versioninstall" depends="-copy"/>
 
-<target name="init.macros">
-
+<!-- MACROS -->
+<target name="-init.macros">
 	<macrodef name="copyWRO">
 	<attribute name="source.dir"/>
 	<attribute name="source.defaultexcludes" default="true"/>
@@ -170,185 +208,6 @@
 	<ac:var name="d.dir" unset="true"/>
 	</sequential>
 	</macrodef>
-
-</target>
-
-<target name="OLD-DELETE">
-	<property name="bat.source.dir" value="..\..\bat\advanced"/>
-	<fileset id="bat.source.files" defaultexcludes="false" dir="${bat.source.dir}">
-		<include name="so.bat" />
-	</fileset>
-	<ac:for param="s.fname">
-		<fileset refid="bat.source.files"/>
-		<sequential>
-			<!-- CONFIG -->
-			<property name="source.dir" location="${bat.source.dir}"/>
-			<property name="destination.dir" location="extras"/>
-			<!--<echo message="source.dir = ${source.dir}"/>-->
-			<!--<echo message="destination.dir = ${destination.dir}"/>-->
-			<!-- ====== -->
-			<property name="s.fname" value="@{s.fname}"/>
-			<!--<echo message="s.fname = ${s.fname}"/>-->
-			<pathconvert property="d.fname">
-				<path><pathelement location="${s.fname}"/></path>
-				<map from="${source.dir}" to="${destination.dir}"/>
-			</pathconvert>
-			<!--<echo message="d.fname = ${d.fname}"/>-->
-			<condition property="d.isNewer" else="FALSE">
-				<and>
-					<available file="${d.fname}"/>
-					<not>
-					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
-					</not>
-				</and>
-			</condition>
-			<!--<echo message="d.isNewer = ${d.isNewer}"/>-->
-			<ac:if><ac:equals arg1="${d.isNewer}" arg2="true"/>
-				<ac:then>
-					<pathconvert property="dir">
-						<path><pathelement location="${destination.dir}"/></path>
-						<map from="${build.main.dir}/" to=""/>
-					</pathconvert>
-					<pathconvert property="fname">
-						<path><pathelement location="${d.fname}"/></path>
-						<map from="${destination.dir}/" to=""/>
-					</pathconvert>
-					<echo level="warning" message="WARNING: In directory '${dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'; NOT OVERWRITTEN)."/>
-					<ac:var name="dir" unset="true"/>
-					<ac:var name="fname" unset="true"/>
-				</ac:then>
-				<ac:else>
-					<!--<echo message="copy file ${s.fname} tofile=${d.fname}"/>-->
-					<!--<echo message="attrib readonly=true file=${d.fname}"/>-->
-					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
-					<attrib readonly="true" file="${d.fname}"/>
-				</ac:else>
-			</ac:if>
-			<ac:var name="s.fname" unset="true"/>
-			<ac:var name="d.fname" unset="true"/>
-			<ac:var name="d.isNewer" unset="true"/>
-			<ac:var name="source.dir" unset="true"/>
-			<ac:var name="destination.dir" unset="true"/>
-		</sequential>
-	</ac:for>
-	<property name="eg.source.dir" value="eg"/>
-	<fileset id="eg.source.files" defaultexcludes="false" dir="${eg.source.dir}">
-		<include name="to.bat" />
-	</fileset>
-
-	<ac:for param="s.fname">
-		<fileset refid="eg.source.files"/>
-		<sequential>
-			<!-- CONFIG -->
-			<property name="source.dir" location="${eg.source.dir}"/>
-			<property name="destination.dir" location="${bin.dir}"/>
-			<!--<echo message="source.dir = ${source.dir}"/>-->
-			<!--<echo message="destination.dir = ${destination.dir}"/>-->
-			<!-- ====== -->
-			<property name="s.fname" value="@{s.fname}"/>
-			<!--<echo message="s.fname = ${s.fname}"/>-->
-			<pathconvert property="d.fname">
-				<path><pathelement location="${s.fname}"/></path>
-				<map from="${source.dir}" to="${destination.dir}"/>
-			</pathconvert>
-			<!--<echo message="d.fname = ${d.fname}"/>-->
-			<condition property="d.isNewer" else="FALSE">
-				<and>
-					<available file="${d.fname}"/>
-					<not>
-					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
-					</not>
-				</and>
-			</condition>
-			<!--<echo message="d.isNewer = ${d.isNewer}"/>-->
-			<ac:if><ac:equals arg1="${d.isNewer}" arg2="true"/>
-				<ac:then>
-					<pathconvert property="dir">
-						<path><pathelement location="${destination.dir}"/></path>
-						<map from="${build.main.dir}/" to=""/>
-					</pathconvert>
-					<pathconvert property="fname">
-						<path><pathelement location="${d.fname}"/></path>
-						<map from="${destination.dir}/" to=""/>
-					</pathconvert>
-					<echo level="warning" message="WARNING: In directory '${dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'; NOT OVERWRITTEN)."/>
-					<ac:var name="dir" unset="true"/>
-					<ac:var name="fname" unset="true"/>
-				</ac:then>
-				<ac:else>
-					<!--<echo message="copy file ${s.fname} tofile=${d.fname}"/>-->
-					<!--<echo message="attrib readonly=true file=${d.fname}"/>-->
-					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
-					<attrib readonly="true" file="${d.fname}"/>
-				</ac:else>
-			</ac:if>
-			<ac:var name="s.fname" unset="true"/>
-			<ac:var name="d.fname" unset="true"/>
-			<ac:var name="d.isNewer" unset="true"/>
-			<ac:var name="source.dir" unset="true"/>
-			<ac:var name="destination.dir" unset="true"/>
-		</sequential>
-	</ac:for>
-	<property name="extras.source.dir" value="extras"/>
-	<fileset id="extras.source.files" defaultexcludes="false" dir="${extras.source.dir}">
-		<include name="dosify.bat" />
-		<include name="so.bat" />
-		<include name="quote.bat" />
-		<include name="which.pl" />
-	</fileset>
-	<ac:for param="s.fname">
-		<fileset refid="extras.source.files"/>
-		<sequential>
-			<!-- CONFIG -->
-			<property name="source.dir" location="${extras.source.dir}"/>
-			<property name="destination.dir" location="${bin.dir}"/>
-			<!--<echo message="source.dir = ${source.dir}"/>-->
-			<!--<echo message="destination.dir = ${destination.dir}"/>-->
-			<!-- ====== -->
-			<property name="s.fname" value="@{s.fname}"/>
-			<!--<echo message="s.fname = ${s.fname}"/>-->
-			<pathconvert property="d.fname">
-				<path><pathelement location="${s.fname}"/></path>
-				<map from="${source.dir}" to="${destination.dir}"/>
-			</pathconvert>
-			<!--<echo message="d.fname = ${d.fname}"/>-->
-			<condition property="d.isNewer" else="FALSE">
-				<and>
-					<available file="${d.fname}"/>
-					<not>
-					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
-					</not>
-				</and>
-			</condition>
-			<!--<echo message="d.isNewer = ${d.isNewer}"/>-->
-			<ac:if><ac:equals arg1="${d.isNewer}" arg2="true"/>
-				<ac:then>
-					<pathconvert property="dir">
-						<path><pathelement location="${destination.dir}"/></path>
-						<map from="${build.main.dir}/" to=""/>
-					</pathconvert>
-					<pathconvert property="fname">
-						<path><pathelement location="${d.fname}"/></path>
-						<map from="${destination.dir}/" to=""/>
-					</pathconvert>
-					<echo level="warning" message="WARNING: In directory '${dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'; NOT OVERWRITTEN)."/>
-					<ac:var name="dir" unset="true"/>
-					<ac:var name="fname" unset="true"/>
-				</ac:then>
-				<ac:else>
-					<!--<echo message="copy file ${s.fname} tofile=${d.fname}"/>-->
-					<!--<echo message="attrib readonly=true file=${d.fname}"/>-->
-					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true"/>
-					<attrib readonly="true" file="${d.fname}"/>
-				</ac:else>
-			</ac:if>
-			<ac:var name="s.fname" unset="true"/>
-			<ac:var name="d.fname" unset="true"/>
-			<ac:var name="d.isNewer" unset="true"/>
-			<ac:var name="source.dir" unset="true"/>
-			<ac:var name="destination.dir" unset="true"/>
-		</sequential>
-	</ac:for>
 </target>
 
 </project>

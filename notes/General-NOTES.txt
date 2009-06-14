@@ -1,5 +1,56 @@
 TODO
 
+DOCUMENT CHANGES
+
+Note: % issues for command line and variation between TCC and CMD shells
+[EG]
+====<cut> [TCC]
+C:\...\git\aws
+>echo %x
+ECHO is OFF
+
+C:\...\git\aws
+>echo 10%x10
+10
+
+C:\...\git\aws
+>echo 10%%x10
+10%x10
+
+C:\...\git\aws
+>echo 10^%x10
+10%x10
+
+C:\...\git\aws
+>echo "10^%x10"
+"10^%x10"
+
+C:\...\git\aws
+>echo "10%%x10"
+"10%x10"
+====<cut> [TCC end]
+====<cut> [CMD]
+C:\...\git\aws
+>cmd
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+C:\Users\Roy\Documents\Projects\git\aws
+>echo "10%%x10"
+"10%%x10"
+
+C:\Users\Roy\Documents\Projects\git\aws
+>echo 10%%x10
+10%%x10
+
+C:\Users\Roy\Documents\Projects\git\aws
+>echo 10%x10
+10%x10
+====<cut> [CMD end]
+
+TCC/CMD standardize
+:: %% => % [both in and out of strings]
+:: all special characters [ <>|^ ] should be double-quoted
+
 see perl's notes RE:command line usage from cmd/Win32: URLref: http://www.perl.com/doc/manual/html/Porting/README.win32.html#item_Using
 
 Notify Module::Build folks about extensively customized Build.PL used in this distribution.

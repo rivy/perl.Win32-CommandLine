@@ -20,7 +20,7 @@ foreach (@modules) {my ($module, $min_v, $max_v) = split(' '); my $v = eval "req
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
 
-(undef) = eval { require Test::Pod; 1; };	## REPEATED for kwalitee testing
+(undef) = eval { require Test::Pod; 1; };	## REPEATED (as obvious code) for kwalitee testing
 
 #all_pod_coverage_ok();
 Test::Pod::all_pod_files_ok( Test::Pod::all_pod_files(qw( . )) );

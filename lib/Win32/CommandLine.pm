@@ -21,6 +21,11 @@ This document describes C<Win32::CommandLine> ($Version$).
 
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
 
+# TODO: deal with % bug -- how can we reliably transmit %'s to subcommands? TCC and CMD handle "%%" differently
+#		** CMD => %x => %x if %x doesn't exist
+#		** TCC => %x or %x% => <null> if %x doesn't exist
+#		== NORMALIZE % handling => %% always => % for both CMD and TCC (both within and outside quotes); %x% => <null> if x doesn't exist
+
 # DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by xx.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
 
 use strict;
@@ -69,6 +74,9 @@ bootstrap Win32::CommandLine $VERSION;
 sub command_line{
 	# command_line(): returns $
 	my $retVal = _wrap_GetCommandLine();
+
+	## TODO: add %% => % test (for both TCC and CMD)
+	$retVal =~ s/%%/%/g;	# %% => % [ standardize %% handling for CMD and TCC ]
 
 	# 4NT/TCC/TCMD compatibility
 	my $parentEXE = _getparentname();
@@ -221,15 +229,16 @@ sub	_dosify {
 	#				 {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
 	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
-	# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
-	my $dos_special_chars = '"<>|';
+	# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, _likely_ escape character [^], [%]?, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
+	#	**	should we make the assumption that these are paths? or pass an argument to that effect (eg, path => 0/1) _OR_ seperate function (ie, _dosify_path() )?
+	my $dos_special_chars = '"<>|^';
 	my $dc = quotemeta( $dos_special_chars );
 	for (@_ ? @_ : $_)
 		{
 		#print "_ = $_\n";
 		s:\/:\\:g;								# forward to back slashes
 		if ( $_ =~ qr{(\s|[$dc])} )
-			{
+			{# found whitespace and/or special characters which must be double quoted
 			#print "in qr\n";
 			s:":\\":g;							# CMD: preserve double-quotes with backslash	# TODO: change to $dos_escape	## no critic (ProhibitUnusualDelimiters)
 			s:([\\]+)\\":($1 x 2).q{\\"}:eg;	# double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
@@ -1999,14 +2008,14 @@ This module is compatible with both B<C<cmd.exe>> and B<C<4nt/tcc/tcmd>> shells,
 	doskey type=call xx type $*
 	type [a-c]*.pl
 	doskey perl=call xx perl $*
-	perl -e 'print "test"'	[o/w FAILS without commandline reinterpretation]
+	perl -e 'print "test"'		[would otherwise FAIL]
 
 =head2 C<4NT/TCC/TCMD>
 
 	alias type=call xx type
 	type [a-c]*.pl
 	alias perl=call xx perl
-	perl -e 'print "test"'	[o/w FAILS without commandline reinterpretation]
+	perl -e 'print "test"'		[would otherwise FAIL]
 
 Note that bash compatible character expansion and globbing is available, including glob meta-notations such as "C<a[bc]*>" or "C<foo.{bat,pl,exe,o}>".
 
@@ -2334,6 +2343,35 @@ You can also look for further information at:
 
 Expand and polish the documentation. Add argument/option explanations and examples for interface functions.
 
+=head1 TESTING
+
+=for REFERENCE [good documentation/TESTING heading :: URLref: http://search.cpan.org/dist/Net-Amazon-S3/lib/Net/Amazon/S3.pm ]
+
+=for REFERENCE [info re end-user/install vs automated vs release/author testing :: URLref: http://search.cpan.org/~adamk/Test-XT-0.02/lib/Test/XT.pm ]
+
+For additional testing, set the following environment variables to a true value ("true" meaning non-NULL, non-ZERO value):
+
+=over
+
+=item TEST_AUTHOR
+
+Perform distribution tests which are necessary prior to a general release.
+
+=item TEST_FRAGILE
+
+Perform tests which have a specific and fragile execution context (eg, network tests to named hosts).
+These tests must be coddled or set up on specific machines to complete correctly.
+
+=item TEST_SIGNATURE
+
+Verify signature is present and correct for the distribution.
+
+=item TEST_ALL
+
+Perform ALL additional/optional tests.
+
+=back
+
 =for TODO
 	=head1 SEE ALSO
 
@@ -2341,22 +2379,22 @@ Expand and polish the documentation. Add argument/option explanations and exampl
 
 =head1 LICENSE AND COPYRIGHT
 
-  Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
+ Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
 
 =head1 DISCLAIMER OF WARRANTY
 
-THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
-AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
-ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
-BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
-THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
+ AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
+ ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
+ BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
+ THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-[REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
+ [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
 
 =head1 ACKNOWLEDGEMENTS
 

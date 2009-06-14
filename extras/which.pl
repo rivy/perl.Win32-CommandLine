@@ -30,9 +30,31 @@ Options:
 
 =over
 
-=item --dosify, --dos, -d
+=item --dosify, --dos, --winify, --win
 
-"Dosify" output
+"Dosify" output ( slashed/quoted appropriately for CMD or TCC )
+
+=item TODO --msysify, --msys, --cygify, --cygwin
+
+"MSYS"ify output ( convert to '/c/...' )
+
+=item TODO --unixify, --unix
+
+"Unixify" output ( slashed/quoted appropriately for SH or BASH )
+
+=item TODO --auto
+
+Choose --dos, --unix, or --msys depending on surrounding execution context
+
+=item TODO --quoting-style=QUOTETYPE
+
+Quoting style = QUOTETYPE (literal, shell, shell-always, c, escape) [ see LS.c and quoteargs.c code; see URLrefs: http://www.ss64.com/bash/ls.html ; http://linux.about.com/od/commands/l/blcmdl1_patch.htm ; http://www.gnu.org/software/coreutils/manual/html_node/What-information-is-listed.html ]
+[ modified by $ENV{QUOTING_STYLE} ]
+
+=item TODO --shell=SHELLTYPE
+
+Shell type = SHELLTYPE (auto [DEFAULT], dos / cmd / win / win32 / windows, msys / cygwin, unix / bash / sh )
+[ modified by $ENV{QUOTING_STYLE} ]
 
 =item --where, -w, --all, -a
 
@@ -103,6 +125,8 @@ pod2usage(1) if @ARGV < 1;
 if ($^O eq "MSWin32") { PATH->Prepend( q{.} ); }
 
 PATH->Uniqify();
+
+$ARGV{dosify} = 1;		## TODO: add options to avoid hard-coding this
 
 foreach (@ARGV)
 	{
@@ -210,8 +234,22 @@ foreach (@ARGV)
 	if (! $ARGV{where} && @w) { @w = $w[0]; }
 	my %printed;
 #	# output full path for all matches (and no repeats [repeats can happen if the PATH contains multiple references to the same location])
-	for (@w) { if ($_) {$_ = File::Spec->rel2abs($_); if (!$printed{$_}) {$printed{$_}=1; print ''.($ARGV{dosify} ? _dosify($_) : $_)."\n"; } } }
+	for (@w) { if ($_) {$_ = File::Spec->rel2abs($_); if (!$printed{$_}) {$printed{$_}=1; print ''.($ARGV{dosify} ? _dosify_path($_) : $_)."\n"; } } }
 	#if (@w) { print join("\n", @w)."\n"; }
+	}
+
+sub _dosify_path {
+	# _dosify_path( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# dosify string (assumed to be a path), returning a string which will be interpreted/parsed by DOS/CMD as the input path when parsed at the command line
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+
+	for (@_ ? @_ : $_)
+		{
+		s:\/:\\:g;								# forward to back slashes
+		_dosify($_);
+		}
+
+	return wantarray ? @_ : "@_";
 	}
 
 sub	_dosify {
@@ -222,13 +260,13 @@ sub	_dosify {
 	#				 {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
 	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
-	# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
-	my $dos_special_chars = '"<>|';
+	# TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, _likely_ escape character [^], [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
+	my $dos_special_chars = '"<>|^';
 	my $dc = quotemeta( $dos_special_chars );
 	for (@_ ? @_ : $_)
 		{
 		#print "_ = $_\n";
-		s:\/:\\:g;								# forward to back slashes
+		#s:\/:\\:g;								# forward to back slashes [now done in _dosify_path()
 		if ( $_ =~ qr{(\s|[$dc])} )
 			{
 			#print "in qr\n";

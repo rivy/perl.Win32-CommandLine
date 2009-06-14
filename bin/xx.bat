@@ -40,7 +40,6 @@ if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
 perl -x -S %0 %*
 if %errorlevel% NEQ 0 (
 ::  propagate %errorlevel%
-::	endlocal & exit /B %errorlevel%
 	exit /B %errorlevel%
 	)
 endlocal
@@ -49,6 +48,8 @@ goto :_DONE
 :source_expansion
 :: sourcing COMMAND vs command OUTPUT is handled within the perl portion of the script (so, handle both the same within the BAT)
 :: setdos /x0 needed? how about for _xx_bat execution? anyway to save RESET back to prior settings without all env vars reverting too? check via TCC help on setdos and endlocal
+:: ? how to set setdos back to previous value instead of /x0 -- prob must use endlocal to do this
+:: ? need to reset setdos PRIOR to executing perl -s -S ... ?
 if 01 == 1.0 ( setdos /x0 )
 echo @echo OFF >> %_xx_bat%
 ::echo perl output [source expansion { perl -x -S %0 %* }]
@@ -253,6 +254,8 @@ if ( $ARGV{args} )
 #	}
 # [2009-02-18] the protection is now automatically done already with the 'dosify' option above ... ? remove it for echo or just note the issue? or allow command line control of it instead? command line control might be problematic => finding the command string without reparsing the command line multiple times (could cause side effects if $(<COMMAND>) is implemented => make it similar to -S (solo and only prior to 1st non-option?)
 #		== just note that echo has no command line parsing
+
+# TODO: check echo %% "%%" => echo % % => % % [doesn't work for TCC or CMD]
 
 if ( $ARGV{args} )
 	{

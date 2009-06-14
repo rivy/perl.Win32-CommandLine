@@ -466,7 +466,7 @@ def filters_working(n):
     #u.warn ( "m:working:n_new:   %s\n" % n_new )
     l = morefilters_repo
     if n_new == None:
-        ctx = l.workingctx()
+        ctx = l[None]   # see URLref: http://www.selenic.com/mercurial/wiki/MercurialApi#Change_Contexts
         parents = ctx.parents()
         n_new = node.hex(parents[0].node())
     n_new = node.hex(l.lookup(n_new))   # expand to full length hex id
