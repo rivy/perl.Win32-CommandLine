@@ -2005,28 +2005,29 @@ This module is compatible with both B<C<cmd.exe>> and B<C<4nt/tcc/tcmd>> shells,
 
 =head2 C<CMD.EXE>
 
-	doskey type=call xx type $*
-	type [a-c]*.pl
-	doskey perl=call xx perl $*
-	perl -e 'print "test"'		[would otherwise FAIL]
+    doskey type=call xx type $*
+    type [a-c]*.pl
+    doskey perl=call xx perl $*
+    perl -e 'print "test"'		[would otherwise FAIL]
 
 =head2 C<4NT/TCC/TCMD>
 
-	alias type=call xx type
-	type [a-c]*.pl
-	alias perl=call xx perl
-	perl -e 'print "test"'		[would otherwise FAIL]
+    alias type=call xx type
+    type [a-c]*.pl
+    .
+    alias perl=call xx perl
+    perl -e 'print "test"'		[would otherwise FAIL]
 
 Note that bash compatible character expansion and globbing is available, including glob meta-notations such as "C<a[bc]*>" or "C<foo.{bat,pl,exe,o}>".
 
 =head2 Command line string/character expansion
 
- '...'    literal (no escapes and no globbing within quotes)
- "..."    literal (no escapes and no globbing within quotes)
- $'...'   string including all ANSI C string escapes (see NOTE); no globbing within quotes
- $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
- $( ... ) subshell expansion [subshell commandline is _not_ expanded]
- $("...") subshell expansion (quotes removed) [subshell commandline is _not_ expanded]
+  '...'    literal (no escapes and no globbing within quotes)
+  "..."    literal (no escapes and no globbing within quotes)
+  $'...'   string including all ANSI C string escapes (see NOTE); no globbing within quotes
+  $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
+  $( ... ) subshell expansion [subshell commandline is _not_ expanded]
+  $("...") subshell expansion (quotes removed) [subshell commandline is _not_ expanded]
 
 NOTE: ANSI C string escapes are  (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other escaped characters: \<x> =>\<x>).
 
@@ -2059,24 +2060,24 @@ at a low level to preserve this order.
 
 To install this module, run the following commands:
 
-	perl Build.PL
-	./Build
-	./Build test
-	./Build install
+    perl Build.PL
+    ./Build
+    ./Build test
+    ./Build install
 
 Or, if you're on a platform (like DOS or Windows) that doesn't require the "./" notation, you can do this:
 
-	perl Build.PL
-	Build
-	Build test
-	Build install
+    perl Build.PL
+    Build
+    Build test
+    Build install
 
 Alternatively, the standard make idiom is also available (though it is deprecated):
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+    perl Makefile.PL
+    make
+    make test
+    make install
 
 (On Windows platforms you should use B<C<nmake>> instead.)
 
@@ -2085,7 +2086,7 @@ Makefile.PL will offer to download and install Module::Build if it is missing fr
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
 
-Note: On ActivePerl installations, "C<./Build install>" will do a full installation using B<C<ppm>> (see L<ppm>).
+Note: On ActivePerl installations, "C<./Build install>" will do a full installation using B<C<ppm>> (see ppm).
 During the installation, a PPM package is constructed locally and then subsequently used for the final module install.
 This allows for uninstalls (using "C<ppm uninstall >I<C<MODULE>>" and also keeps local HTML documentation current.
 
@@ -2309,30 +2310,30 @@ You can find documentation for this module with the perldoc command.
 You can also look for further information at:
 
     * AnnoCPAN: Annotated CPAN documentation
-
-      http://annocpan.org/dist/Win32-CommandLine
-
+      E<space>
+    . http://annocpan.org/dist/Win32-CommandLine
+      E<space>
     * CPAN Ratings
-
+      E<space>
       http://cpanratings.perl.org/dist/Win32-CommandLine
-
+      E<space>
     * RT: CPAN's request tracker (aka buglist)
-
+      E<space>
       http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine
-
+      E<space>
     * Search CPAN
-
+      E<space>
       http://kobesearch.cpan.org/dist/Win32-CommandLine
       _or_
       http://search.cpan.org/dist/Win32-CommandLine
-
+      E<space>
     * CPANTS: CPAN Testing Service
-
+      E<space>
       [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
       [ used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
-
+      E<space>
     * CPANTESTERS: Test results
-
+      E<space>
       http://www.cpantesters.org/show/Win32-CommandLine.html
 
 =for possible_future
@@ -2349,18 +2350,19 @@ Expand and polish the documentation. Add argument/option explanations and exampl
 
 =for REFERENCE [info re end-user/install vs automated vs release/author testing :: URLref: http://search.cpan.org/~adamk/Test-XT-0.02/lib/Test/XT.pm ]
 
-For additional testing, set the following environment variables to a true value ("true" meaning non-NULL, non-ZERO value):
+For additional testing, set the following environment variables to a true value ("true" in the perl sense, meaning non-NULL, non-ZERO value):
 
 =over
 
 =item TEST_AUTHOR
 
-Perform distribution tests which are necessary prior to a general release.
+Perform distribution correctness and quality tests, which are essential prior to a public release.
 
 =item TEST_FRAGILE
 
-Perform tests which have a specific and fragile execution context (eg, network tests to named hosts).
-These tests must be coddled or set up on specific machines to complete correctly.
+Perform tests which have a specific (i.e., fragile) execution context (eg, network tests to named hosts).
+These are tests that must be coddled with specific execution contexts or set up on specific machines to
+complete correctly.
 
 =item TEST_SIGNATURE
 
@@ -2379,27 +2381,27 @@ Perform ALL additional/optional tests.
 
 =head1 LICENSE AND COPYRIGHT
 
- Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
+  Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
 
 =head1 DISCLAIMER OF WARRANTY
 
- THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
- AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
- ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
- BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
- THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
+  AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
+  ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
+  BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
+  INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
+  THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
+  [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
 
 =head1 ACKNOWLEDGEMENTS
 
-Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas and an initial XS starting
-point for the module during a discussion on PerlMonks (see L<http://www.perlmonks.org/?node_id=625182>).
+Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas, and an initial XS starting
+point for the module, during a discussion on PerlMonks (see L<http://www.perlmonks.org/?node_id=625182>).
 
 =for TODO
 	POST in REPLY to http://www.perlmonks.org/?parent=625182;node_id=3333
