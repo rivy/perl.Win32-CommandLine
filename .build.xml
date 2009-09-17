@@ -12,12 +12,15 @@
 	<ant antfile=".build.xml" dir=".." inheritAll="false"/>
 
 	<property name="hg.source.dir" value="."/>
-	<mapper name="hg.source.mapper" type="glob" from=".hgrc" to="hgrc"/>
+	<filtermapper id="hg.source.mapper">
+		<replaceregex pattern="^\.hgrc$$" replace="hgrc" flags="i"/>
+	</filtermapper>
 	<patternset id="hg.source.patternset">
 		<include name=".hgrc" />
 		<include name=".morefilters.py" />
+		<include name=".updatestate.py" />
 	</patternset>
-	<copyWRO source.dir="${hg.source.dir}" source.defaultexcludes="false" source.patternset.refid="hg.source.patternset" destination.dir=".hg" filename.mapper.refid="hg.source.mappper" failonerror="true"/>
+	<copyWRO source.dir="${hg.source.dir}" source.defaultexcludes="false" source.patternset.refid="hg.source.patternset" destination.dir=".hg" filename.mapper.refid="hg.source.mapper" failonerror="true"/>
 
 	<property name="bat.source.dir" value="..\..\bat\advanced"/>
 	<patternset id="bat.source.patternset">
