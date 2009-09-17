@@ -14,11 +14,14 @@
 
 [extensions]
 hgext.win32text =
-#hgext.color = 
+hgext.color = 
 #hgext.fold =
 hgext.keyword = 
 #hgext.morefilters =
+##REPLACE##
+##morefilters = {$REPO_HOME}\.hg\.morefilters.py
 morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.hg\.morefilters.py
+##REPLACE##
 # Avoid the [DEFAULT] extension bug
 #HOME = !
 # move to main .ini
