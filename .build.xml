@@ -15,12 +15,15 @@
 	<filtermapper id="hg.source.mapper">
 		<replaceregex pattern="^\.hgrc$$" replace="hgrc" flags="i"/>
 	</filtermapper>
+	<filterset id="hg.source.filter">
+		<filter token="build.main.dir" value="${build.main.dir}"/>
+	</filterset>
 	<patternset id="hg.source.patternset">
 		<include name=".hgrc" />
 		<include name=".morefilters.py" />
 		<include name=".updatestate.py" />
 	</patternset>
-	<copyWRO source.dir="${hg.source.dir}" source.defaultexcludes="false" source.patternset.refid="hg.source.patternset" destination.dir=".hg" filename.mapper.refid="hg.source.mapper" failonerror="true"/>
+	<copyWRO source.dir="${hg.source.dir}" source.defaultexcludes="false" source.patternset.refid="hg.source.patternset" destination.dir=".hg" filename.mapper.refid="hg.source.mapper" copy.filter.refid="hg.source.filter" failonerror="true"/>
 
 	<property name="bat.source.dir" value="..\..\bat\advanced"/>
 	<patternset id="bat.source.patternset">
@@ -94,6 +97,7 @@
 	<attribute name="destination.dir"/>
 	<attribute name="destination.flatten" default="false"/>
 	<attribute name="filename.mapper.refid" default=""/>
+	<attribute name="copy.filter.refid" default=""/>
 	<attribute name="overwrite" default="false"/>
 	<attribute name="failonerror" default="false"/>
 	<attribute name="warn.dest.newer" default="true"/>
@@ -198,7 +202,9 @@
 			<ac:if><istrue value="${DO.copy}"/>
 				<ac:then>
 					<!--echo message="TASK: copy file &quot;${s.fname}&quot; tofile=&quot;${d.fname}&quot;"/-->
-					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="@{overwrite}"/>
+					<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="@{overwrite}">
+						<filterset refid="@{copy.filter.refid}"/>
+					</copy>
 				</ac:then>
 			</ac:if>
 			<ac:if><istrue value="@{set.dest.readonly}"/>

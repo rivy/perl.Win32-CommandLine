@@ -1,15 +1,14 @@
+# @<TOKENS>@ are replaced by ANT
+
 ; hgext.keyword: Note: this can kill repository efficiency if too many files are checked for keyword expansion (as all files marked for expansion will be checked with every update).
 ; * generally, to preserve normal efficiency, enable keyword expansion only in specific repositories with specific (small population) target files using '.hg/hgrc'
 
-[DEFAULT]
-#HOME = /home/myuser
-
 [ui]
-; TODO: make this a local file in '.hg'
 ;style = mini.template.txt		
 ;style = .hg/mini.t.txt		## only works when running hg from the main repository directory (? is there an escape from the main repository directory)
 ##ignore.mine = %(HOME)s/.hgignore.mine
 ##style = %(HOME)s/.hg-styles/hg-map-cmdline.color
+style = @build.main.dir@\.hg\#log-style.mini.txt
 
 
 [extensions]
@@ -17,14 +16,7 @@ hgext.win32text =
 hgext.color = 
 #hgext.fold =
 hgext.keyword = 
-#hgext.morefilters =
-##REPLACE##
-##morefilters = {$REPO_HOME}\.hg\.morefilters.py
-morefilters = C:\Documents and Settings\Roy\Documents\My Projects\perl\Win32-CommandLine\.hg\.morefilters.py
-##REPLACE##
-# Avoid the [DEFAULT] extension bug
-#HOME = !
-# move to main .ini
+morefilters = @build.main.dir@\.hg\#morefilters.py
 graphlog = 
 #pager = 
 #color =
