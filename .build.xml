@@ -13,9 +13,10 @@
 
 	<property name="hg.source.dir" value="."/>
 	<filtermapper id="hg.source.mapper">
-		<replaceregex pattern="^\.hgrc$$" replace="hgrc" flags="i"/>
+		<replaceregex pattern="^\.hgrc$$" replace="hgrc" flags="i"/><!-- convert ".hgrc" to "hgrc" for HG repos -->
 	</filtermapper>
-	<filterset id="hg.source.filter">
+	<filterset id="hg.source.filter" begintoken="$${" endtoken="}" description="Replace tokens in config files with associated build properties">
+		<!--<filtersfile file=".build.properties"/> :: ?TODO: create a file containing all build properties to expose to config file(s)-->
 		<filter token="build.main.dir" value="${build.main.dir}"/>
 	</filterset>
 	<patternset id="hg.source.patternset">
