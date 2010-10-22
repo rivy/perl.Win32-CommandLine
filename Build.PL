@@ -1,5 +1,5 @@
 #!perl -w   -- -*- tab-width: 4; mode: perl -*-
-#$Id: Build.PL,v 0.3.4.15 ( r68:119536bcb98f [mercurial] ) 2009/04/04 08:40:43 rivy $
+#$Id: Build.PL,v 0.3.4.24067657 ( r77:fbb22282284a [mercurial] ) 2010/01/07 22:08:20 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -20,16 +20,16 @@
 
 use strict;
 use warnings;
-use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, and indirect filehandles
+use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, indirect filehandles, extended versions for 'use' [URLref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring/]
 
-use English qw( -no_match_vars ); ##	# long Perl built-on variable names ['-no_match_vars' avoids regex performance penalty]
+use English qw( -no_match_vars ); ##	# long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.3.4.15 $ SCS tag
+# generate VERSION from $Version: 0.3.4.24067657 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.4.24067657 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -43,7 +43,7 @@ $config{'dist_author'} = undef;
 $config{'license'} = undef;							# must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};						# module requirements (no obvious default)
 $config{'recommends_href'} = {};					# module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
+$config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0.74, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [version v0.74+ needed for v5.10+ extended version support; NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 $config{'configure_requires_href'} = {};			# module requirements for configuration (no obvious default)
 $config{'sign'} = 'true';							# always sign the module, if possible
 $config{'create_readme'} = 'true';					# create README from module pod
@@ -57,14 +57,22 @@ $config{'xs_files_href'} = {};						# alternate XS file locations [to help with 
 $config{'PL_files_href'} = {};						# perl files to execute during processing (usually to generated .PL files from templates)
 $config{'c_source'} = undef;						# c source files to compile
 $config{'config_href'} = {};						# modify Config.pm values for the build
-$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];		# extra files to clean up during "build clean"
-$config{'add_to_realcleanup_aref'} = [];			# extra files to clean up during "build realclean"
+$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];		# globs matching extra files to clean up during "build clean"
+$config{'add_to_realcleanup_aref'} = [];			# globs matching extra files to clean up during "build realclean"
 $config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS) [NOTE: entries are used as REGEXs for comparison VS $^O]
 $config{'custom_code_href'} = {};					# custom code overrides from config
-$config{'custom_ENV_href'} = { '_BUILD_module_name' => '' };	# custom environment overrides (set before each dispatch) [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
+$config{'custom_ENV_href'} = {};					# custom environment overrides (set before each dispatch) [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
 
 # helper variables
-$config{'lib_path'} = undef;						# generated from $config{'module_name'} during .config file parsing (may be set in .config, but is reset after each successful $config{'module_name'} parse)
+$config{'lib_path'} = undef;						# generated from $config{'module_name'} during .config file parsing (should NOT be set in .config, since it is regenerated after each successful $config{'module_name'} parse in the .config parsing section)
+$config{'module_path'} = undef;						# generated from $config{'module_name'} during .config file parsing (should NOT be set in .config, since it is regenerated after each successful $config{'module_name'} parse in the .config parsing section)
+
+# versioning
+# setv => strip any extra version and add b = YYYY.MMDD.<DaySeconds> to version
+# setv --setv_release	=> increment last version digit AND b = 0
+$config{'v_files'} = undef;							# GLOB									# UNDEF => module_path
+$config{'v_source'} = undef;						# GLOB - source for version and dates	# UNDEF => module_path
+$config{'v_n'} = 3;									# M.m.r [ valid range: any number > 0 ]
 
 ##
 
@@ -112,7 +120,10 @@ if ( -e $config_filename )
 				$SIG{'__WARN__'} = 'DEFAULT';	## NOTE: 'IGNORE' is not supported by $SIG{'__WARN__'} [URLrefs: [perlvar - %SIG] http://perldoc.perl.org/perlvar.html#%SIG , [Perl's Warn and Die Signals] http://www.perlmonks.org/?node_id=51097 , http://www.perlmonks.org/?node_id=673637 ]
 				if ($w || $e) {warn "build: warning, malformed configuration entry: $config{'rc_filename'}, line $line\n";}
 				}
-			if ($key eq 'module_name') { $config{'lib_path'} = 'lib/' . join( q{/}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) ); }	# relative path to the modules lib location (using standard Module::Builder rules)
+			if ($key eq 'module_name') {
+				$config{'lib_path'} = 'lib/' . join( q{/}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) ); 	# relative path to the module's lib location (using standard Module::Builder rules)
+				$config{'module_path'} = $config{lib_path} . q{/} . (split(q{::},$config{module_name}))[-1] . '.pm';						# relative path to the usual location of a module's package file (using 'lib_path')
+				}
 			}
 			else { die "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
 		}
@@ -133,8 +144,10 @@ if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\
 if ( !$config{'dist_author'} ) { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 if ( !$config{'license'} ) 	   { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-if (!$config{'custom_ENV_href'}->{'_BUILD_module_name'}) { $config{'custom_ENV_href'}->{'_BUILD_module_name'} = $config{'module_name'}; }
-if (!$config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'}) { $config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} = 'lib/'.join('/', split(/::/, $config{'module_name'})).'.pm'; }
+#assert( $config{'lib_path'} ) # should be defined if $config{'module_name'} has been parsed (as asserted above)
+
+if ( !$config{'custom_ENV_href'}->{'_BUILD_module_name'} ) { $config{'custom_ENV_href'}->{'_BUILD_module_name'} = $config{'module_name'}; }
+if ( !$config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} ) { $config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} = $config{'module_path'}; }
 
 #use lib 'inc';
 #require Devel::AssertOS; import Devel::AssertOS ( @{$config{'assert_os_aref'}} );
@@ -232,6 +245,10 @@ Build the PAR distribution.
 =item sign
 
 Sign the current module content in the base directory (for local testing).
+
+=item show_vfiles
+
+Print all versioned files within module.
 
 =back
 
@@ -337,6 +354,22 @@ $code{'ACTION_sign@_sign_dir'} = q{
 		#[ADD] create the dist_meta prior to signature
 		$self->ACTION_distmeta;
 
+		# use local .gpg/gpg.conf, if available for GPG signing (to provide local repository override of default signature) [would be nice if Module::Signature took a signer argument]
+		use File::Spec::Functions qw( rel2abs );
+		use File::Basename qw( dirname );
+
+		#print "_BUILD_gpg_conf_path = $ENV{_BUILD_gpg_conf_path}\n";
+		my $gpg_conf_path = q{};
+		if ($ENV{_BUILD_gpg_conf_path}) {
+			$gpg_conf_path = rel2abs($ENV{_BUILD_gpg_conf_path}, dirname(rel2abs($0)));
+			}
+		#print "gpg_conf_path = '$gpg_conf_path'\n";
+		if ( -e $gpg_conf_path )
+			{
+			#print qq{'$gpg_conf_path' EXISTS\n};
+			$ENV{GnuPGHome} = $gpg_conf_path;
+			}
+
 		# Would be nice if Module::Signature took a directory argument.
 		$self->_do_in_dir($dir, sub {local $Module::Signature::Quiet = 1; Module::Signature::sign()});
 	}
@@ -398,6 +431,20 @@ $code{'ACTION_distpar'} = q{
 		my ($self) = @_;
 
 		$self->depends_on('pardist');
+	  }
+};
+$code{'ACTION_show_vfiles'} = q{
+	#[ADD] NEW action = _show_vfiles - print all versioned file within module
+	sub ACTION_show_vfiles {
+		my ($self) = @_;
+
+		#print "ENV{...} = $ENV{_BUILD_versioned_file_globs}\n";
+
+		# done with GLOBs instead of directly specifying files to maintain correct file list without requiring reconstruction of Build.PL
+		my @files = ( map { glob $_ } split(/;/, $ENV{_BUILD_versioned_file_globs}) );
+		print join(qq{\n}, @files);
+
+		#print join( qq{\n}, split( q{;}, $ENV{_BUILD_versioned_files}) );
 	  }
 };
 $code{'ACTION_realclean'} = q{

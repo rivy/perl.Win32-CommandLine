@@ -23,7 +23,7 @@ goto :find_unique_temp_PASS
 
 :: find bat file for sourcing and instantiate it with a 1st line of text
 :find_unique_temp
-set _xx_bat="%temp%\xx.bat.source.%RANDOM%.bat"
+set _xx_bat="%temp%\xx.bat.source.%RANDOM%.%RANDOM%.bat"
 if EXIST %_xx_bat% ( goto :find_unique_temp )
 echo @:: %_xx_bat% TEMPORARY file > %_xx_bat%
 :find_unique_temp_PASS
@@ -206,7 +206,7 @@ use warnings;
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version 0.74 qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 use Pod::Usage;
 
@@ -219,21 +219,30 @@ use ExtUtils::MakeMaker;
 #-- config
 #my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) );	#"
 
+#-- getopt
+use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
+# PRE-parse for nullglob option before initial expansion of command line (to avoid double expansion of the command line and possible subshell side-effects)
+my %ARGV = ();
+GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'nullglob=s', 'help|h|?|usage', 'man', 'version|ver|v');
+if ( exists $ARGV{'nullglob'} ) { $ENV{'nullglob'} = $ARGV{'nullglob'}; }
+
+my $showUsage = ( @ARGV < 1 );	# show usage only if no arguments (check _before_ a possible nullglob replacement of any/all globs by NULL)
+
 use Win32::CommandLine;
 
 @ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );	# if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine so we want the error if its missing or unable to load
 
-#-- getopt
-use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
-my %ARGV = ();
+#-- do main getopt
+##use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
+%ARGV = ();
 # NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by wrapping the BAT script by executing the output of the perl script.
-GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'help|h|?|usage', 'man', 'version|ver|v') or pod2usage(2);
+GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'nullglob=s', 'help|h|?|usage', 'man', 'version|ver|v');
 #Getopt::Long::VersionMessage() if $ARGV{'version'};
 do {print q{}.(File::Spec->splitpath($0))[2].qq{ v$::VERSION}.qq{\n}; exit(0);} if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
 pod2usage({-verbose => 2}) if $ARGV{'man'};
 
-pod2usage(1) if @ARGV < 1;
+pod2usage(1) if $showUsage;
 
 if ( $ARGV{args} )
 	{

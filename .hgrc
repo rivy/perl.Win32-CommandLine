@@ -1,26 +1,26 @@
-# ${<TOKENS>} are replaced by ANT
+# @<TOKENS>@ are replaced by ANT
 
 ; hgext.keyword: Note: this can kill repository efficiency if too many files are checked for keyword expansion (as all files marked for expansion will be checked with every update).
 ; * generally, to preserve normal efficiency, enable keyword expansion only in specific repositories with specific (small population) target files using '.hg/hgrc'
 
 [ui]
-;style = mini.template.txt		
+;style = mini.template.txt
 ;style = .hg/mini.t.txt		## only works when running hg from the main repository directory (? is there an escape from the main repository directory)
 ##ignore.mine = %(HOME)s/.hgignore.mine
 ##style = %(HOME)s/.hg-styles/hg-map-cmdline.color
-style = ${build.main.dir}\.hg\@hg\log-style.mini.txt
+style = @build.main.dir@\.hg\@hg\log-style.mini.txt
 
 
 [extensions]
 hgext.win32text =
-hgext.color = 
+hgext.color =
 #hgext.fold =
-hgext.keyword = 
-morefilters = ${build.main.dir}\.hg\@hg\morefilters.py
-graphlog = 
-#pager = 
+hgext.keyword =
+morefilters = @build.main.dir@\.hg\@hg\morefilters.py
+graphlog =
+#pager =
 #color =
-#hgext.rebase = 
+#hgext.rebase =
 
 [encode]
 # URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension

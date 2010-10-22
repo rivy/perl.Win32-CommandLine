@@ -1,7 +1,7 @@
 # Skip List RegExps for MANIFEST
 # each line is a regular expression which will exclude any matching files from entry into the MANIFEST
 
-# NOTE: AVOID trailing comments because of the trailing comment bug noted. It causes incorrect results from other programs, notably 'cpansign' doesn't collect the correct file names.
+# NOTE: AVOID trailing comments because of the trailing comment bug noted. It causes incorrect results from other programs, notably 'cpansign', which doesn't collect the correct file names.
 
 # NOTE: regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
 # NOTE: scripts/modules using the default ExtUtils::Manifest code (eg, 'cpansign') will not interpret lines with ${dist_<X>} correctly and may complain
@@ -25,7 +25,7 @@
 # :: compiler detrus in the lib directory
 (?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds|lib|ccs)$
 # :: MSVC compiler detrus
-(?:^|/)vc90\.pdb$
+(?:^|/)vc[1-9][0-9]+\.pdb$
 
 # :: other possible/optional generated PACKAGE FILES to avoid
 # :: : needed for clean testing after 'build install' which uses PPM for install (and generates -PPM.tar.gz and .ppd files) [also works 'build ppmdist']
@@ -45,7 +45,7 @@
 (?:^|/)pm_to_blib\.ts$
 (?:^|/)pm_to_blib$
 # :: 6.18 through 6.25 generated 'blibdirs\.ts'
-(?:^|/)blibdirs\.ts$         
+(?:^|/)blibdirs\.ts$
 
 # Avoid META-build files (ANT/NANT)
 # :: regexp matches .build/.build.xml in any directory (including subs)
@@ -67,6 +67,12 @@
 (?:^|/)\.hg/
 (?:^|/)\.hgtags$
 (?:^|/)\.hgignore$
+(?:^|/)\.hgrc
+# :: git
+(?:^|/)\.git/
+
+# Avoid signature GPG configuration files
+(?:^|/)\.gpg/
 
 # Avoid temp and backup files
 ~$

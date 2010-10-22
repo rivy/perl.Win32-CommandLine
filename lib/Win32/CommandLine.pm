@@ -10,7 +10,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
-This document describes C<Win32::CommandLine> ($Version$).
+our $VERSION = qv($Version$)
 
 =cut
 
@@ -38,7 +38,7 @@ use 5.006;			# earliest tested perl version
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version 0.74 qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 # Module base/ISA and Exports
 
@@ -1169,7 +1169,7 @@ sub	_zero_position{
 			$r = File::Which::which($fn);
 			if (defined	$r)	{ $r = File::Spec->rel2abs(	$r ); }
 			#print $arg."\t\t=(find	with which)> ".((defined $r) ? $r :	"undef");
-			if (lc($r) eq lc(File::Spec->rel2abs($zero)))
+			if ($r && (lc($r) eq lc(File::Spec->rel2abs($zero))) )
 				{# which found
 				#print "\tMATCH	(which)\n";
 				last;
@@ -2400,8 +2400,8 @@ Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-licens
 
 =head1 ACKNOWLEDGEMENTS
 
-Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas, and an initial XS starting
-point for the module, during a discussion on PerlMonks (see L<http://www.perlmonks.org/?node_id=625182>).
+Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas (including an initial XS starting
+point for the module) during a discussion on PerlMonks (see L<http://www.perlmonks.org/?node_id=625182>).
 
 =for TODO
 	POST in REPLY to http://www.perlmonks.org/?parent=625182;node_id=3333
