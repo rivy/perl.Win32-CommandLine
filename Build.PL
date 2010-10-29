@@ -288,6 +288,16 @@ $code{'@new'} = q{
 		return $self->SUPER::new(@_);
 		}
 };
+$code{'find_dist_packages'} = q{
+	sub find_dist_packages{
+		# rebuild MANIFEST early :: fixes missing MANIFEST warnings for modern versions of Module::Build which include the new MYMETA.yml paradigm
+		my $self = shift;
+
+		$self->ACTION_manifest( qq{quiet=true} );
+
+		return $self->SUPER::find_dist_packages(@_);
+		}
+};
 $code{'dispatch'} = q{
 	sub dispatch \{
 		#my $self = shift;
@@ -987,7 +997,8 @@ $code{'ACTION_manifest'} = q{
 			};
 	  }
 	sub ACTION_manifest {
-		my ($self) = @_;
+		#my ($self) = @_;
+		my ($self, $quiet) = @_;
 
 		#use Sub::Override;
 		require ExtUtils::Manifest; #ExtUtils::Manifest->import();
@@ -1007,7 +1018,25 @@ $code{'ACTION_manifest'} = q{
 		$dist_path = dirname(rel2abs($0)); $dist_path =~ s:\\\\:\/:g; $dist_path = quotemeta( $dist_path );
 		#print "dist_path = $dist_path\n";
 
+		# URLref: [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136
+		my ($OUT, $o, $ERR, $e);
+		if ( $quiet ) {
+			# redirect STDOUT/STDERR and suppress
+			open($OUT,'>&STDOUT');
+			close STDOUT;
+			open STDOUT, '>', \$o or die "Unable to redirect STDOUT: $!";
+			open($ERR,'>&STDERR');
+			close STDERR;
+			open STDERR, '>', \$e or die "Unable to redirect STDERR: $!";
+			}
+
         $self->SUPER::ACTION_manifest;
+
+		if ( $quiet ) {
+			# re-open STDOUT/STDERR for normal output
+	        open STDOUT, ">&", $OUT or die "can't reopen STDOUT: $!";
+	        open STDERR, ">&", $ERR or die "can't reopen STDERR: $!";
+			}
 
 		# ???: SIGN?
 		#my $dist_path = '.';
