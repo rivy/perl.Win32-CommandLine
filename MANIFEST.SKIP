@@ -36,6 +36,8 @@
 (?:^|/)Build$
 (?:^|/)Build.bat$
 (?:^|/)_build/
+# avoid MYMETA.yml [ for Module::Build v0.35+ (August 2009); URLref: http://www.dagolden.com/index.php/479/mymeta-yml-in-the-wild ]
+(?:^|/)MYMETA.yml$
 
 # Avoid Makemaker generated and utility files
 (?:^|/)MANIFEST\.bak$
@@ -48,9 +50,9 @@
 (?:^|/)blibdirs\.ts$
 
 # Avoid META-build files (ANT/NANT)
-# :: regexp matches .build/.build.xml in any directory (including subs)
+# :: regexp matches .build/.build.xml/.build.xml* in any directory (including subs)
 (?:^|/)\.build$
-(?:^|/)\.build\.xml$
+(?:^|/)\.build\.xml[^/]*$
 # :: regexp matches .build/.build.xml ONLY in main directory; unfortunately, other tools complain => eg, causes MANIFEST mismatches for SIGNATURE
 #^${dist_path}/\.build$
 #^${dist_path}/\.build\.xml$
@@ -73,6 +75,7 @@
 
 # Avoid signature GPG configuration files
 (?:^|/)\.gpg/
+(?:^|/)\.gpg.conf
 
 # Avoid temp and backup files
 ~$
@@ -87,3 +90,10 @@
 
 # Avoid Devel::Cover files.
 (?:^|/)cover_db/
+
+# Avoid local configuration files
+(?:^|/)\.perltidyrc$
+
+# Avoid files specified as non-manifest
+(?:^|/)@non-manifest/
+
