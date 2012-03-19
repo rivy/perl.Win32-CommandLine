@@ -1,0 +1,9 @@
+CHANGED: added testing and fixup (via PERL5SHELL), if needed, for subshell calls
+CHANGED: improved error text for failed subshell calls
+UPDATED: build package (Build.PL, tests, and ANT) pulled from upstream
+CHANGED: minor changes to repo configuration (.hgrc)
+
+FIXED: repaired taint testing failures in t/13.xx.t
+FIXED: repaired taint testing failures in 00.sig and 99.sig due to ExtUtils::Manifest::manifind() taint
+FIXED: repaired taint testing failures in 01.load
+	... other taint issues ...
