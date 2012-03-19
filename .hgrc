@@ -1,74 +1,81 @@
-# @<TOKENS>@ are replaced by ANT
-
-; hgext.keyword: Note: this can kill repository efficiency if too many files are checked for keyword expansion (as all files marked for expansion will be checked with every update).
-; * generally, to preserve normal efficiency, enable keyword expansion only in specific repositories with specific (small population) target files using '.hg/hgrc'
-
+; ## Mercurial config file [ local / repo-level configuration (overrides system and global/user-level configurations) ]
+; ## location: [REPO_ROOT_DIR]/.hg/hgrc
+; ## URLref: [HGRC] http://www.selenic.com/mercurial/hgrc.5.html
+;
+; ## NOTE: .hgrc in [REPO_ROOT_DIR] is transformed & copied onto [REPO_ROOT_DIR]/.hg/hgrc, via a META-builder (generally, ANT or RAKE)
+; ## NOTE: @<TOKENS>@ are replaced by the META-builder via a transformative update/copy
+;
+; ## [ui]
 [ui]
-;style = mini.template.txt
-;style = .hg/mini.t.txt		## only works when running hg from the main repository directory (? is there an escape from the main repository directory)
-##ignore.mine = %(HOME)s/.hgignore.mine
-##style = %(HOME)s/.hg-styles/hg-map-cmdline.color
+; PERL development username
+username=@env.ID_dev_PERL@
+;
 style = @build.main.dir@\.hg\@hg\log-style.mini.txt
-
-
+;
+; ## [extensions]
+; # NOTE: hgext.keyword can kill repository efficiency if too many files are checked for keyword expansion (as all files marked for expansion will be checked with every update).
+; #     * Generally, to preserve normal efficiency, enable keyword expansion only in specific repositories with specific (small population) target files using '.hg/hgrc'
 [extensions]
+morefilters = @build.main.dir@\.hg\@hg\morefilters.py
+hgext.fold = @build.main.dir@\.hg\@hg\fold.py
+makewritable = @build.main.dir@\.hg\@hg\makewritable.py
+casestop = @build.main.dir@\.hg\@hg\casestop.py
+;
+hgext.progress =
 hgext.win32text =
 hgext.color =
-#hgext.fold =
 hgext.keyword =
-morefilters = @build.main.dir@\.hg\@hg\morefilters.py
-graphlog =
+#graphlog =
 #pager =
 #color =
 #hgext.rebase =
-
+;
+; ## [encode]
+; # URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension
 [encode]
-# URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension
-# Encode files that don't contain NUL characters.
+; Encode files that don't contain NUL characters.
 ** = cleverencode:
-
-#[decode]
-# URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension
-# Decode files that don't contain NUL characters.
-#** = cleverdecode:
-
+;
+;; ## [decode]
+; # URLref: http://www.selenic.com/mercurial/wiki/Win32TextExtension
+;[decode]
+; Decode files that don't contain NUL characters.
+;** = cleverdecode:
+;
+; ## [keyword]
+; # EXAMPLES:
+; # "**=" == expand keywords in all files
+; # "x*=ignore" == do not expand keywords in files matching "x*" in main directory
 [keyword]
-; examples:
-; 	expand keywords in all files
-;	** =
-; 	do not expand keywords in files matching "x*" in main directory
-;	x* = ignore
 ; expand keywords in all perl files (case insensitive extensions) in all respository directories
 **.{p,P}{l,L} =
 **.{p,P}{m,M} =
 **.{x,X}{s,S} =
-; expand keywords installable scripts and examples (NOT extras which are imported from other repositories using nant)
+; expand keywords installable scripts and examples (NOT extras which are imported from other repositories using ANT)
 bin/** =
 eg/** =
-;extras/** =
+#extras/** =
 ; _do not_ expand keywords in "Build.PL" (code is from different repository) in the main repository directory
 Build.PL = ignore
 ; ignore inc and t/lib directories (included code from different packages)
 inc/** = ignore
-inc/** = ignore
-inc/** = ignore
 t/lib/** = ignore
-t/lib/** = ignore
-t/lib/** = ignore
-
+;
+; ## [keywordmaps]
+; # any duplicates here will override any corresponding global default
+; # BUG [now FIXED]: keywords are only expanded between revisions with changesets for the specific file, so $Version$ will not be updated to the current "repository version" unless there is a changeset associated with the file.
+; # *FIXED: keyword expansion is re-done on each update with hooks [see morefilters.hook_update or morefilters.expand]
 [keywordmaps]
-# any duplicates here will override any corresponding global default
 #Id = {file|basename},v {node} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
 #Id = {file|basename},v {node|version_dated_compressed} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
 Id = {file|basename},v {node|working|version_vtdiff} ( r{rev}:{node|short} [mercurial] ) {date|utcdate} {author|user}
 ; $Version$ is expanded to the version of the current working directory revision (a "repository wide" version) by using 'working' filter
-; BUG?: keywords are only expanded between revisions with changesets for the specific file, so $Version$ will not be updated to the current "repository version" unless there is a changeset associated with the file.
-; * FIXED: keyword expansion is re-done on each update with hooks [see morefilters.hook_update or morefilters.expand]
+; use version_vtdiff for perl build (version_dated_compressed leads to an integer overflow while build.PL builds the initial build scripts)
 #Version = {node|working|version}
-# use version_vtdiff for perl build (version_dated_compressed leads to an integer overflow while build.PL builds the initial build scripts)
 #Version = v{node|working|version_dated_compressed|v_mmr} (build {node|working|version_dated_compressed|v_build})
 Version = {node|working|version_vtdiff}
-
+;
+; ## [hooks]
 [hooks]
 #post-commit = hg kwexpand
 #post-update = hg kwexpand
