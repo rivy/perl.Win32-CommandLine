@@ -1,0 +1,520 @@
+<?xml version="1.0"?>
+<!-- ANT Build file -->
+<project name="BUILD" default="meta.build" xmlns:ac="antlib:net.sf.antcontrib">
+
+<property name="build.main.dir" location="${basedir}"/>
+<property name="ant.file.dir" location="${ant.file}/.."/>
+<pathconvert property="ant.file.name"><path location="${ant.file}"/><map from="${ant.file.dir}${file.separator}" to=""/></pathconvert>
+
+<target name="meta.rebuild" depends="-init, -init.REBUILD, meta.build" description="perform a full META.rebuild (including full/unconditional reinstantiation)">
+</target>
+
+<target name="meta.build" depends="-init" description="perform a full META.build (including needed reinstantiation)">
+	<property environment="env"/>
+	<available property="avail.parent.BUILD" file="../${ant.file.name}"/>
+	<ac:if><and><isset property="env.__DEBUG"/><and><or><equals arg1="${DEBUG.key}" arg2=""/><equals arg1="${DEBUG.key}" arg2="${env.__DEBUG}"/></or></and></and><ac:then>
+		<echo level="info" message="avail.parent.BUILD = ${avail.parent.BUILD}"/>
+		</ac:then>
+	</ac:if>
+	<ac:if><istrue value="${avail.parent.BUILD}"/>
+		<ac:then>
+			<propertyset id="-init.propertyset">
+				<propertyref prefix="-init"/>
+			</propertyset>
+			<ac:if><and><isset property="env.__DEBUG"/><and><or><equals arg1="${DEBUG.key}" arg2=""/><equals arg1="${DEBUG.key}" arg2="${env.__DEBUG}"/></or></and></and><ac:then>
+				<echo message="CALL SUPER::ant all"/>
+				</ac:then>
+			</ac:if>
+			<ant antfile="../${ant.file.name}" target="all" inheritAll="false"><propertyset refid="-init.propertyset"/></ant>
+		</ac:then>
+	</ac:if>
+
+	<antcall target="-instantiate.SCM"/>
+	<antcall target="-instantiate.SIGN"/>
+	<antcall target="-instantiate.BUILD"/>
+</target>
+
+<target name="meta.help" description="print META build file help">
+	<property environment="env"/>
+	<exec executable="${env.ComSpec}" dir="." failonerror="false" resultproperty="exitcode" outputproperty="help.output">
+		<arg value="/c"/>
+		<arg value="call &quot;${env.ANT_HOME}/bin/ant&quot; -projecthelp -f &quot;${ant.file}&quot; &amp; exit %ERRORLEVEL%"/>
+	</exec>
+	<echo level="warning" message="${help.output}"/>
+</target>
+
+<target name="help" depends="meta.help" description="print META build file help">
+</target>
+
+<target name="-init" depends="-init.load.antContrib, -init.macros">
+	<property environment="env"/>
+	<property name="DEBUG.key" value=""/>
+
+	<property name="copy.verbose" value=""/>
+
+	<available property="is.build.ANT" type="file" file="${build.main.dir}/.build.xml"/>
+	<available property="is.build.PERL" type="file" file="${build.main.dir}/Build.PL"/>
+
+	<available property="is.repo.HG" type="dir" file="${build.main.dir}/.hg"/>
+	<available property="is.repo.GIT" type="dir" file="${build.main.dir}/.git"/>
+
+	<available property="is.sign.GPG" type="dir" file="${build.main.dir}/.gpg"/>
+
+	<ac:if><and><isset property="env.__DEBUG"/><and><or><equals arg1="${DEBUG.key}" arg2=""/><equals arg1="${DEBUG.key}" arg2="${env.__DEBUG}"/></or></and></and><ac:then>
+		<echo message="[ BUILD ]"/>
+		<echo message="build.main.dir = '.' = '${build.main.dir}'"/>
+		<echo message="basedir = '${basedir}'"/>
+		<echo message="user.dir = '${user.dir}'"/>
+		<echo message="ant.file = '${ant.file}'"/>
+		<echo message="ant.file.dir = '${ant.file.dir}'"/>
+		<echo message="ant.file.name = '${ant.file.name}'"/>
+
+		<echo message="is.build.ANT = '${is.build.ANT}'"/>
+		<echo message="is.build.PERL = '${is.build.PERL}'"/>
+
+		<echo message="is.repo.HG = '${is.repo.HG}'"/>
+		<echo message="is.repo.GIT = '${is.repo.GIT}'"/>
+
+		<echo message="is.sign.GPG = '${is.sign.GPG}'"/>
+	    </ac:then>
+	</ac:if>
+
+</target>
+
+<target name="-instantiate.BUILD">
+	<ac:if><istrue value="${is.build.ANT}"/>
+		<ac:then>
+			<antcall target="-instantiate.build.ANT"/>
+		</ac:then>
+	</ac:if>
+	<ac:if><istrue value="${is.build.PERL}"/>
+		<ac:then>
+			<antcall target="-instantiate.build.PERL"/>
+		</ac:then>
+	</ac:if>
+</target>
+
+<target name="-instantiate.build.ANT">
+	<echo level="debug" message="in build.ANT"/>
+</target>
+
+<target name="-instantiate.build.PERL">
+	<echo level="debug" message="in build.PERL"/>
+	<property name="Build.name" value="Build.PL"/>
+	<property name="Build.timestamp.name" value="_build/magicnum"/>
+
+	<echo level="debug" message="checking ${Build.name} [in ${build.main.dir}]" />
+	<property name="sf" value="${build.main.dir}/${Build.name}" />
+	<property name="tf" value="${build.main.dir}/${Build.timestamp.name}" />
+
+	<ac:if><or><not><uptodate srcfile="${sf}" targetfile="${tf}"/></not><not><uptodate srcfile="${sf}.config" targetfile="${tf}"/></not></or>
+		<ac:then>
+			<echo message="CALL perl ${Build.name} [in ${build.main.dir}]" />
+			<exec executable="perl" dir="${build.main.dir}" outputproperty="BUILD.output" resultproperty="BUILD.return"><arg value="${Build.name}"/></exec>
+			<ac:if><not><equals arg1="${BUILD.return}" arg2="0"/></not>
+				<ac:then>
+					<echo message="${BUILD.output}"/>
+				</ac:then>
+			</ac:if>
+		</ac:then>
+	</ac:if>
+</target>
+
+<target name="-instantiate.SCM">
+	<available property="is.repo.HG" type="dir" file="${build.main.dir}/.hg"/>
+	<available property="is.repo.GIT" type="dir" file="${build.main.dir}/.git"/>
+	<ac:if><istrue value="${is.repo.GIT}"/>
+		<ac:then>
+			<antcall target="-instantiate.repo.GIT"/>
+		</ac:then>
+	</ac:if>
+	<ac:if><istrue value="${is.repo.HG}"/>
+		<ac:then>
+			<antcall target="-instantiate.repo.HG"/>
+		</ac:then>
+	</ac:if>
+</target>
+
+<target name="-instantiate.SIGN">
+	<available property="is.sign.GPG" type="dir" file="${build.main.dir}/.gpg"/>
+	<ac:if><istrue value="${is.sign.GPG}"/>
+		<ac:then>
+			<antcall target="-instantiate.sign.GPG"/>
+		</ac:then>
+	</ac:if>
+</target>
+
+<target name="-instantiate.repo.GIT" if="is.repo.GIT">
+	<echo level="debug" message="in repo.GIT"/>
+</target>
+
+<target name="-instantiate.repo.HG" if="is.repo.HG">
+	<echo level="debug" message="in repo.HG"/>
+	<property environment="env"/>
+	<property name="hg.source.dir" value="${basedir}"/>
+	<filtermapper id="hg.source.mapper">
+		<replaceregex pattern="^\.hgrc$$" replace="hgrc" flags="i"/>
+	</filtermapper>
+
+	<ac:if><isset property="env.ID_dev_PERL"/><ac:then><property name="final.ID_dev" value="${env.ID_dev_PERL}"/></ac:then></ac:if>
+	<ac:if><isset property="env.ID_dev"/><ac:then><property name="final.ID_dev" value="${env.ID_dev}"/></ac:then></ac:if>
+
+	<fail message="'ID_dev' (and/or 'ID_dev_PERL'), in the environment, must be set to a username/email ID for instantiation of .hgrc" unless="final.ID_dev"/>
+
+	<filterset id="hg.source.filter">
+		<filter token="build.main.dir" value="${build.main.dir}"/>
+		<filter token="env.ID_dev" value="${env.ID_dev}"/>
+		<filter token="env.ID_dev_PERL" value="${env.ID_dev_PERL}"/>
+		<filter token="final.ID_dev" value="${final.ID_dev}"/>
+	</filterset>
+	<patternset id="hg.source.patternset">
+		<include name=".hgrc" />
+	</patternset>
+	<property name="hg.destination.dir" value=".hg"/>
+	<available property="has.hgrc" file="${hg.destination.dir}/hgrc"/>
+	<available property="has.HG.dirstamp" file="${hg.destination.dir}/hgrc.ANT.dirstamp"/>
+	<loadfile property="hgrc.ANT.dirstamp" srcFile="${hg.destination.dir}/hgrc.ANT.dirstamp" quiet="true">
+		<filterchain>
+			<headfilter lines="1"/>
+			<striplinebreaks/>
+		</filterchain>
+	</loadfile>
+	<!--
+	<uptodate property="dest.HG.uptodate">
+		<srcfiles dir="${hg.source.dir}"><patternset refid="hg.source.patternset"/></srcfiles>
+		<mapper refid="hg.source.mapper"/>
+	</uptodate>
+	-->
+	<!--<uptodate property="dest.HG.uptodate" srcfile=".hgrc" targetfile=".hg/hgrc"/>-->
+	<uptodate property="dest.HG.uptodate" targetfile=".hg\hgrc">
+		<srcfiles dir="${hg.source.dir}"><include name="${antfile}"/><patternset refid="hg.source.patternset"/></srcfiles>
+	</uptodate>
+
+	<condition property="is.HG.instance.uptodate">
+		<and>
+			<not><istrue value="${-init.REBUILD.DO}"/></not>
+			<istrue value="${has.hgrc}"/>
+			<istrue value="${dest.HG.uptodate}"/>
+			<equals arg1="${hgrc.ANT.dirstamp}" arg2="${hg.source.dir}" trim="true" casesensitive="false"/>
+		</and>
+	</condition>
+
+	<echo level="debug" message="has.hgrc = '${has.hgrc}'"/>
+	<echo level="debug" message="dest.HG.uptodate = '${dest.HG.uptodate}'"/>
+	<echo level="debug" message="has.HG.dirstamp = '${has.HG.dirstamp}'"/>
+	<echo level="debug" message="hgrc.ANT.dirstamp = '${hgrc.ANT.dirstamp}'"/>
+	<echo level="debug" message="is.HG.instance.uptodate = '${is.HG.instance.uptodate}'"/>
+
+	<ac:if><not><istrue value="${is.HG.instance.uptodate}"/></not>
+		<ac:then>
+			<copyWRO overwrite.always="true" source.dir="${hg.source.dir}" source.defaultexcludes="false" source.patternset.refid="hg.source.patternset" destination.dir="${hg.destination.dir}" filename.mapper.refid="hg.source.mapper" copy.filter.refid="hg.source.filter" copy.verbose="${copy.verbose}" failonerror="true"/>
+			<echo message="${hg.source.dir}" file="${hg.destination.dir}/hgrc.ANT.dirstamp"/>
+		</ac:then>
+	</ac:if>
+</target>
+
+<target name="-instantiate.sign.GPG" if="is.sign.GPG">
+	<echo level="debug" message="in sign.GPG"/>
+	<property environment="env"/>
+	<property name="gpg.source.dir" value="${basedir}"/>
+	<filtermapper id="gpg.source.mapper">
+		<replaceregex pattern="^\.gpg.conf$$" replace="gpg.conf" flags="i"/>
+	</filtermapper>
+
+	<ac:if><isset property="env.ID_dev_PERL"/><ac:then><property name="final.ID_dev" value="${env.ID_dev_PERL}"/></ac:then></ac:if>
+	<ac:if><isset property="env.ID_dev"/><ac:then><property name="final.ID_dev" value="${env.ID_dev}"/></ac:then></ac:if>
+
+	<fail message="'ID_dev' (and/or 'ID_dev_PERL'), in the environment, must be set to a GPG compatible email ID for instantiation of GPG.conf" unless="final.ID_dev"/>
+
+	<filterset id="gpg.source.filter">
+		<filter token="build.main.dir" value="${build.main.dir}"/>
+		<filter token="env.GnuPGHome" value="${env.GnuPGHome}"/>
+		<filter token="env.ID_dev" value="${env.ID_dev}"/>
+		<filter token="env.ID_dev_PERL" value="${env.ID_dev_PERL}"/>
+		<filter token="final.ID_dev" value="${final.ID_dev}"/>
+	</filterset>
+	<patternset id="gpg.source.patternset">
+		<include name=".gpg.conf" />
+	</patternset>
+	<property name="gpg.destination.dir" value=".gpg"/>
+	<available property="has.gpg.conf" file="${gpg.destination.dir}/gpg.conf"/>
+	<available property="has.GPG.dirstamp" file="${gpg.destination.dir}/gpg.conf.ANT.dirstamp"/>
+	<loadfile property="gpg.conf.ANT.dirstamp" srcFile="${gpg.destination.dir}/gpg.conf.ANT.dirstamp" quiet="true">
+		<filterchain>
+			<headfilter lines="1"/>
+			<striplinebreaks/>
+		</filterchain>
+	</loadfile>
+	<uptodate property="dest.GPG.uptodate" srcfile=".gpg.conf" targetfile=".gpg/gpg.conf"/>
+
+	<condition property="is.GPG.instance.uptodate">
+		<and>
+			<not><istrue value="${-init.REBUILD.DO}"/></not>
+			<istrue value="${has.gpg.conf}"/>
+			<istrue value="${has.GPG.dirstamp}"/>
+			<istrue value="${dest.GPG.uptodate}"/>
+			<equals arg1="${gpg.conf.ANT.dirstamp}" arg2="${gpg.source.dir}" trim="true" casesensitive="false"/>
+		</and>
+	</condition>
+
+	<echo level="debug" message="has.gpg.conf = '${has.gpg.conf}'"/>
+	<echo level="debug" message="dest.GPG.uptodate = '${dest.GPG.uptodate}'"/>
+	<echo level="debug" message="has.GPG.dirstamp = '${has.GPG.dirstamp}'"/>
+	<echo level="debug" message="gpg.conf.ANT.dirstamp = '${gpg.conf.ANT.dirstamp}'"/>
+	<echo level="debug" message="is.GPG.instance.uptodate = '${is.GPG.instance.uptodate}'"/>
+
+	<ac:if><not><istrue value="${is.GPG.instance.uptodate}"/></not>
+		<ac:then>
+			<copyWRO overwrite.always="true" source.dir="${gpg.source.dir}" source.defaultexcludes="false" source.patternset.refid="gpg.source.patternset" destination.dir="${gpg.destination.dir}" filename.mapper.refid="gpg.source.mapper" copy.filter.refid="gpg.source.filter" copy.verbose="${copy.verbose}" failonerror="true"/>
+			<echo message="${gpg.source.dir}" file="${gpg.destination.dir}/gpg.conf.ANT.dirstamp"/>
+		</ac:then>
+	</ac:if>
+</target>
+
+<target name="-init.REBUILD">
+	<property name="-init.REBUILD.DO" value="true"/>
+</target>
+
+<target name="-init.load.antContrib" unless="-init.load.antContrib.DONE">
+	<!-- Avoids AntContrib reloads for ANT subtasks (avoids "Trying to override old definition..." warnings) :: see URLref: http://www.coderanch.com/t/470833/tools/rid-messages-like-Trying-override -->
+	<taskdef uri="antlib:net.sf.antcontrib" classpath="${ant.file}-ant-contrib.jar"/>
+	<property name="-init.load.antContrib.DONE" value="true"/>
+</target>
+
+<!-- BUILD.PL targets -->
+<target name="build" depends="-init"/>
+<target name="clean"/>
+<target name="code" depends="-init"/>
+<target name="config_data" depends="-init"/>
+<target name="diff" depends="-init"/>
+<target name="dist" depends="-init"/>
+<target name="distall" depends="-init"/>
+<target name="distcheck" depends="-init"/>
+<target name="distclean" depends="-init"/>
+<target name="distdir" depends="-init"/>
+<target name="distmeta" depends="-init"/>
+<target name="distpar" depends="-init"/>
+<target name="distppm" depends="-init"/>
+<target name="distsign" depends="-init"/>
+<target name="disttest" depends="-init"/>
+<target name="docs" depends="-init"/>
+<target name="fakeinstall" depends="-init"/>
+<!--<target name="help" depends="-init"/>-->
+<target name="html" depends="-init"/>
+<target name="install" depends="-init"/>
+<target name="manifest" depends="-init"/>
+<target name="manpages" depends="-init"/>
+<target name="pardist" depends="-init"/>
+<target name="ppd" depends="-init"/>
+<target name="ppmdist" depends="-init"/>
+<target name="prereq_report" depends="-init"/>
+<target name="pure_install" depends="-init"/>
+<target name="realclean"/>
+<target name="retest" depends="-init"/>
+<target name="sign" depends="-init"/>
+<target name="show_vfiles" depends="-init"/>
+<target name="skipcheck" depends="-init"/>
+<target name="test" depends="-init"/>
+<target name="testaction" depends="-init"/>
+<target name="testall" depends="-init"/>
+<target name="testcover" depends="-init"/>
+<target name="testdb" depends="-init"/>
+<target name="testpod" depends="-init"/>
+<target name="testpodcoverage" depends="-init"/>
+<target name="versioninstall" depends="-init"/>
+
+<!-- MACROS :: rev18 -->
+<!-- ?? change gate to "-init.macros.rev18.DONE" so that alternate revisions are caught by trying to re-init -->
+<target name="-init.macros" unless="-init.macros.DONE">
+	<macrodef name="copyWRO">
+	<!-- add comments (including what "copyWRO" stands for ... change to "copyWH..." -->
+	<attribute name="source.dir"/>
+	<attribute name="source.defaultexcludes" default="true"/>
+	<attribute name="source.patternset.refid"/>
+	<attribute name="destination.dir"/>
+	<attribute name="destination.flatten" default="false"/>
+	<attribute name="filename.mapper.refid" default=""/>
+	<attribute name="copy.filter.refid" default=""/>
+	<attribute name="copy.verbose" default="false"/>
+	<attribute name="overwrite.dest.newer" default="false"/>
+	<attribute name="overwrite.always" default="false"/>
+	<attribute name="failonerror" default="false"/>
+	<attribute name="warn.dest.newer" default="true"/>
+	<attribute name="dest.readonly.file.regexp" default=""/>
+	<attribute name="dest.hidden.file.regexp" default="(?i).*(^|\${file.separator})\.[^\${file.separator}]*"/><!-- DEFAULT: hide all .prefix files --><!--<property name="dotPrefixFiles.regexp" value="(?i).*(^|\${file.separator})\.[^\${file.separator}]*"/>-->
+	<sequential>
+	<property name="b.dir" location="."/>
+	<property name="s.dir" location="@{source.dir}"/>
+	<property name="d.dir" location="@{destination.dir}"/>
+	<ac:for param="s.fname">
+		<fileset defaultexcludes="@{source.defaultexcludes}" dir="${s.dir}">
+			<patternset refid="@{source.patternset.refid}"/>
+		</fileset>
+		<sequential>
+			<echo level="debug" message="s.dir = &quot;${s.dir}&quot;"/>
+			<echo level="debug" message="d.dir = &quot;${d.dir}&quot;"/>
+			<property name="s.fname" value="@{s.fname}"/>
+			<echo level="debug" message="s.fname = &quot;${s.fname}&quot;"/>
+			<ac:if><equals arg1="@{filename.mapper.refid}" arg2=""/>
+				<ac:then>
+					<ac:if><istrue value="@{destination.flatten}"/>
+						<ac:then>
+							<pathconvert property="d.fname">
+								<path><pathelement location="${s.fname}"/></path>
+								<chainedmapper>
+									<flattenmapper/>
+									<globmapper from="*" to="${d.dir}${file.separator}*"/>
+								</chainedmapper>
+							</pathconvert>
+						</ac:then>
+						<ac:else>
+							<pathconvert property="d.fname">
+								<path><pathelement location="${s.fname}"/></path>
+								<map from="${s.dir}" to="${d.dir}"/>
+							</pathconvert>
+						</ac:else>
+					</ac:if>
+				</ac:then>
+				<ac:else>
+					<pathconvert property="d.fname">
+						<path><pathelement location="${s.fname}"/></path>
+						<chainedmapper>
+							<globmapper from="${s.dir}${file.separator}*" to="*"/>
+							<mapper refid="@{filename.mapper.refid}"/>
+							<globmapper from="*" to="${d.dir}${file.separator}*"/>
+						</chainedmapper>
+					</pathconvert>
+				</ac:else>
+			</ac:if>
+			<echo level="debug" message="d.fname = &quot;${d.fname}&quot;"/>
+			<condition property="d.isNewer" else="FALSE">
+				<and>
+					<available file="${d.fname}"/>
+					<not>
+					<uptodate srcfile="${d.fname}" targetfile="${s.fname}"/>
+					</not>
+				</and>
+			</condition>
+			<echo level="debug" message="d.isNewer = ${d.isNewer}"/>
+			<condition property="DO.overwrite" else="FALSE">
+				<or>
+					<istrue value="@{overwrite.always}"/>
+					<and>
+						<istrue value="${d.isNewer}"/>
+						<istrue value="@{overwrite.dest.newer}"/>
+					</and>
+				</or>
+			</condition>
+			<echo level="debug" message="DO.overwrite = ${DO.overwrite}"/>
+			<condition property="DO.warn" else="FALSE">
+				<and>
+					<istrue value="${d.isNewer}"/>
+					<istrue value="${DO.overwrite}"/>
+				</and>
+			</condition>
+			<echo level="debug" message="DO.warn = ${DO.warn}"/>
+			<ac:if><istrue value="${DO.warn}"/>
+				<ac:then>
+					<pathconvert property="dir">
+						<path><pathelement location="${d.dir}"/></path>
+						<!--map from="${s.dir}/" to=""/--><!-- relative to source.dir -->
+						<mapper type="glob" from="${b.dir}${file.separator}" to=""/><!-- relative to main build directory -->
+					</pathconvert>
+					<pathconvert property="fname">
+						<!--
+						<path><pathelement location="${d.fname}"/></path>
+						<mapper type="glob" from="${d.dir}${file.separator}" to=""/>
+						-->
+						<map from="${d.dir}${file.separator}" to=""/>
+						<path location="${d.fname}"/>
+					</pathconvert>
+					<ac:if><not><istrue value="@{failonerror}"/></not>
+						<ac:then>
+							<condition property="overwrite.text" value="OVERWRITING" else="NOT OVERWRITTEN"><istrue value="${DO.overwrite}"/></condition>
+							<echo level="warning" message="WARNING: In directory '${d.dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'); ${overwrite.text}."/>
+							<ac:var name="overwrite.text" unset="true"/>
+						</ac:then>
+						<ac:else>
+							<fail message="ERROR: In directory '${d.dir}', '${fname}' is NEWER than the SOURCE file (from '${s.dir}'); COPY FAILED."/>
+						</ac:else>
+					</ac:if>
+					<ac:var name="dir" unset="true"/>
+					<ac:var name="fname" unset="true"/>
+				</ac:then>
+			</ac:if>
+			<condition property="DO.copy" else="FALSE">
+				<or>
+					<not>
+					<uptodate srcfile="${s.fname}" targetfile="${d.fname}"/>
+					</not>
+					<istrue value="${DO.overwrite}"/>
+				</or>
+			</condition>
+			<echo level="debug" message="DO.copy = ${DO.copy}"/>
+			<ac:if><istrue value="${DO.copy}"/>
+				<ac:then>
+					<echo level="debug" message="TASK: copy file &quot;${s.fname}&quot; tofile=&quot;${d.fname}&quot;"/>
+					<ac:if><not><isreference refid="@{copy.filter.refid}"/></not>
+						<ac:then>
+							<attrib hidden="false" readonly="false"><fileset file="${d.fname}"/></attrib><!-- to deal with hidden & readonly files at the destination (avoids java.io.FileNotFoundException) -->
+							<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="${DO.overwrite}" verbose="@{copy.verbose}"/>
+						</ac:then>
+						<ac:else>
+							<attrib hidden="false" readonly="false"><fileset file="${d.fname}"/></attrib><!-- to deal with hidden & readonly files at the destination (avoids java.io.FileNotFoundException) -->
+							<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="${DO.overwrite}" verbose="@{copy.verbose}">
+								<filterset refid="@{copy.filter.refid}"/>
+							</copy>
+						</ac:else>
+					</ac:if>
+				</ac:then>
+			</ac:if>
+			<ac:if><length string="@{dest.readonly.file.regexp}" when="greater" length="0"/>
+				<ac:then>
+					<ac:propertyregex property="DO.readonly" input="${d.fname}" regexp="^@{dest.readonly.file.regexp}$" replace="true" defaultValue="FALSE"/>
+				</ac:then>
+				<ac:else>
+					<property name="DO.readonly" value="FALSE"/>
+				</ac:else>
+			</ac:if>
+			<echo level="debug" message="DO.readonly = ${DO.readonly}"/>
+			<ac:if><istrue value="${DO.readonly}"/>
+				<ac:then>
+					<echo level="debug" message="TASK: attrib readonly=true file=&quot;${d.fname}&quot;"/>
+					<attrib readonly="true" file="${d.fname}"/>
+				</ac:then>
+			</ac:if>
+			<ac:if><length string="@{dest.hidden.file.regexp}" when="greater" length="0"/>
+				<ac:then>
+					<ac:propertyregex property="DO.hide" input="${d.fname}" regexp="^@{dest.hidden.file.regexp}$" replace="true" defaultValue="FALSE"/>
+				</ac:then>
+				<ac:else>
+					<property name="DO.hide" value="FALSE"/>
+				</ac:else>
+			</ac:if>
+			<echo level="debug" message="DO.hide = ${DO.hide}"/>
+			<ac:if><istrue value="${DO.hide}"/>
+				<ac:then>
+					<echo level="debug" message="TASK: attrib hidden=true file=&quot;${d.fname}&quot;"/>
+					<attrib hidden="true" file="${d.fname}"/>
+				</ac:then>
+			</ac:if>
+			<ac:var name="DO.readonly" unset="true"/>
+			<ac:var name="DO.hide" unset="true"/>
+			<ac:var name="DO.overwrite" unset="true"/>
+			<ac:var name="DO.warn" unset="true"/>
+			<ac:var name="DO.copy" unset="true"/>
+			<ac:var name="s.fname" unset="true"/>
+			<ac:var name="d.fname" unset="true"/>
+			<ac:var name="d.isNewer" unset="true"/>
+		</sequential>
+	</ac:for>
+	<ac:var name="b.dir" unset="true"/>
+	<ac:var name="s.dir" unset="true"/>
+	<ac:var name="d.dir" unset="true"/>
+	</sequential>
+	</macrodef>
+	<property name="-init.macros.DONE" value="true"/>
+</target>
+<!-- MACROS :: rev18 -->
+
+</project>
