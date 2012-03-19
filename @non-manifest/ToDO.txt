@@ -1,0 +1,195 @@
+* change to new HG EOL strategy; needs some thought
+	* .bat all need CRLF upon checkout (probably should by in repo with same) because of the goto LABEL bug for non-CRLF EOL bat files; in general, all others should be LF, checked in and changed to LF, checked out as LF
+	* hgeol seems kludgy, look at it, and see of it can be made to default to such a plan
+
+for t\98.version.t and t\98.version-defaults.t
+	# ToDO: discuss the method of avoiding MM->parse_version() taint on PerlMonks (is there a better, less kludgy way?)
+	      * same for signature (overriding ExtUtils::Manifest::manifind() (better way?)
+
+:: TAINT
+* DONE (as initial step) :: current thought => remove -T from shebang for ALL tests and run seperate full taint tests using 'build taint_test' and 'build taint_testall'
+* think about running all tests under taint for TEST_AUTHOR ( TEST_ALL would still test all but not add taint checking, or maybe set TEST_TAINT ... this can break installs and may be set inadvertantly or for another cause, maybe a longer name, less likely to conflict with other uses)
+* URLref: [Why a taint flag on test files?] http://www.perlmonks.org/?node_id=499986
+* discuss taint ramifications on PerlMonks and/or StackOverflow especially under Win32
+	* $ENV{PERL5SHELL} (is it tainted, why/why not, how do you correct it if user is running an alternate shell, doesn that matter ... can we just use CMD)
+	* $ENV{PATH} ( this is important and VERY user dependent, can't just lop off the entire PATH, things like strawberry Perl, etc need to be on the PATH to run... )
+	* temporary files? where to put them... can we easily get a current user name / directory that's not tainted (eg, from %ENV)
+	* $ENV{SystemRoot} ... windows can be installed in multiple locations (at least x:\windows and x:\winnt), how do we find it taint-free to be able to use needed standard executables?
+
+DONE :: ? get rid of the passthrough warning (skip passthrough?) => very annoying, so removed by using simple PASSTHROUGH option (without download) and continuing to specify Module::Build as required to build in META.yml
+
+with minimum installation
+
+build
+build testall
+
+FIXED :: (was a GnuPG error with the gpg-agent holding open files; upgraded to newest GnuPG and error went away (or it's at least occurring only rarely now) :: causes a hang at the 1st test signature; retesting with 'build testall' works just fine
+
+track this down
+	* doesn't look like the test is ever executed... look in Build.PL
+
+---<output>
+c:\@local\@projects\perl\Win32-CommandLine>build
+Checking prerequisites...
+  recommends:
+    *  Win32::API is not installed
+    *  Win32::Security::SID is not installed
+
+ERRORS/WARNINGS FOUND IN PREREQUISITES.  You may wish to install the versions
+of the modules indicated above before proceeding with this installation
+
+Run 'Build installdeps' to install missing prerequisites.
+
+Creating new 'MYMETA.yml' with configuration results
+Creating new 'Build' script for 'Win32-CommandLine' version 'v0.5.3_45441242'
+
+c:\@local\@projects\perl\Win32-CommandLine>build testall
+Building Win32-CommandLine
+gcc -c -s -O2 -DWIN32 -DHAVE_DES_FCRYPT -DWIN64 -DCONSERVATIVE  -DUSE_SITECUSTOMIZE -DPERL_IMPLICIT_CONTEXT -D
+PERL_IMPLICIT_SYS -fno-strict-aliasing -mms-bitfields -DPERL_MSVCRT_READFIX -s -O2 "-DXS_VERSION=\"v0.5.3_4544
+1242\"" "-DVERSION=\"v0.5.3_45441242\"" -I"C:\strawberry\perl\lib\CORE" -I"C:\strawberry\c\include" -o "lib\Wi
+n32\CommandLine.o" "lib\Win32\CommandLine.c"
+ExtUtils::Mkbootstrap::Mkbootstrap('blib\arch\auto\Win32\CommandLine\CommandLine.bs')
+Generating script 'lib\Win32\CommandLine.lds'
+dlltool --def "lib\Win32\CommandLine.def" --output-exp "lib\Win32\CommandLine.exp"
+g++ -o "blib\arch\auto\Win32\CommandLine\CommandLine.dll" -Wl,--base-file,"lib\Win32\CommandLine.base" -Wl,--i
+mage-base,0x22010000 -mdll -s -L"C:\strawberry\perl\lib\CORE" -L"C:\strawberry\c\lib" "lib\Win32\CommandLine.l
+ds" "lib\Win32\CommandLine.exp"
+dlltool --def "lib\Win32\CommandLine.def" --output-exp "lib\Win32\CommandLine.exp" --base-file "lib\Win32\Comm
+andLine.base"
+g++ -o "blib\arch\auto\Win32\CommandLine\CommandLine.dll" -Wl,--image-base,0x22010000 -mdll -s -L"C:\strawberr
+y\perl\lib\CORE" -L"C:\strawberry\c\lib" "lib\Win32\CommandLine.lds" "lib\Win32\CommandLine.exp"
+Creating Makefile.PL
+
+IMPORTANT NOTE: The 'passthrough' style of Makefile.PL is deprecated and
+may be removed in a future version of Module::Build in favor of the
+'configure_requires' property.  See Module::Build::Compat
+documentation for details.
+
+Creating META.yml
+Couldn't load Module::Signature for signing action:
+ Can't locate Module/Signature.pm in @INC (@INC contains: C:\@local\@projects\perl\Win32-CommandLine\_build\li
+b C:\@local\@projects\perl\Win32-CommandLine\_build\lib c:/strawberry/perl/site/lib c:/strawberry/perl/vendor/
+lib c:/strawberry/perl/lib .) at C:\@local\@projects\perl\Win32-CommandLine\_build\lib/RIVY/Builder.pm line 74
+6.
+
+t\00.signature.t ........... Terminating on signal SIGINT(2)
+Terminate batch job (Y/N)? y
+
+c:\@local\@projects\perl\Win32-CommandLine>build testall
+Building Win32-CommandLine
+Couldn't load Module::Signature for signing action:
+ Can't locate Module/Signature.pm in @INC (@INC contains: C:\@local\@projects\perl\Win32-CommandLine\_build\li
+b C:\@local\@projects\perl\Win32-CommandLine\_build\lib c:/strawberry/perl/site/lib c:/strawberry/perl/vendor/
+lib c:/strawberry/perl/lib .) at C:\@local\@projects\perl\Win32-CommandLine\_build\lib/RIVY/Builder.pm line 74
+6.
+
+t\00.signature.t ........... skipped: Missing SIGNATURE file
+t\01.load.t ................ # Win32::CommandLine, MSWin32, perl v5.012001, c:\STRAWB~1\perl\bin\perl.exe
+t\01.load.t ................ ok
+t\10.namespace.t ........... ok
+t\11.commandline.t ......... ok
+t\12.argv-ENVnullglob-f.t .. ok
+t\12.argv-ENVnullglob-t.t .. ok
+t\12.argv-tilde.t .......... ok
+t\12.argv.t ................ ok
+t\13.xx.t .................. ok
+t\90.pod-coverage.t ........ # Test::Pod::Coverage [v1.04+] is not available
+t\90.pod-coverage.t ........ skipped: [ Test::Pod::Coverage 1.04 ] required for testing
+t\90.pod.t ................. # Test::Pod [v1.14+] is not available
+t\90.pod.t ................. skipped: [ Test::Pod 1.14 ] required for testing
+t\97.meta.t ................ # Test::CPAN::Meta [v0.12+] is not available
+t\97.meta.t ................ skipped: [ Test::CPAN::Meta 0.12 ] required for testing
+t\97.perl-minv.t ........... # Test::MinimumVersion [v0.008+] is not available
+t\97.perl-minv.t ........... skipped: [ Test::MinimumVersion 0.008 ] required for testing
+t\98.version-defaults.t .... ok
+t\98.version.t ............. ok
+t\99.critic-tests.t ........ skipped: Test::Perl::Critic required to criticize code
+t\99.critic.t .............. skipped: Test::Perl::Critic required to criticize code
+t\99.distribution.t ........ skipped: Test::Distribution required to run distribution tests
+t\99.kwalitee.t ............ skipped: Test::Kwalitee required to test CPANTS kwalitee
+t\99.signature.t ...........
+t\99.signature.t ........... 1/2 #   Failed test 'Missing SIGNATURE file'
+#   at t\99.signature.t line 37.
+#          got: 'Missing SIGNATURE file'
+#     expected: ''
+Undefined subroutine &Module::Signature::verify called at t\99.signature.t line 38.
+# Looks like you planned 2 tests but ran 1.
+# Looks like you failed 1 test of 1 run.
+# Looks like your test exited with 255 just after 1.
+t\99.signature.t ........... Dubious, test returned 255 (wstat 65280, 0xff00)
+Failed 2/2 subtests
+t\ltrim.t .................. ok
+t\test.t ................... ok
+
+Test Summary Report
+-------------------
+t\99.signature.t         (Wstat: 65280 Tests: 1 Failed: 1)
+  Failed test:  1
+  Non-zero exit status: 255
+  Parse errors: Bad plan.  You planned 2 tests but ran 1.
+Files=22, Tests=225, 12 wallclock secs ( 0.17 usr +  0.09 sys =  0.26 CPU)
+Result: FAIL
+Failed 1/22 test programs. 1/225 subtests failed.
+---<output>
+
+FOR:
+	build realclean & perl Build.PL & build testall
+
+HANGS @ TAP::Parser::Iterator::Process.pm, line #292
+
+"my $line = <$out>;" is the problem
+
+----<sub>
+	            return sub {
+	                if ( defined( my $line = <$out> ) ) {
+	                    chomp $line;
+	                    return $line;
+	                }
+	                $self->_finish;
+	                return;
+	            };
+----<sub>
+
+looks like $out (an IO::Handle) hangs here when read with <$out> or $out->getline, although $out->opened => 1 and $out->error => 0
+
+...
+
+in Module::Build::Base.pm, line #4338, the line 'my $pkgs = eval { $self->find_dist_packages };' causes the HANG in TAP::Parser::Iterator::Process
+
+if the line is rewritten, removing the eval, the script DOESN'T hang in TAP::Parser::Iterator::Process.pm
+
+:: multiple URLrefs ...
+
+might not be fixable... run3 also fails
+
+*** The error is caused by the QUIET manifest I/O redirection here:
+
+----<code>
+		# URLref: [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136
+		my ($OUT, $o, $ERR, $e);
+## =>	$quiet=0;
+		if ( $quiet ) {
+	        print "REDIRECTING\n";
+			# redirect STDOUT/STDERR and suppress ACTION_manifest output
+			open($OUT,'>&STDOUT');
+			close STDOUT;
+			open STDOUT, '>', \$o or die "Unable to redirect STDOUT: $!";
+			open($ERR,'>&STDERR');
+			close STDERR;
+			open STDERR, '>', \$e or die "Unable to redirect STDERR: $!";
+			}
+
+        $self->SUPER::ACTION_manifest;
+
+		if ( $quiet ) {
+			# re-open STDOUT/STDERR for normal output
+	        open STDOUT, ">&", $OUT or die "can't reopen STDOUT: $!";
+	        open STDERR, ">&", $ERR or die "can't reopen STDERR: $!";
+	        print "REOPENED\n";
+			}
+----<code>
+
+. $quiet=0 fixes it ... how to correctly suppress ACTION_manifest output when needed then?
+
+FIXED ... look at current code, diff, and document the issue and repair
