@@ -52,6 +52,8 @@ Options:
 
 Quote all output
 
+=back
+
 =head1 OPTIONAL ARGUMENTS
 
 =over
@@ -59,6 +61,8 @@ Quote all output
 =item <filename(s)>
 
 FILENAMES...
+
+=back
 
 =head1 OPTIONS
 

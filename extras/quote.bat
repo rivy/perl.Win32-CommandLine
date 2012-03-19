@@ -54,6 +54,8 @@ Quote all output
 
 Combine INPUT into one line seperated by SPACE.
 
+=back
+
 =head1 OPTIONAL ARGUMENTS
 
 =over
@@ -61,6 +63,8 @@ Combine INPUT into one line seperated by SPACE.
 =item <filename(s)>
 
 FILENAMES...
+
+=back
 
 =head1 OPTIONS
 
