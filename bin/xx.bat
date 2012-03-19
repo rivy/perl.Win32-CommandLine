@@ -3,7 +3,10 @@
 @echo off
 :: eXpand and eXecute command line
 :: similar to linux xargs
-:: TODO: clean up documentation/comments
+
+:: ToDO: perl must be referenced here as 'perl.exe' to avoid infinite recursion if this is called via a 'perl.BAT' batch script as "xx perl.exe $*"; using shell aliasing will avoid this complication, but is there another way to keep the script here clean of expectation of perl as PERL.EXE?
+:: ToDO: clean up documentation/comments
+
 :: parent environment is kept untouched except as modified by "sourcing" of target command line text or executable output
 :: contains batch file techniques to allow "sourcing" of target command line text or executable output
 :: :"sourcing" => running commands in the parents environmental context, allowing modification of parents environment and CWD
@@ -37,6 +40,7 @@ if 01 == 1.0 ( setdos /x-14567 )
 
 if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
 ::echo "perl output - no -s/-so"
+::perl.exe -x -S %0 %*  	&:: if needed to avoid infinite recursion while using a PERL.BAT script
 perl -x -S %0 %*
 if %errorlevel% NEQ 0 (
 ::  propagate %errorlevel%
@@ -53,6 +57,7 @@ goto :_DONE
 if 01 == 1.0 ( setdos /x0 )
 echo @echo OFF >> %_xx_bat%
 ::echo perl output [source expansion { perl -x -S %0 %* }]
+::perl.exe -x -S %0 %* >> %_xx_bat%  	&:: if needed to avoid infinite recursion while using a PERL.BAT script
 perl -x -S %0 %* >> %_xx_bat%
 ::echo "sourcing - BAT created"
 if %errorlevel% NEQ 0 (
@@ -230,7 +235,7 @@ my $showUsage = ( @ARGV < 1 );	# show usage only if no arguments (check _before_
 
 use Win32::CommandLine;
 
-@ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );	# if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine so we want the error if its missing or unable to load
+@ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );	# if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine (and installed with it) so we want the error if its missing or unable to load
 
 #-- do main getopt
 ##use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##	# no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
@@ -265,6 +270,10 @@ if ( $ARGV{args} )
 #		== just note that echo has no command line parsing
 
 # TODO: check echo %% "%%" => echo % % => % % [doesn't work for TCC or CMD]
+
+# untaint
+$ENV{PATH} =~ /\A(.*)\z/mxs; $ENV{PATH} = ( defined $1 ? $1 : undef );
+
 
 if ( $ARGV{args} )
 	{
