@@ -1,24 +1,33 @@
-t/lib/*/*
-t/prelim/*
-inc/*
+# NOTE: default = REGEXP syntax
+# URLref: [hgignore] http://www.selenic.com/mercurial/hgignore.5.html
+
+# ignore META-build and GnuPG generated files
+\.gpg/.*
+
+# ignore build generated files
 Build
 Build.bat
-_build/*
-blib/*
-lib/Win32/CommandLine.c
-lib/Win32/CommandLine.o
-Win32-CommandLine.*
-vc60.pdb
-vc70.pdb
-vc80.pdb
-vc90.pdb
-vc100.pdb
-MANIFEST
-MANIFEST.bak
-Makefile.PL
-Makefile
-README
-META.yml
-SIGNATURE
-CHANGES.log.tmp
-.*.pyc
+_build/.*
+blib/.*
+lib/Win32/CommandLine\.c$
+lib/Win32/CommandLine\.o$
+lib/Win32/CommandLine\.obj$
+Win32-CommandLine.*$
+vc[1-9][0-9]+.pdb$
+MANIFEST$
+MANIFEST.bak$
+Makefile.PL$
+Makefile$
+README$
+META.yml$
+MYMETA.yml$
+SIGNATURE$
+CHANGES\.log\.tmp$
+.*\.pyc$
+
+# ignore pulled/imported code (if any)
+inc/.*
+t/lib/.*
+
+# ignore experimental code
+t/prelim/.*
