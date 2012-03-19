@@ -52,7 +52,8 @@ add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );
 
 ## do tests
 
-$ENV{nullglob} = 0;	# setup a known environment
+# setup a known environment
+$ENV{nullglob} = 0;  	## no critic ( RequireLocalizedPunctuationVars ) ## ToDO: remove/revisit
 
 #plan tests => test_num() + ($Test::NoWarnings::VERSION ? 1 : 0);
 plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0);

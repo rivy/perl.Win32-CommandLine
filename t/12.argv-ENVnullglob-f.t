@@ -19,7 +19,8 @@ sub add_test;
 sub test_num;
 sub do_tests;
 
-$ENV{nullglob} = 0;	# setup a known environment
+# setup a known environment
+$ENV{nullglob} = 0;  	## no critic ( RequireLocalizedPunctuationVars ) ## ToDO: remove/revisit
 
 # Tests
 
