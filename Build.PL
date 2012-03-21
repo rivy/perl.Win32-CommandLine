@@ -1,5 +1,5 @@
 #!perl -w   -- ## emacs -*- tab-width: 4; mode: cperl indent-tabs-mode: nil; basic-offset: 2 -*- ## (jedit) :tabsize=4:mode=perl: ## (notepad++) vim:ts=4:sw=2:et:sta:sts=2
-#$Id: Build.PL,v 0.3.5.26772120 ( r86:1776b3b13b6c [mercurial] ) 2010/11/11 18:09:59 rivy $
+#$Id: Build.PL,v 0.3.6.1067 ( r95:517d0a40aefe [mercurial] ) 2012/03/21 23:19:16 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -25,11 +25,11 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.3.5.26772120 $ SCS tag
+# generate VERSION from $Version: 0.3.6.1067 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.5.26772120 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.6.1067 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -46,7 +46,7 @@ $config{'recommends_href'} = {};					# module recommendations (no obvious defaul
 $config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0.74, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'ExtUtils::Manifest' => '1.54' };	# basic module requirements for Build.PL [version v0.74+ needed for v5.10+ extended version support; NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 #$config{'configure_requires_href'} = { 'Module::Build' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0 };		# module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
 $config{'configure_requires_href'} = { 'Module::Build' => 0, 'Test::Harness'=>'3.0', 'TAP::Harness' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0 };		# module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ] ## Test::Harness v3.0 required (1st version that includes TAP::Harness)
-$config{'sign'} = 'true';							# always sign the module distribution, if possible (note: this is only used when the distribution is built (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set))) 
+$config{'sign'} = 'true';							# always sign the module distribution, if possible (note: this is only used when the distribution is built (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
 $config{'create_readme'} = 'true';					# create README from module pod
 #$config{'create_makefile_pl'} = 'passthrough';		# (DEPRECATED, using 'small' & configure_requires => Module::Build) passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
 $config{'create_makefile_pl'} = 'small';		# pass all Makefile.PL functionality to Build.PL, but requires Module::Build (ERROR if Module::Build is missing; so, use 'configure_requires=>Module::Build') [see PerlDOC: module::build::compat]
@@ -252,7 +252,7 @@ Additional custom options.
 
 =item --color=0|no|never|off|1|on|yes|always
 
-Force TAP::Harness color output via manipulation of TAP::Formatter (and the use of Win32::Console::ANSI for MSWin32). When color 
+Force TAP::Harness color output via manipulation of TAP::Formatter (and the use of Win32::Console::ANSI for MSWin32). When color
 is enabled (and Win32::Console::ANSI for MSWin32 systems) is installed, colored output is displayed reliably to the shell.
 For MSWin32 systems, both CMD and TCC shells display colored output. Additionally, although the TAP::Formatter will
 usually not pipe colored output, when 'always' is used, output color is enabled and piped correctly.
@@ -377,11 +377,15 @@ $code{'dispatch'} .= q{
 
 		# OPTION color => 0/never/no/off; 1/on/yes; always
 		$self->{properties}{use_color} = 0; # 0/off/never/no
-		$self->{properties}{use_color} = 1 if defined($self->{args}{color}) &&  ( $self->{args}{color} eq q{} || $self->{args}{color} eq q{1} || $self->{args}{color} eq q{on} || $self->{args}{color} eq q{yes} );
-		$self->{properties}{use_color} = 'always' if defined($self->{args}{color}) &&  ( $self->{args}{color} eq q{always} );
-		if ( not $self->{properties}{use_color} && not ( $self->{args}{color} eq q{0} || $self->{args}{color} eq q{never} || $self->{args}{color} eq q{no} || $self->{args}{color} eq q{off})) {
-			die "Malformed --color option (use --color=0|never|no|off|1|on|yes|always)\n";
-			};
+		if  ( defined($self->{args}{color}) ) {
+			my $option = lc( $self->{args}{color} );
+			$self->{properties}{use_color} = 1 if ( $option eq q{} || $option eq q{1} || $option eq q{on} || $option eq q{yes} );
+			$self->{properties}{use_color} = 'always' if $option eq q{always};
+			if ( not $self->{properties}{use_color} && not ( $option eq q{0} || $option eq q{never} || $option eq q{no} || $option eq q{off})) {
+				die "Malformed --color option (use --color=0|never|no|off|1|on|yes|always)\n";
+				};
+			}
+
 		if ( $self->{properties}{use_color} ) {
 			$self->{properties}{tap_harness_args}{color} = 1;
 			}
@@ -393,9 +397,9 @@ $code{'dispatch'} .= q{
 		my $hasWin32ConsoleANSI = eval q{use Win32::Console::ANSI; 1};
 
 		if ( $^O =~ /\AMSWin/i && $self->{properties}{use_color} && not $hasWin32ConsoleANSI) {
-			warn qq{Win32::Console::ANSI is recommended for reliable color output (but is not installed; to install, use "cpan Win32::Console::ANSI")\n}; 
+			warn qq{Win32::Console::ANSI is recommended for reliable color output (but is not installed; to install, use "cpan Win32::Console::ANSI")\n};
 			};
-			
+
 		# HACK :: convince TAP::Formatter::Color to use Term::ANSIColor if we can load Win32::Console::ANSI by masquerading as "linux" OS
 		# * this solves multiple color output problems for TAP testing output (works with CMD and TCC shells as well)
 		# NOTE: this might be moved into test, testall, etc. (but it's single source here)
