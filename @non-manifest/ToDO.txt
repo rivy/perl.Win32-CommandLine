@@ -2,6 +2,8 @@
 	* wait for CPAN indexing and testing of 0.5.5_N
 	* if all goes well, update documentation
 	* upgrade version to 0.6.0 and distribute
+	* update Changelog
+		* example, see URLref: https://metacpan.org/diff/release/AZAWAWI/Wx-Scintilla-0.17/AZAWAWI/Wx-Scintilla-0.19 @@ http://www.webcitation.org/66LVcM5mo
 
 * change to new HG EOL strategy; needs some thought
 	* .bat all need CRLF upon checkout (probably should by in repo with same) because of the goto LABEL bug for non-CRLF EOL bat files; in general, all others should be LF, checked in and changed to LF, checked out as LF
