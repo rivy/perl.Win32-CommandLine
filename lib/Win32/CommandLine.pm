@@ -71,7 +71,7 @@ sub argv;			# get commandline and reparse it, returning a new ARGV array
 
 # Module Implementation
 
-bootstrap Win32::CommandLine $VERSION;
+bootstrap Win32::CommandLine $VERSION->normal;
 
 sub command_line{
 	# command_line(): returns $
