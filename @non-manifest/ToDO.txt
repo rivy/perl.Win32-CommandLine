@@ -1,3 +1,8 @@
+* [2012-03-18]
+	* wait for CPAN indexing and testing of 0.5.5_N
+	* if all goes well, update documentation
+	* upgrade version to 0.5.6 and distribute
+
 * change to new HG EOL strategy; needs some thought
 	* .bat all need CRLF upon checkout (probably should by in repo with same) because of the goto LABEL bug for non-CRLF EOL bat files; in general, all others should be LF, checked in and changed to LF, checked out as LF
 	* hgeol seems kludgy, look at it, and see of it can be made to default to such a plan
