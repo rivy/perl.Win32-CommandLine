@@ -10,7 +10,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
-our $VERSION = qv(qw$Version$[1])
+our $VERSION = qw$Version$[1]
 
 =cut
 
@@ -19,6 +19,12 @@ our $VERSION = qv(qw$Version$[1])
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls RequirePodAtEnd )
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching Capitalization ProhibitUnusedPrivateSubroutines ProhibitDeepNests ProhibitBacktickOperators ProhibitExcessComplexity ProhibitConstantPragma ProhibitCascadingIfElse RequireInterpolationOfMetachars ) # ToDO: revisit/remove
 
+# ToDO: ANSI C-quoting :: \XHH also currently is seen as a transform sequence (although capital versions of the other DO NOT cause a transformation)... ? remove \XHH ## this needs research
+
+# ToDO: $ENV{~NAME} overrides ~NAME expansion, replacing the usual expansion, EXCEPT for $ENV{~} which does NOT override the expansion of ~
+#        :: should $ENV{~} override ~ expansion?; should ~ expand twice? (eg, == expansion of ~<CURRENTUSER> [which would allow $ENV{~CURRENTUSER} to override) or be left as a seperate direct expansion?
+
+# ToDO: normalize the handling of {}: currently, {} is passed through (GOOD), an unmatched { disappears (ERROR? or leave it on the line?), an unmatched } is passed through (GOOD?)
 # TODO: think about refactoring for taint protection
 
 # TODO: add taking nullglob from environment $ENV{nullglob}, use it if nullglob is not given as an option to the procedures (check this only in parse()?)
@@ -734,7 +740,7 @@ sub	_argv_parse{
 	# $s ==	string being parsed
 	while ($s ne q{})
 		{# $s is non-empty and starts with non-whitespace character
-		Carp::Assert::assert( $s =~	/^\S/ );
+		Carp::Assert::assert( $s =~ /^\S/ );
 		my $start_s1 = $s;
 		my $t = q{};	# token (may be a partial/in-progess or full/finished token)
 		my @argY;
@@ -1023,7 +1029,7 @@ sub _get_next_chunk{
 			{# simple non-whitespace chunk	##default
 			# added avoid consuming subshell_start and subshell_end
 			## n#o critic ( ProhibitDeepNests )
-			Carp::Assert::assert( $s =~	/^\S/ );
+			Carp::Assert::assert( $s =~ /^\S/ );
 			#print "s = $s\n";
 			$ret_type = 'simple';
 			while ($s =~ /^([^$q_qm\s\$)]+)(.*)$/s)
@@ -1495,7 +1501,7 @@ sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 		else
 			{
 			# complex token	containing quote delimeters
-			Carp::Assert::assert( $s =~	/[$q_qm]/ );
+			Carp::Assert::assert( $s =~ /[$q_qm]/ );
 			#my	$t = q{};
 			while ($s =~ /^\S/)
 				{# parse full token containing quote delimeters
@@ -2128,35 +2134,41 @@ Note that bash compatible character expansion and globbing is available, includi
   "..."    literal (no escapes and no globbing within quotes)
   $'...'   string including all ANSI C string escapes (see NOTE); no globbing within quotes
   $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
-  $( ... ) subshell expansion [subshell commandline is _not_ expanded]
-  $("...") subshell expansion (quotes removed) [subshell commandline is _not_ expanded]
+  $( ... ) subshell expansion [subshell commandline is _not_ automatically expanded]
+  $("...") subshell expansion (quotes removed) [subshell commandline is _not_ automatically expanded]
 
-NOTE: ANSI C string escapes are  (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other escaped characters: \<x> =>\<x>).
+NOTE: ANSI C string escapes are  (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \[0-9]{1,3}, \x[0-9a-fA-f]{1,2}, \c[@A-Z[\\\]\^_`]; all other escaped characters are left in place without transformation (\<x> => \<x>).
+
+URLref: [bash ANSI-C Quoting] L<http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html> @@ L<http://www.webcitation.org/66M8skmP8>
+
+=for ToDO
+	NOTE: \XHH also currently works (although capitalized versions of the other escape sequences DO NOT cause a transformation)... ? remove \XHH ## needs research
 
 =for TODO
 	Explain that $("...") with quote removal was added to allow redirection and continuation characters within the subshell
 
 =head2 GLOB META CHARACTERS
 
-  \       Quote the next metacharacter
-  []      Character class
-  {}      Multiple pattern
-  *       Match any string of characters
-  ?       Match any single character
-  ~       Current user home directory
-  ~USER   User NAME home directory
-  ~TEXT   Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USER expansion]
+  \           Quote the next metacharacter
+  []          Character class
+  {}          Multiple pattern
+  *           Match any string of characters
+  ?           Match any single character
+  ~           Current user home directory
+  ~USERNAME   Home directory of USERNAME
+  ~TEXT       Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USERNAME expansion]
 
 
-The metanotation C<a{b,c,d}e> is a shorthand for C<abe ace ade>.  Left to
+The multiple pattern metanotation C<a{b,c,d}e> is a shorthand for C<abe ace ade>.  Left to
 right order is preserved, with results of matches being sorted separately
 at a low level to preserve this order.
 
 =for CHECK-THIS
-	As a special case C<{>, C<}>, and C<{}> are passed undisturbed.
+	As special cases C<{}> and umatched C<}> are passed through undisturbed to the final command line. [TRUE]
+	Unmatched C<{> is consumed. [TRUE, may change?]
 
 =for CHECK-THIS
-	 verify and document ~<text> overrides ~<name> ## verify and document which has priority
+	 verify and document ~<text> overrides ~<name> ## TRUE, except $ENV{~} which has no effect ## verify and document which has priority
 
 =head1 INSTALLATION
 
@@ -2181,10 +2193,12 @@ Alternatively, the standard make idiom is also available (though it is deprecate
     make test
     make install
 
-(On Windows platforms you should use B<C<nmake>> instead.)
+(On Windows platforms you should use B<C<nmake>> or B<C<dmake>> instead.)
 
 Note that the Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
-Makefile.PL will offer to download and install Module::Build if it is missing from your current installation.
+Makefile.PL will throw an exception if Module::Build is missing from your current installation. C<cpan> will
+notify the user of the build prerequisites (and install them for the build, if it is setup to do so [see the cpan 
+configuration option C<build_requires_install_policy>]).
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
 
@@ -2219,11 +2233,11 @@ C<command_line()>: returns $ :: returns the full Win32 command line as a string.
 
 =head2 argv( [\%] )
 
-C<argv( [\%] )>: returns @ :: get the current command line and reparse/glob-expand it; returning a new ARGV array
+C<argv( [\%] )>: returns @ :: reparse & glob-expand the original command line; returning a new, replacement argument array
 
 =head2 parse( $ [,\%] )
 
-C<parse( $ [,\%] )>: returns @ :: takes a string argument and returns the parsed argument string as an array.
+C<parse( $ [,\%] )>: returns @ :: parse & glob-expand a string argument; returns the parsed argument string as an array.
 
 =for readme continue
 
@@ -2233,34 +2247,34 @@ This began as a simple need to work-around the less-than-stellar C<COMMAND.COM>/
 It then grew into a small odyssey: learning XS and how to create a perl module, learning the perl build process and creating a customized build script/environment,
 researching tools and developing methods for revision control and versioning, learning and creating perl testing processes, and finally learning about PAUSE
 and perl publishing practices. And, somewhere in the middle, adding some of the C<bash> shell magic to the CMD shell (and, additionally, making it
-compatible with the excellent [and free] TCC-LE shell from JPSoft [find it at L<http://jpsoft.com/>]).
+compatible with the excellent [and free] TCC-LE shell from JPSoft [find that at L<http://jpsoft.com>]).
 
 Some initial attempts were made using C<Win32::API> and C<Inline::C>. For example (C<Win32::API> attempt [caused GPFs]):
 
-    @rem = '--*-Perl-*--
-    @echo off
-    if "%OS%" == "Windows_NT" goto WinNT
-    perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
-    goto endofperl
-    :WinNT
-    perl -x -S %0 %*
-    if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
-    if %errorlevel% == 9009 echo You do not have Perl in your PATH.
-    if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
-    goto endofperl
-    @rem ';
-    #!/usr/bin/perl -w
-    #line 15
-    #
-    use Win32::API;
-    #
-    Win32::API->Import("kernel32", "LPTSTR GetCommandLine()");
-    my $string = pack("Z*", GetCommandLine());
-    #
-    print "string[".length($string)."] = '$string'\n";
-    # ------ padding --------------------------------------------------------------------------------------
-    __END__
-    :endofperl
+  @rem = '--*-Perl-*--
+  @echo off
+  if "%OS%" == "Windows_NT" goto WinNT
+  perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+  goto endofperl
+  :WinNT
+  perl -x -S %0 %*
+  if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+  if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+  if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+  goto endofperl
+  @rem ';
+  #!/usr/bin/perl -w
+  #line 15
+  #
+  use Win32::API;
+  #
+  Win32::API->Import("kernel32", "LPTSTR GetCommandLine()");
+  my $string = pack("Z*", GetCommandLine());
+  #
+  print "string[".length($string)."] = '$string'\n";
+  # ------ padding --------------------------------------------------------------------------------------
+  __END__
+  :endofperl
 
 Unfortunately, C<Win32::API> and C<Inline::C> were shown to be too fragile at the time (in 2007).
 C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> was very brittle on Win32 systems (not compensating for paths with embedded strings).
@@ -2272,20 +2286,22 @@ So, an initial XS solution was implemented. And from that point, the lure of C<b
 
 =head1 IMPLEMENTATION and INTERNALS
 
-SV * _wrap_GetCommandLine() :: [XS] Use C and Win32 API to get the command line.
-HANDLE _wrap_CreateToolhelp32Snapshot ( dwFlags, th32ProcessID )
-bool _wrap_Process32First ( hSnapshot, lppe )
-bool _wrap_Process32Next ( hSnapshot, lppe )
-bool _wrap_CloseHandle ( hObject )
- ##// Pass useful CONSTANTS back to perl
-int _const_MAX_PATH ()
-HANDLE _const_INVALID_HANDLE_VALUE ()
-DWORD _const_TH32CS_SNAPPROCESS ()
- ##// Pass useful sizes back to Perl (for testing) */
-unsigned int _info_SIZEOF_HANDLE ()
-unsigned int _info_SIZEOF_DWORD ()
- #// Pass PROCESSENTRY32 structure info back to Perl
-SV * _info_PROCESSENTRY32 ()
+This is a list of internal XS functions (brief descriptions will be added at a later date):
+
+  SV * _wrap_GetCommandLine() :: [XS] Use C and Win32 API to get the command line.
+  HANDLE _wrap_CreateToolhelp32Snapshot ( dwFlags, th32ProcessID )
+  bool _wrap_Process32First ( hSnapshot, lppe )
+  bool _wrap_Process32Next ( hSnapshot, lppe )
+  bool _wrap_CloseHandle ( hObject )
+  ##// Pass useful CONSTANTS back to perl
+  int _const_MAX_PATH ()
+  HANDLE _const_INVALID_HANDLE_VALUE ()
+  DWORD _const_TH32CS_SNAPPROCESS ()
+  ##// Pass useful sizes back to Perl (for testing) */
+  unsigned int _info_SIZEOF_HANDLE ()
+  unsigned int _info_SIZEOF_DWORD ()
+  #// Pass PROCESSENTRY32 structure info back to Perl
+  SV * _info_PROCESSENTRY32 ()
 
 =for further_expansion
 	other internal function notes
@@ -2333,7 +2349,7 @@ C<Win32::CommandLine> requires no configuration files or environment variables.
 
 $ENV{NULLGLOB} = 0/1 => overrides default 'nullglob' setting
 
-=for the_possible_future
+=for possible_future
 	$ENV{WIN32_COMMANDLINE_RULE} = "sh" | "bash" (case doesn't matter) => argv will parse in "sh/bash" manner if set to "default"|"undef"
 	- will warn (not carp) if value unrecognized
 
@@ -2424,25 +2440,25 @@ You can find documentation for this module with the perldoc command.
 
 You can also look for further information at:
 
-    * AnnoCPAN: Annotated CPAN documentation
+  * AnnoCPAN: Annotated CPAN documentation
 
 	http://annocpan.org/dist/Win32-CommandLine
 
-    * CPAN Ratings
+  * CPAN Ratings
 
 	http://cpanratings.perl.org/dist/Win32-CommandLine
 		
-    * RT: CPAN's request tracker (aka buglist)
+  * RT: CPAN's request tracker (aka buglist)
 
 	http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine
 
-    * Search CPAN
+  * Search CPAN
 
 	http://kobesearch.cpan.org/dist/Win32-CommandLine
 	_or_
 	http://search.cpan.org/dist/Win32-CommandLine
 
-    * CPANTESTERS: Test results
+  * CPANTESTERS: Test results
 
 	http://www.cpantesters.org/show/Win32-CommandLine.html
 
@@ -2649,7 +2665,7 @@ $ echo $(which -a echo)
 SUMMARY
 TODO: UPDATE THIS $"..." and "..." not exactly accurate now [2009-02-23]
  '...' => literal (no escapes and no globbing within quotes)
- $'...' => ANSI C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n{1,3}, \xh{1,2}, \cx; all other \<x> =>\<x>)
+ $'...' => ANSI C string escapes (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \n[0-9]{1,3}, \xh[0-9a-fA-F]{1,2}, \cx; all other \<x> =>\<x>)
  "..." => literal (no escapes but allows internal globbing) [differs from bash]
  $"..." => same as "..."
 ??? $"..." => modified bash escapes (for $, ", \ only) and $ expansion (?$() shell escapes), no `` shell escapes, note: \<x> => \<x> unless <x> = {$, ", or <NL>}
