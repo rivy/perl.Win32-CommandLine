@@ -61,7 +61,7 @@ BEGIN {require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter );} 
 {no strict 'refs'; ## no critic ( ProhibitNoStrict )
 #our @EXPORT = qw( );   # no default exported symbols
 %EXPORT_TAGS = (
-    'ALL'       => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_'] 
+    'ALL'       => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
 #   '_INTERNAL' => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ }  keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all internal functions [Note: internal functions start with a leading '_']
     );
 @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
@@ -2197,7 +2197,7 @@ Alternatively, the standard make idiom is also available (though it is deprecate
 
 Note that the Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
 Makefile.PL will throw an exception if Module::Build is missing from your current installation. C<cpan> will
-notify the user of the build prerequisites (and install them for the build, if it is setup to do so [see the cpan 
+notify the user of the build prerequisites (and install them for the build, if it is setup to do so [see the cpan
 configuration option C<build_requires_install_policy>]).
 
 PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
@@ -2447,7 +2447,7 @@ You can also look for further information at:
   * CPAN Ratings
 
 	http://cpanratings.perl.org/dist/Win32-CommandLine
-		
+
   * RT: CPAN's request tracker (aka buglist)
 
 	http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine
