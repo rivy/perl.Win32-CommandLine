@@ -3,6 +3,9 @@
 use strict;
 use warnings;
 
+
+# ToDO: modify add_test to take additional optional argument(s) which test for tests which fail correctly and for startup / breakdown evals
+
 {
 ## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
 my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;	# DISABLE buffering (enable autoflush) on STDIN, STDOUT, and STDERR (keeps output in order)
@@ -57,7 +60,7 @@ $perl = ( $perl =~ m/\A(.*)\z/msx ) ? $1 : q{};  	## no critic ( ProhibitCapture
 ## accumulate tests
 
 # TODO: organize tests, add new tests for 'xx.bat'
-# TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{x = $x\n};" } => { x = Xbc }		## enclosed redirection
+# TODO: add tests (CMD and TCC) for x.bat => { x perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{set _x=$x\n};" } => { set _x=Xbc }		## enclosed redirection
 
 # TODO: test expansions
 # PROBLEM: subshell execution no preserving setdos /x-which, any other changes in subshells? is there a setdos /x0 in the AutoRun somewhere?
@@ -81,15 +84,27 @@ add_test( [ q{perl -e "$_ = 'abc'; s/a/bb/; print"} ], ( q{perl -e "$_ = 'abc'; 
 add_test( [ q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ], ( q{xx -e perl -e "$x = split( /x/, q{}); print $x;"} ) );		## prior BUG
 
 # design decision = should non-quoted/non-glob expanded tokens be dosified or not
-add_test( [ q{/NOT_A_FILE} ], ( q{\NOT_A_FILE} ) );		# non-files (can screw up switches)
+add_test( [ q{/THIS_IS_NOT_A_FILE_sa9435kj4j5j545jn2230096jkjlk5609345k3l5j3lk} ], ( q{\THIS_IS_NOT_A_FILE_sa9435kj4j5j545jn2230096jkjlk5609345k3l5j3lk} ) );	# non-files (can screw up switches) ## assume not FRAGILE (name should be unique)
 
-if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
+
+if (-e 'c:/windows') {
+	# case preservation of non-globbed args
+	add_test( [ q{c:/windows} ], ( q{c:\windows} ) );		# non-expanded files have no case changes	## ? FRAGILE (b/c case differences between WINDOWS)
+	add_test( [ q{c:/WiNDowS} ], ( q{c:\WiNDowS} ) );		# non-expanded files have no case changes	## ? FRAGILE (b/c case differences between WINDOWS)
+	}
+
+if (-e "$ENV{SystemRoot}/system" ) {
+	# case preservation of non-globbed portions of args
+	add_test( [ qq{$ENV{SystemRoot}*/system*} ], ( join(q{ }, dosify( glob( quotemeta_glob($ENV{SystemRoot}).'*/system*' ))) ) );	# expanded portions of pathnames have case corresponding to the matched file ## ? FRAGILE (b/c case differences between WINDOWS)
+	add_test( [ qq{$ENV{SystemRoot}/system*} ], ( join(q{ }, dosify( glob( quotemeta_glob($ENV{SystemRoot}).'/system*' ))) ) );		# expanded portions of pathnames have case corresponding to the matched file ## ? FRAGILE (b/c case differences between WINDOWS)
+	}
+
+if ($ENV{TEST_FRAGILE}) {
+	# depends on xx.bat maintaining the exact same version output
 	if ($haveExtUtilsMakeMaker)
 		{# ExtUtilsMakeMaker present
 		add_test( [ q{-v} ], ( q{xx.bat v}.MM->parse_version($script) ) );
 		}
-	add_test( [ q{c:/windows} ], ( q{c:\windows} ) );		# non-expanded files									## FRAGILE (b/c case differences between WINDOWS)
-	add_test( [ q{c:/windows/system*} ], ( q{c:\windows\system c:\windows\system.ini c:\windows\system32} ) );		# non-expanded files ## FRAGILE (b/c case differences between WINDOWS)
 	}
 
 # /dev/nul vs nul (?problem or ok)
@@ -112,21 +127,50 @@ if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $E
 
 add_test( [ q{perl -e 'print 0'} ], ( q{perl -e "print 0"} ) );
 add_test( [ q{perl -e "print 0"} ], ( q{perl -e "print 0"} ) );
-#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ) );	## ERROR -- ? fixable, ? should it be fixed? ## design decision = ?attempt to fix the single quote issue == NOTE: _with xx alias of perl_, q{perl -e 'print 0'} WORKS, so shouldn't q{$( perl -e 'print 0' )} work as well?
+add_test( [ q{perl -e "print 'a'"} ], ( q{perl -e "print 'a'"} ) );
+add_test( [ q{perl -e 'print "a"'} ], ( q{perl -e "print \\"a\\""} ) );
+
+# test BUGFIX :: BUG was "incorrect translation of internal \ to / for non-file ARGs"
+add_test( [ q{perl -e "print `xx -e t/*.t`"} ], ( q{perl -e "print `xx -e t/*.t`"} ) );
+add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`"} ) );
+
+
+#if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
+#	add_test( [ q{~} ], ( q{"}.$ENV{USERPROFILE}.q{"} ) );	## FRAGILE (b/c quotes are dependent on internal spaces)
+#	}
+
+
+if ($ENV{TEST_FRAGILE}) {
+	# USERNAME expansion
+	add_test( [ q{~} ], ( dosify($ENV{USERPROFILE}) ) );					## ? FRAGILE
+	add_test( [ qq{~$ENV{USERNAME}} ], ( dosify($ENV{USERPROFILE}) ) );	## ? FRAGILE
+
+	# Overriding USERNAME expansion with %ENV
+	$ENV{'~NOTAUSERNAME'} = '/test'; 	## no critic ( RequireLocalizedPunctuationVars )
+	add_test( [ q{~NOTAUSERNAME} ], ( q{\\test} ) );	## slightly FRAGILE (unlikely, but could be a USER)
+	## Modifies other tests :: must reverse changes before another test is run ... use startup => "$ENV{qq{~$USERNAME}} = '/test'", breakdown => "$ENV{qq{~$USERNAME}}=undef"
+	##$ENV{"~$USERNAME"} = '/test';
+	##do_test( [ qq{~$ENV{USERNAME}} ], ( q{\\test} ) );	## ? FRAGILE
+	}
+
+# Subshells - argument generation via subshell execution & subsequent expansion of subshell output
 add_test( [ q{$( perl -e "print 0" )} ], ( q{0} ) );
+add_test( [ q{$( perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{set _x=$x\n};" )} ], ( q{set _x=Xbc} ) );
+add_test( [ q{$( echo 0 )} ], ( q{0} ) );
+add_test( [ q{$( "echo 0 && echo 1" )} ], ( q{0 1} ) );
+#add_test( [ q{$( echo 0 & echo 1 )} ], ( q{0 1} ), { fails => 1 } );		## FAILS, as expected; the command line is broken in two pieces by the shell @ the "&" before xx gets it; xx only sees "$( echo 0 "
+#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ), { fails => 1 } );		## FAILS, as expected; the subshell is executed with normal shell semantics, so perl sees two arguments "'print" and 0'" causing an exception
+
+if ($ENV{TEST_FRAGILE}) {
+	add_test( [ q{$( xx perl -e 'print 0' )} ], ( q{0} ) );	## FRAGILE :: requires an already installed and working 'xx'
+	}
+
+
+# Usual expansion of subshells (via CMD/TCC)
+# NOTE: perl -e 'print 0' from the usual command line sees two arguments "'print" and "0'" and then throws an exception
 
 add_test( [ q{$( echo 0 )} ], ( q{0} ) );
 add_test( [ q{$( echo TEST )} ], ( q{TEST} ) );
-
-add_test( [ q{perl -e "print `xx -e t/*.t`"} ], ( q{perl -e "print `xx -e t/*.t`"} ) );
-add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`"} ) );	## prior BUG
-
-if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
-	add_test( [ q{~} ], ( q{"}.$ENV{USERPROFILE}.q{"} ) );	## FRAGILE (b/c quotes are dependent on internal spaces)
-	}
-
-$ENV{'~TEST'} = "/test";  	## no critic ( RequireLocalizedPunctuationVars )
-add_test( [ q{~TEST} ], ( q{\\test} ) );	## ? FRAGILE
 
 ## FRAGILE = uncomment this and make it better
 #my $version_output = `ver`;	## no critic (ProhibitBacktickOperators)
@@ -162,3 +206,19 @@ sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }		## NOTE: caller(E
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
 sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; my ($got_stdout, $got_stderr); eval { IPC::Run3::run3( "$perl $script -e @args", \undef, \$got_stdout, \$got_stderr ); chomp($got_stdout); chomp($got_stderr); if ($got_stdout ne q{}) { push @got, $got_stdout }; if ($got_stderr ne q{}) {push @got, $got_stderr}; 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
+
+#### SUBs
+
+sub	quotemeta_glob{
+	my $s = shift @_;
+
+	my $gc = quotemeta( q{?*[]{}~}.q{\\} );
+	$s =~ s/([$gc])/\\$1/g;					# backslash quote all glob metacharacters (backslashes as well)
+	return $s;
+}
+
+sub dosify{
+	# use Win32::CommandLine::_dosify
+	use Win32::CommandLine;
+	return Win32::CommandLine::_dosify(@_);	## no critic ( ProtectPrivateSubs )
+}

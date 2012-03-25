@@ -117,14 +117,14 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 add_test( [ qq{$0 't\\glob-file.tests\\'*x} ], ( ) );
 #
 
-if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
-	##
-	## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
+if ($ENV{TEST_FRAGILE}) {
+	## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
+	##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
 	add_test( [ qq{$0 ~*} ], ( ) );
-	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
-	add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-	add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
-	add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
+	add_test( [ qq{$0 ~} ], ( unixify($ENV{USERPROFILE}) ) );
+	add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+	add_test( [ qq{$0 ~$ENV{USERNAME}/} ], ( unixify($ENV{USERPROFILE}.q{/}) ) );
+	add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], ( 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ) );
 	##
 	}
 
@@ -154,3 +154,26 @@ sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }		## NOTE: caller(E
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
 sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; eval { @got = Win32::CommandLine::_argv(@args); 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
+
+#### SUBs
+
+sub dosify{
+	# use Win32::CommandLine::_dosify
+	use Win32::CommandLine;
+	return Win32::CommandLine::_dosify(@_);	## no critic ( ProtectPrivateSubs )
+}
+
+sub unixify{
+	# _unixify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# unixify string, returning a string which has unix correct slashes
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+
+	## no critic ( ProhibitUnusualDelimiters )
+
+	for (@_ ? @_ : $_)
+		{
+		s:\\:\/:g;
+		}
+
+	return wantarray ? @_ : "@_";
+}

@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+## ToDO: compare with argv.t tests and combine as reasonable; since tests are all done at the same time, we could seperate the $ENV overrides into seperate test files
+
 #use lib 't/lib';
 use Test::More;
 use Test::Differences;
@@ -25,27 +27,36 @@ sub do_tests;
 
 ## accumulate tests
 
-if ($ENV{TEST_FRAGILE} or ($ENV{TEST_ALL} and (defined $ENV{TEST_FRAGILE} and $ENV{TEST_FRAGILE}))) {
-	##
-	## TODO: this is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansion should be...
-	## use TEST_FRAGILE
-	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
-	add_test( [ qq{$0 ~} ], ( q{C:/Documents and Settings/Administrator} ) );
-	add_test( [ qq{$0 ~ ~administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-	add_test( [ qq{$0 ~administrator/} ], ( q{C:/Documents and Settings/Administrator/} ) );
-	add_test( [ qq{$0 x ~administrator\\ x} ], ( 'x', q{C:/Documents and Settings/Administrator/}, 'x' ) );
-	add_test( [ qq{$0 ~ ~Administrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-	add_test( [ qq{$0 ~ ~ADMINistrator} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
-	add_test( [ qq{$0 ~ ~ADMINISTRATOR} ], ( q{C:/Documents and Settings/Administrator}, q{C:/Documents and Settings/Administrator} ) );
+add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+
+if ($ENV{TEST_FRAGILE}) {
+	## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
+	##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
+	add_test( [ qq{$0 ~} ], ( unixify($ENV{USERPROFILE}) ) );
+	add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+	add_test( [ qq{$0 ~$ENV{USERNAME}/} ], ( unixify($ENV{USERPROFILE}.q{/}) ) );
+	add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], ( 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ) );
+	add_test( [ qq{$0 ~ ~}.lc($ENV{USERNAME}) ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+	if ($ENV{USERNAME} =~ /\A(.)(.*?)(.)\z/) {
+		my $mixed_case_USERNAME;
+		$mixed_case_USERNAME = lc($1).lc($2).uc($3);
+		add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+		$mixed_case_USERNAME = lc($1).uc($2).lc($3);
+		add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+		$mixed_case_USERNAME = lc($1).uc($2).uc($3);
+		add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+		$mixed_case_USERNAME = uc($1).lc($2).lc($3);
+		add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+		$mixed_case_USERNAME = uc($1).lc($2).uc($3);
+		add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+		$mixed_case_USERNAME = uc($1).uc($2).lc($3);
+		add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+		}
+	add_test( [ qq{$0 ~ ~}.uc($ENV{USERNAME}) ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
 	##
 	}
 
-## TODO: check for correct expansion of ~ to "%USERPROFILE" { note: this could be fragile, if ~ is defined as something else or if there is some asynchrony between %userprofile% and the registry (( can this happen? or is %userprofile% set from the registry? prob could happen if the registry is changed after the shell is started... ))
-	## unset ~ before checking
-
-## TODO: add ENV variable "~x" and check for correct expansion
-
-
+## ToDO: ~ expansion is correct; BUT $ENV override of ~ doesn't work ... should it? -- CHECK this and write a test
 
 ## TODO: check both with and without nullglob, including using %opts for argv()
 add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );
@@ -65,3 +76,26 @@ sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }		## NOTE: caller(E
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
 sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; eval { @got = Win32::CommandLine::_argv(@args); 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
+
+#### SUBs
+
+sub dosify{
+	# use Win32::CommandLine::_dosify
+	use Win32::CommandLine;
+	return Win32::CommandLine::_dosify(@_);	## no critic ( ProtectPrivateSubs )
+}
+
+sub unixify{
+	# _unixify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+	# unixify string, returning a string which has unix correct slashes
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+
+	## no critic ( ProhibitUnusualDelimiters )
+
+	for (@_ ? @_ : $_)
+		{
+		s:\\:\/:g;
+		}
+
+	return wantarray ? @_ : "@_";
+}
