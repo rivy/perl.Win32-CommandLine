@@ -2,10 +2,10 @@
 :: to.bat [PATH]
 :: cd with command line expansion
 ::
-:: * if PATH exists, cd to it
-:: * if PATH == NULL, cd to home directory (aka "~")
-:: * expand PATH; if expand(PATH) exists, cd to it
-:: * expand ~PATH; if expand(~PATH) exists, cd to it
+:: * if PATH exists, cd to it & exit
+:: * if PATH == NULL, cd to home directory (aka "~") & exit
+:: * expand PATH; if expand(PATH) exists, cd to it & exit
+:: * expand ~PATH; if expand(~PATH) exists, cd to it & exit
 ::
 :: compatible with CMD, 4NT/TCC/TCMD
 :: NOT compatible with COMMAND
@@ -60,16 +60,16 @@ set CWD=%CD%
 if "%ERROR%" == "0" ( goto :DONE )
 :: check for missing Perl and/or XX
 call perl -e 1 2> nul
-if NOT "%ERRORLEVEL%" == "0" ( 
+if NOT "%ERRORLEVEL%" == "0" (
 	echo ERROR: Missing Perl [which is required]; install perl and the Win32::CommandLine module [install from http://strawberryperl.com, then "cpan Win32::CommandLine"]
 	goto :handle_errors_DONE
 	)
 call xx --version > nul 2> nul
-if NOT "%ERRORLEVEL%" == "0" ( 
+if NOT "%ERRORLEVEL%" == "0" (
 	echo ERROR: Missing XX [which is required]; install the Win32::CommandLine module for perl [use "cpan Win32::CommandLine"]
 	goto :handle_errors_DONE
 	)
-call xx echo ERROR: Cannot find the specified path [%args%]
+call xx echo ERROR: Cannot find the specified path [%args% (or ~%args%)]
 :handle_errors_DONE
 
 :DONE
