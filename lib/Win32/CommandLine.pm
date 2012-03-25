@@ -19,6 +19,8 @@ our $VERSION = qw$Version$[1]
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls RequirePodAtEnd )
 ## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching Capitalization ProhibitUnusedPrivateSubroutines ProhibitDeepNests ProhibitBacktickOperators ProhibitExcessComplexity ProhibitConstantPragma ProhibitCascadingIfElse RequireInterpolationOfMetachars ) # ToDO: revisit/remove
 
+# ToDO: write a note to the perl developers to add a note about Win32::CommandLine to the perl README.win32 (eg, http://search.cpan.org/~flora/perl-5.14.2/README.win32 @@ http://www.webcitation.org/66PGpLoga)
+
 # ToDO: ANSI C-quoting :: \XHH also currently is seen as a transform sequence (although capital versions of the other DO NOT cause a transformation)... ? remove \XHH ## this needs research
 
 # ToDO: $ENV{~NAME} overrides ~NAME expansion, replacing the usual expansion, EXCEPT for $ENV{~} which does NOT override the expansion of ~
@@ -77,7 +79,7 @@ sub argv;			# get commandline and reparse it, returning a new ARGV array
 
 # Module Implementation
 
-bootstrap Win32::CommandLine $VERSION->normal;
+wbootstrap Win32::CommandLine (($^V lt v5.8.9) ? $VERSION : $VERSION->normal); 		## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators ) 	## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
 
 sub command_line{
 	# command_line(): returns $
@@ -126,16 +128,27 @@ my %_G = ( # package globals
 	single_q			=> q{'},					# '
 	double_q			=> q{"},					# "
 	quote				=> q{'"},					# ' and "
-	quote_meta			=> quotemeta q{'"},			# quotemeta ' and "
+	quote_meta			=> quotemeta q{'"},		# quotemeta ' and "
 	escape_char			=> q{\\},					# escape character (\)
 	glob_char			=> '?*[]{}',				# glob signal characters (no '~' for Win32)
 	unbalanced_quotes	=> 0,
 	);
 
 BEGIN {## no critic ( ProhibitExcessComplexity ProhibitPunctuationVars )
+	# NOTE: we REQUIRE a working subshell mechanism, so enforce it (? warning if we change anything like COMSPEC for subshell execution?)
+	# ToDO: rework this to better respect the users settings/wishes, but default to a working system avoiding mismatched subshell execution (eg, using "cmd.exe /x/d/c", ? prefix with unixified $ENV{SystemRoot}?)
+	# ToDO: when  done, remove the extra code from the perl scripts in @bin (wrap-cpan, etc)
+	# see this code from wrap-cpan:
+	##	# avoid differing shells for COMSPEC and Perl subshell execution; this can cause weird behavior (eg, TCC parsing a BAT file but executing it with CMD, which causes all sorts of trouble)
+	##	# assume user knows best, however; so, if Perl5Shell is set, leave it alone
+	##	$ENV{COMSPEC} = $ENV{SystemRoot}.q{\\System32\\cmd.exe} if ($^O eq 'MSWin32') and not $ENV{PERL5SHELL} and -e $ENV{SystemRoot}.q{\\System32\\cmd.exe};
+	# so, leave PERL5SHELL alone, but set COMSPEC as needed?
 	# _initialize_subshell_calls()
 	# Test and, if needed, create a working system() call by setting PERL5SHELL
-	# URLref: [system call error 'Can't spawn "cmd.exe": No such file or directory at ...' ] http://www.perlmonks.org/?node=392416
+	# URLrefs:
+	# [PerlDoc - PerlRUN (see PERL5SHELL)] http://perldoc.perl.org/perlrun.html @@ http://www.webcitation.org/66PEuU5YJ
+	# [system call error 'Can't spawn "cmd.exe": No such file or directory at ...' ] http://www.perlmonks.org/?node=392416 @@ http://www.webcitation.org/66PEdGziA
+	# [PERL5SHELL Info] http://www.perlmonks.org/bare/?node_id=112690 @@ http://www.webcitation.org/66PEjrl2y
 	# NOTE: BEGIN is used because once a system() or backtick call has been issued, perl seems to ignore any changes to PERL5SHELL, so PERL5SHELL must be correct before any system() or backtick calls are done
 	# NOTE: generally, assume the user knows what they are doing, PERL5SHELL will either be empty or set up correctly corresponding to an executable in the PATH, so only change it if undefined
 	# NOTE: no changes to PATH (once again, user knows best)
@@ -191,8 +204,8 @@ BEGIN {## no critic ( ProhibitExcessComplexity ProhibitPunctuationVars )
 	if (-e $cmd) {
 		$p5s = $cmd;
 		$p5s =~ s/\\/\\\\/g;
-		#$p5s .= ' /d/x/c';	## /d == Disable execution of AutoRun commands ; /x == /E:ON == Enable command extensions ; /c  == transient shell (execute command and return)
-		$p5s .= ' /x/c';	## [no /d for subshell consistency] ; /x == /E:ON == Enable command extensions ; /c  == transient shell (execute command and return)
+		#$p5s .= ' /x/c';	## [no /d for subshell consistency] ; /x == /E:ON == Enable command extensions ; /c  == transient shell (execute command and return) :: NOTE: this avoids concerns about autorun changing the subshell environment in unexpected ways
+		$p5s .= ' /x/d/c';	## /x == /E:ON == Enable command extensions ; /d == Disable execution of AutoRun commands ; /c  == transient shell (execute command and return) :: NOTE: this assumes that CMD autorun doesn't modify the environment (strange unexpected things can happen if this is note true)
 		}
 	if ($badP5S) { if (not $msg) { $msg = q{ERROR: PERL5SHELL is set incorrectly}.($onPATH ? q{} : qq{; the executable [$exe] was not found (PATH was also searched)}).($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
 	if (not $onPATH and not defined $ENV{PERL5SHELL} and $p5s) {
@@ -1055,7 +1068,7 @@ sub _get_next_chunk{
 	return ( $ret_chunk, $s, $ret_type );
 }
 
-sub	_argv_do_glob{
+sub _argv_do_glob{
 	# _argv_do_glob( @args ): returns @
 	## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
@@ -1167,7 +1180,7 @@ sub	_argv_do_glob{
 				@g = bsd_glob( $pat, $glob_flags );
 				#print "s = $s\n";
 				if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
-				if ($opt{dosify}) {	foreach (@g) { _dosify($_); }}
+				if ($opt{dosify}) { foreach (@g) { _dosify($_); }}
 				elsif ($opt{unixify}) { foreach (@g) { $_ =~ s:\\:\/:g; }}
 				}
 			}
@@ -1175,6 +1188,7 @@ sub	_argv_do_glob{
 			{
 			@g = ( $s );
 			# TODO: CHECK this and think about correct function names... (both here and in successful glob function above)
+			# TODO: CHECK unixify ... does it need the  "if (-e $_)" gate similar to dosify?
 			if ($opt{dosify} eq 'all') { foreach (@g) { if (-e $_) { _dosify($_); }}}
 			elsif ($opt{dosquote}) { foreach (@g) { _dos_quote($_); }}
 			elsif ($opt{unixify} eq 'all') { foreach (@g) { $_ =~ s:\\:\/:g; }}
@@ -1295,8 +1309,8 @@ sub	_argv{
 	my %opt	= (
 		remove_exe_prefix => 1,		# = 0/<true> [default = true]		# if true, remove all initial args up to and including the exe name from the @args array
 		dosquote => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
-		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
-		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
+		dosify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all _globbed_ ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
+		unixify => 0,				# = 0/<true>/'all' [default = 0]	# if true, convert all _globbed_ ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
 		nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,		# = 0/<true> [default = 0]	# if true, patterns	which match	no files are expanded to a null	string (no token), rather than	the	pattern	itself	## $ENV{nullglob} (if it exists) overrides the default
 		glob => 1,					# = 0/<true> [default = true]		# when true, globbing is performed
 		## TODO: rework this ... need carp/croak on unbalanced quotes/subshells (? carp_ub_quotes, carp_ub_shells, carp = 0/1/warn/carp/die/croak)
@@ -1379,11 +1393,11 @@ sub	_argv{
 }
 
 sub	_quote_gc_meta{
-	my $s =	shift @_;
+	my $s = shift @_;
 #	my $gc = $_G{glob_char};
 
-	my $gc = quotemeta(	'?*[]{}~'.q{\\} );
-#	my $dgc	= quotemeta	( '?*' );
+	my $gc = quotemeta( q{?*[]{}~}.q{\\} );
+#	my $dgc = quotemeta ( '?*' );
 
 #	$s =~ s/\\/\//g;						# replace all backslashes with forward slashes
 #	$s =~ s/([$gc])/\\$1/g;					# backslash quote all metacharacters (note: there should be no backslashes to quote)
