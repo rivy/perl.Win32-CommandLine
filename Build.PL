@@ -1,12 +1,19 @@
 #!perl -w   -- ## emacs -*- tab-width: 4; mode: cperl indent-tabs-mode: nil; basic-offset: 2 -*- ## (jedit) :tabsize=4:mode=perl: ## (notepad++) vim:ts=4:sw=2:et:sta:sts=2
-#$Id: Build.PL,v 0.3.6.1067 ( r95:517d0a40aefe [mercurial] ) 2012/03/21 23:19:16 rivy $
+#$Id: Build.PL,v 0.3.6.334566 ( r100:64d56d2645ef [mercurial] ) 2012/03/25 20:14:32 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
 ## TODO?: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META.yml
 ## TODO?: .. or just remove VERSION code generating the alpha '_' within the version? does it matter? does the '_' interfere with version comparisons on CPAN?
 
+# ToDO: open a defect ticket about error leakage for checking compiler presence in ExtUtils::CBuilder :: should be done in CBuilder with STDERR redirect
+# ToDO: open a defect ticket about error leakage for checking gpg presence in Module::Signature :: should be done in Module::Signature with STDERR redirect
+##      # EG: #>perl -e "use File::Spec; $n = File::Spec->devnull(); if (qx{gpg --version 2>$n} =~ /GnuPG.*?(\S+)\s*$/m) { $h = $1 } else { $h = qq{NULL}; }; print $h"
+
 ## TODO: add an 'upload' action to use cpan_upload... to upload the basic distribution to CPAN
+## : depends(testall) without errors
+
+## ToDO: redirect STDERR to STDOUT for skipcheck (currently all output goes to STDERR)
 
 ## TODO: flesh out stub documentation for additional custom actions
 
@@ -25,11 +32,11 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.3.6.1067 $ SCS tag
+# generate VERSION from $Version: 0.3.6.334566 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.6.1067 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.6.334566 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -98,7 +105,7 @@ if ( -e $config_filename )
 {
 	my $comment_chars = q{#};
 	my $fh  = undef;
-	open( $fh, '<', $config_filename ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR"; ## no critic ( RequireCarping )
+	open( $fh, '<', $config_filename ) or die "Can't open '$config{'rc_filename'}': $OS_ERROR\n"; ## no critic ( RequireCarping )
 	my $line = 0;
 	while ( my $s = <$fh> )
 	{
@@ -131,7 +138,7 @@ if ( -e $config_filename )
 		}
 		else { die "Malformed configuration line @ ($config{'rc_filename'}, line $line)\n"; }
 	}
-	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR"; ## no critic ( RequireCarping )
+	close $fh or die "Can't close '$config{'rc_filename'}' after reading: $OS_ERROR\n"; ## no critic ( RequireCarping )
 }
 
 #use Data::Dumper;
@@ -394,13 +401,13 @@ $code{'dispatch'} .= q{
 			$self->{properties}{tap_harness_args}{formatter_class} = 'TAP::Formatter::Console';
 			}
 
-		my $hasWin32ConsoleANSI = eval q{use Win32::Console::ANSI; 1};
+		my $haveWin32ConsoleANSI = eval q{use Win32::Console::ANSI; 1};
 
-		if ( $^O =~ /\AMSWin/i && $self->{properties}{use_color} && not $hasWin32ConsoleANSI) {
+		if ( $^O =~ /\AMSWin/i && $self->{properties}{use_color} && not $haveWin32ConsoleANSI ) {
 			warn qq{Win32::Console::ANSI is recommended for reliable color output (but is not installed; to install, use "cpan Win32::Console::ANSI")\n};
 			};
 
-		# HACK :: convince TAP::Formatter::Color to use Term::ANSIColor if we can load Win32::Console::ANSI by masquerading as "linux" OS
+		# HACK: convince TAP::Formatter::Color to use Term::ANSIColor if we can load Win32::Console::ANSI by masquerading as "linux" OS
 		# * this solves multiple color output problems for TAP testing output (works with CMD and TCC shells as well)
 		# NOTE: this might be moved into test, testall, etc. (but it's single source here)
 		# ToDO: move to test_setup_color() and add to test(), testall(), retest(), disttest(), taint_test(), taint_testall(), testcover(), testdb(), testpod(), testpodcoverage() ## is there a common origin?
@@ -439,9 +446,9 @@ $code{'find_dist_packages'} = q{
 		#$self->ACTION_manifest( qq{quiet} );
 		{
 			local $self->{properties}{quiet} = 1;
-			require ExtUtils::Manifest;
+			require ExtUtils::Manifest;  	# needed to modify $ExtUtils::Manifest::Verbose and $ExtUtils::Manifest::Quiet prior to manifest building
 			local ($ExtUtils::Manifest::Verbose, $ExtUtils::Manifest::Quiet) = (0,1);
-			$self->ACTION_manifest;
+			$self->ACTION_manifest; 		# [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
 		}
 
 		return $self->SUPER::find_dist_packages(@_);
@@ -468,8 +475,9 @@ $code{'have_c_compiler'} = q{
 		my @RETval;
 
 		# swallow any annoying error output from ExtUtils::CBuilder have_compiler()
-		# URLrefs: [Capture::Tiny] http://search.cpan.org/~DAGOLDEN/Capture-Tiny , [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136
-		# alternate method (without Capture::Tiny) [URLref: http://www.perlmonks.org/?node_id=629771]
+		# URLrefs: [Capture::Tiny] http://search.cpan.org/~DAGOLDEN/Capture-Tiny , [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136 @@ http://www.webcitation.org/66O9EXPAz
+		# URLrefs: [How can I capture STDERR from an external command] http://www.perlmonks.org/?node=How%20can%20I%20capture%20STDERR%20from%20an%20external%20command%3F @@ http://www.webcitation.org/66O9ViBoB
+		# alternate method (without Capture::Tiny) [URLref: http://www.perlmonks.org/?node_id=629771 @@ http://www.webcitation.org/66O97acch]
 		#BEGIN { eval { require Capture::Tiny; 1 }; }  	# Capture::Tiny requires loading via BEGIN for 'syntactic sugar' [see URLref: http://perlmonks.com/?node=Seekers%20of%20Perl%20Wisdom ]
 		my $haveCaptureTiny = eval { require Capture::Tiny; 1; };
 		my $o = q{};
@@ -550,6 +558,14 @@ $code{'ACTION_taint_testall'} = q{
 	  }
 };
 $code{'ACTION_sign@_sign_dir'} = q{
+	sub _MY_module_signature_has_gpg {
+		use File::Spec;
+		my $null = File::Spec->devnull();
+		if (qx{gpg --version 2>$null} =~ /GnuPG.*?(\S+)\s*$/m) {
+			return $1
+			}
+		else { return; }
+		}
 	sub _sign_dir {
 		my ($self, $dir) = @_;
 
@@ -558,18 +574,46 @@ $code{'ACTION_sign@_sign_dir'} = q{
 		return;
 		}
 
+		## override Module::Signature (based on VERSION) to quiet _has_gpg()
+		## : add $Module::Signature::VERSION gating when appropriate (upstream fixed)
+		##if ( $Module::Signature::VERSION < N ) {
+			my $codeRef = \&_MY_module_signature_has_gpg;
+			{no warnings 'redefine';
+			*Module::Signature::_has_gpg = $codeRef;
+			}
+		##}
+
+		## ToDO: based on _has_gpg(); (if Windows?, maybe all platforms), initiate gpg with something in the base directory to start gpg-agent, so that gpg-agent doesn't hold an open file handle on this or a sub-directory
+		## ToDO: open a defect report about gpg-agent holding an open file handle
+
+		# URLrefs:
+		# http://www.gnupg.org/documentation/manuals/gnupg/GPG-Configuration-Options.html#GPG-Configuration-Options @@ http://www.webcitation.org/66OEXPIRA
+		# http://www.gnupg.org/documentation/manuals/gnupg/GPG-Input-and-Output.html#GPG-Input-and-Output @@ http://www.webcitation.org/66OEYz0So
+		#
+		# doesn't work ... gpg opens another gpg-agent when signing using Module::Signature
+		# from the open handles after the below command, it looks like gpg-agent opens a handle on the CWD when first initiated
+		# --batch stops all terminal output
+		# my $gpg_output = qx{cd $ENV{SystemRoot} & gpg --batch --output nul --clearsign $ENV{SystemDrive}\\nul 2> nul}; ## gpg-agent will hold an open handle on %SystemDrive% which is essentially un-deletable (so it's as same as possible)
+		#{
+		#local *D;
+		#open D, "| gpg --output nul --clearsign" or die "Could not call gpg: $!";
+		#print D "TEST";
+		#close D;
+		#}
+
 		# Add SIGNATURE to the MANIFEST
 		{
 		my $manifest = File::Spec->catfile($dir, 'MANIFEST');
-		die "Signing a distribution requires a MANIFEST file" unless -e $manifest;
+		die "Signing a distribution requires a MANIFEST file\n" unless -e $manifest;
 		#$self->_add_to_manifest($manifest, "SIGNATURE    Added here by Module::Build");
 		#[CHANGED] == removed comment to prevent altering MANIFEST, when possible (to preserve correct signatures as long as possible)
-		$self->_add_to_manifest($manifest, 'SIGNATURE');	# SKIP any comment, it can alter the MANIFEST when/if it is auto-regenerated
+		$self->_add_to_manifest($manifest, 'SIGNATURE');	# NO comment, just the filename; comments can alter the MANIFEST when/if it is auto-regenerated
 		$self->_sort_manifest($manifest);	# keep MANIFEST sorted (to preserve correct signatures as much as possible)
 		}
 
-		#[ADD] create the distmeta prior to signature
-		$self->ACTION_distmeta;
+		## CHECK: remove this add add dependencies in actions before calling this ... it's cleaner; (ACTION_sign, ACTION_dist_sign (depends on distdir [unless already created]), ACTION_distdir (already depends on distmeta); so, should be correct
+		###[ADD] create the distmeta prior to signature
+		##$self->ACTION_distmeta;
 
 		# use local GnuPG gpg.conf, if available, for GnuPG signing (provides local repository override of default signature) [would be nice if Module::Signature took a signer argument]
 		# * use $ENV{_BUILD_gpg_conf_path}, if specified; or default to search .gpg in the main directory
@@ -627,6 +671,53 @@ $code{'ACTION_dist'} = q{
 		$self->SUPER::ACTION_dist();
 	  }
 };
+$code{'ACTION_distdir'} = q{
+	#[ADD] distdir - make ACTION_distsign dependant on sign (as a HACK to avoid gpg-agent open file handle on distdir)
+	sub ACTION_distdir {
+		my ($self) = @_;
+
+		# HACK: avoid gpg-agent leaving an open handle on a directory scheduled for cleanup :: this causes to sign events & leaves gpg-agent with a handle open to the main directory (not as bad because we don't clean it up)
+		# would be better to fix this in _sign_dir or in Module::Signature itself, if possible
+		if ($^O =~ /\AMSWin/i) {
+			use File::Glob qw(:glob); 	# ':glob' exports bsd_glob and GLOB_X flags
+			if (not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign'); }
+			}
+
+		$self->SUPER::ACTION_distdir();
+	  }
+};
+$code{'ACTION_distsign'} = q{
+	#[ADD] distsign - make ACTION_distsign dependant on sign (as a HACK to avoid gpg-agent open file handle on distdir)
+	sub ACTION_distsign {
+		my ($self) = @_;
+
+		# HACK: avoid gpg-agent leaving an open handle on a directory scheduled for cleanup :: this causes to sign events & leaves gpg-agent with a handle open to the main directory (not as bad because we don't clean it up)
+		# would be better to fix this in _sign_dir or in Module::Signature itself, if possible
+		if ($^O =~ /\AMSWin/i) {
+			use File::Glob qw(:glob); 	# ':glob' exports bsd_glob and GLOB_X flags
+			if (not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign'); }
+			}
+
+		$self->SUPER::ACTION_distsign();
+	  }
+};
+$code{'ACTION_distcheck'} = q{
+	#[ADD] action = distcheck - custom distcheck ACTION to create MANIFEST (if needed; especially after a "distclean")
+	sub ACTION_distcheck {
+		my ($self) = @_;
+
+		# needed prior to ACTION_distcheck to make sure there is a MANIFEST o/w distcheck gripes
+		#$self->ACTION_manifest( qq{quiet} );
+		{
+			local $self->{properties}{quiet} = 1;
+			require ExtUtils::Manifest;  	# needed to modify $ExtUtils::Manifest::Verbose and $ExtUtils::Manifest::Quiet prior to manifest building
+			local ($ExtUtils::Manifest::Verbose, $ExtUtils::Manifest::Quiet) = (0,1);
+			$self->ACTION_manifest; 		# [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
+		}
+
+		$self->SUPER::ACTION_distcheck();
+	  }
+};
 $code{'ACTION_distall'} = q{
 	#[ADD] NEW action = distall - makes all distributions
 	sub ACTION_distall {
@@ -655,6 +746,60 @@ $code{'ACTION_distpar'} = q{
 		$self->depends_on('pardist');
 	  }
 };
+$code{'ACTION_disttestall'} = q{
+	#[ADD] NEW action = disttestall - run all tests on distribution
+	sub ACTION_disttestall {
+		# FROM Module::Build::ACTION_disttest()
+		my ($self) = @_;
+		$self->depends_on('distdir');
+
+		$self->_do_in_dir
+		( $self->dist_dir,
+		  sub {
+			# XXX could be different names for scripts
+
+			$self->run_perl_script('Build.PL') # XXX Should this be run w/ --nouse-rcfile
+			  or die "Error executing 'Build.PL' in dist directory: $!";
+			$self->run_perl_script('Build')
+			  or die "Error executing 'Build' in dist directory: $!";
+			$self->run_perl_script('Build', [], ['testall'])
+			  or die "Error executing 'Build test' in dist directory";
+		  });
+		}
+};
+$code{'ACTION_upload_cpan'} = q{
+	#[ADD] NEW action = upload_cpan - use CPAN::Uploader to upload finished / test-complete distributions to CPAN
+	sub ACTION_upload_cpan {
+		my ($self) = @_;
+
+		$self->depends_on('dist');
+		print "Distribution built successfully.\n";
+		$self->depends_on('disttestall');
+		print "Testing of distribution completed successfully.\n";
+
+		use File::Spec;
+		my $devnull = File::Spec->devnull();
+		my $haveCPANUpload = ( qx{cpan-upload --help 2>$devnull} =~ /\scpan-upload\s/m );
+		if (not $haveCPANUpload) {
+			die q{Unable to upload distribution ('cpan-upload' script required; install CPAN::Uploader)}."\n";
+			}
+		my $havePAUSEcredentials = -e $ENV{HOME}.'/.pause';
+		if (not $havePAUSEcredentials) {
+			die q{Unable to upload distribution ('.pause' credentials file expected in the $ENV{HOME} directory; see documentation for CPAN::Uploader)}."\n";
+			}
+		my $dist_dir = $self->dist_dir;
+		## ToDO: refactor to either quote $dist_dir.tar.gz correctly for system() or use CPAN::Uploader directly (it is vaguely possible that we could have errors because of inadequate argument quoting)
+		system( qq{cpan-upload $dist_dir.tar.gz} );
+	  }
+};
+$code{'ACTION_cpan_upload'} = q{
+	#[ADD] NEW action = cpan_upload - (ALIAS of upload_cpan)
+	sub ACTION_cpan_upload {
+		my ($self) = @_;
+
+		$self->ACTION_upload_cpan();
+	  }
+};
 $code{'ACTION_show_vfiles'} = q{
 	#[ADD] NEW action = show_vfiles - print all versioned file within module
 	sub ACTION_show_vfiles {
@@ -678,7 +823,7 @@ $code{'ACTION_show_versions'} = q{
 
 		my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
 
-		if (not $haveExtUtilsMakeMaker) { die "ERROR: version parsing requires ExtUtils::MakeMaker" };
+		if (not $haveExtUtilsMakeMaker) { die "Unable to parse versions with ExtUils::MakeMaker (install ExtUils::MakeMaker)\n" };
 
 		# done with GLOBs instead of directly specifying files to maintain correct file list without requiring reconstruction of Build.PL
 		my @files = ( map { glob $_ } split(/;/, $ENV{_BUILD_versioned_file_globs}) );
@@ -887,8 +1032,8 @@ $code{'ACTION_install'} = q{
 	sub ACTION_install {
 		my ($self) = @_;
 
-        ###[ADD] update all distmeta info when installing
-        ##$self->depends_on('distmeta');	## NOT NEEDED and causes a MANIFEST rebuild which can cause SIGNATURE issues on tests after installs ## may be fixed with sorted MANIFEST
+		###[ADD] update all distmeta info when installing
+		##$self->depends_on('distmeta');	## NOT NEEDED and causes a MANIFEST rebuild which can cause SIGNATURE issues on tests after installs ## may be fixed with sorted MANIFEST
 
 		#if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
 		## this is an ActivePerl installation (and ppm is available)
@@ -989,20 +1134,20 @@ $code{'ACTION_distmeta@FILES_up_to_date'} = q{
 		}
 };
 $code{'ACTION_distmeta'} = q{
-    sub ACTION_distmeta {
-        my ($self) = @_;
+	sub ACTION_distmeta {
+		my ($self) = @_;
 
 		#[ADD] create meta info; but, to stabilize build for SIGNATURE, only recreate if needed (eg, antecedent file(s) are newer)
 		# completely replaces $self->SUPER::ACTION_distmeta (to avoid unneeded file rebuilds)
 
-		require ExtUtils::Manifest;  	# needed to modify $ExtUtils::Manifest::Verbose and $ExtUtils::Manifest::Quiet prior to manifest building
-
-        #[ADD] update the MANIFEST when building 'distmeta'
+		#[ADD] update the MANIFEST when building 'distmeta'
 		# needed prior to ACTION_distmeta to make sure there is a MANIFEST o/w META.yml creation has errors
+		#$self->ACTION_manifest( qq{quiet} );
 		{
 			local $self->{properties}{quiet} = 1;
+			require ExtUtils::Manifest;  	# needed to modify $ExtUtils::Manifest::Verbose and $ExtUtils::Manifest::Quiet prior to manifest building
 			local ($ExtUtils::Manifest::Verbose, $ExtUtils::Manifest::Quiet) = (0,1);
-			$self->ACTION_manifest;
+			$self->ACTION_manifest; 		# [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
 		}
 
 		# NOTE: FILES_up_to_date( $|\@ dependent_file(s), $|\@ antecedent(s) [, \%] ) {...}
@@ -1012,8 +1157,8 @@ $code{'ACTION_distmeta'} = q{
 		$self->do_create_license if ($self->create_license and not $self->FILES_up_to_date('LICENSE', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));	## worry about _main_docfile(), ASSERT?
 		$self->do_create_metafile if (not $self->FILES_up_to_date('META.yml', [ 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));	## worry about _main_docfile(), ASSERT?
 
-        # TODO: check file(s) for up-to-date before recreation of files (and DON'T call SUPER)
-        ## Makefile.PL [ check create_makefile_pl ... ]
+		# TODO: check file(s) for up-to-date before recreation of files (and DON'T call SUPER)
+		## Makefile.PL [ check create_makefile_pl ... ]
 			#sub do_create_makefile_pl {
 			#  my $self = shift;
 			#  require Module::Build::Compat;
@@ -1023,8 +1168,8 @@ $code{'ACTION_distmeta'} = q{
 			#  $self->_add_to_manifest('MANIFEST', 'Makefile.PL');
 			#}
 
-        ## 'README' [ MODULE files... : check do_create_readme and POD::ReadMe to find the correct files ]
-        	# README created from _main_docfile
+		## 'README' [ MODULE files... : check do_create_readme and POD::ReadMe to find the correct files ]
+			# README created from _main_docfile
 			#my $docfile = $self->_main_docfile;
 			#sub _main_docfile {
 			#  my $self = shift;
@@ -1036,7 +1181,7 @@ $code{'ACTION_distmeta'} = q{
 			#  }
 			#}
 
-        ## License [ check create_license ... ]
+		## License [ check create_license ... ]
 			#sub do_create_license {
 			#  my $self = shift;
 			#  $self->log_info("Creating LICENSE file");
@@ -1063,8 +1208,8 @@ $code{'ACTION_distmeta'} = q{
 			#  $self->_add_to_manifest('MANIFEST', 'LICENSE');
 			#}
 
-        ## META.yml [ check create_metafile ... ]
-        	#sub do_create_metafile {
+		## META.yml [ check create_metafile ... ]
+			#sub do_create_metafile {
 			#  my $self = shift;
 			#  return if $self->{wrote_metadata};
 			#
@@ -1094,35 +1239,46 @@ $code{'ACTION_distmeta'} = q{
 			#  $self->write_metafile;
 			#}
 
-        #[ADD] re-update the MANIFEST with any new files [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
+		#[ADD] re-update the MANIFEST with any new files [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
+		#$self->ACTION_manifest( qq{quiet} );
 		{
 			local $self->{properties}{quiet} = 1;
+			require ExtUtils::Manifest;  	# needed to modify $ExtUtils::Manifest::Verbose and $ExtUtils::Manifest::Quiet prior to manifest building
 			local ($ExtUtils::Manifest::Verbose, $ExtUtils::Manifest::Quiet) = (0,1);
-			$self->ACTION_manifest;
+			$self->ACTION_manifest; 		# [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
 		}
-      }
+	}
 };
 $code{'ACTION_testall'} = q{
-    sub ACTION_testall {
-        my ($self) = @_;
+	sub ACTION_testall {
+		my ($self) = @_;
 
 		use File::Glob qw(:glob); 	# ':glob' exports bsd_glob and GLOB_X flags
 
 		$ENV{TEST_ALL} = 1;
 
-        # build dependency (to make sure we're testing the most recent incarnation of the package)
+		# build dependency (to make sure we're testing the most recent incarnation of the package)
 		$self->depends_on('build');
 
-        # NOT strictly necessary to limit distmeta builds to only TEST_AUTHOR or TEST_ALL cases (distmeta rebuilds are now dependency gated)
-        # ... but distmeta rebuilds on other platforms can change minor things such as EOL characters, quote characters, or links, any of which invalidates the SIGNATURE; so, avoid distmeta rebuilds especially for installation tests
-        # ... so keep the ENV variable gates
-        #$self->depends_on('distmeta');
-        if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { $self->depends_on('distmeta') };
+		# NOT strictly necessary to limit distmeta builds to only TEST_AUTHOR or TEST_ALL cases (distmeta rebuilds are now dependency gated)
+		# ... but distmeta rebuilds on other platforms can change minor things such as EOL characters, quote characters, or links, any of which invalidates the SIGNATURE; so, avoid distmeta rebuilds especially for installation tests
+		# ... so keep the ENV variable gates
+		#$self->depends_on('distmeta');
+		if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { $self->depends_on('distmeta') };
 
-        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and $self->{properties}{sign} and not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign') };  	# [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
+		if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and $self->{properties}{sign} and not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign') };  	# [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
 
-        return $self->SUPER::ACTION_testall;
-      }
+		return $self->SUPER::ACTION_testall;
+	}
+};
+$code{'ACTION_manifest@_POSSIBLE_add_to_manifest'} = q{
+	#[ADD] _POSSIBLE_add_to_manifest = add sort after adding to manifest to keep MANIFEST in sorted condition
+	sub _POSSIBLE_add_to_manifest {
+		my ($self) = @_;
+
+		$self->SUPER::_add_to_manifest();
+		$self->SUPER::_sort_manifest();
+	  }
 };
 $code{'ACTION_manifest@sort_manifest'} = q{
 	sub _sort_manifest {
@@ -1166,7 +1322,7 @@ $code{'ACTION_manifest'} = q{
   my $dist_name = q{};
   my $dist_version = q{};
   my $dist_path = q{};
-    ## FROM: ExtUtils::Manifest (v1.54)
+	## FROM: ExtUtils::Manifest (v1.54)
 	sub my_maniskip {
 		#print "HERE in my_maniskip()\n";
 		my @skip ;
@@ -1313,8 +1469,8 @@ $code{'ACTION_manifest'} = q{
 	#override->restore;
 	#*ExtUtils::Manifest::_maniskip = \&my_maniskip;
 
-	# ... might be brittle:: Module::Signature overrides it as well ( but only for ExtUtils::Manifest->VERSION < 1.41 ), probably ok
-	# ... petition ExtUtils::Manifest maintainers for a hook? changing the original code might break some folks MANIFEST.SKIPs
+	# CHECK: ... might be brittle:: Module::Signature overrides it as well ( but only for ExtUtils::Manifest->VERSION < 1.41 ), probably ok
+	# ToDO: ... petition ExtUtils::Manifest maintainers for a hook? changing the original code might break some folks MANIFEST.SKIPs
   }
 };
 $code{'ACTION_ppd@my_varchname'} = q{
