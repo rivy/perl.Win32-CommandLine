@@ -27,7 +27,7 @@ unless ($message || $haveModuleSignature) { $message = 'Module::Signature requir
 unless ($message || $haveSHA) { $message = 'Missing any supported SHA modules (Digest::SHA, Digest::SHA1, or Digest::SHA::PurePerl)'; }
 unless ($message || $haveKeyserverConnectable) { $message = 'Unable to connect to keyserver (pgp.mit.edu)'; }
 
-plan skip_all => $message if $message;
+#plan skip_all => $message if $message;
 
 unless ($message || $haveSIGNATURE) { $message = 'Missing SIGNATURE file'; }
 unless ($message || $haveNonEmptySIGNATURE) { $message = 'Empty SIGNATURE file'; }

@@ -1,5 +1,5 @@
 #!perl -w   -- ## emacs -*- tab-width: 4; mode: cperl indent-tabs-mode: nil; basic-offset: 2 -*- ## (jedit) :tabsize=4:mode=perl: ## (notepad++) vim:ts=4:sw=2:et:sta:sts=2
-#$Id: Build.PL,v 0.3.6.334566 ( r100:64d56d2645ef [mercurial] ) 2012/03/25 20:14:32 rivy $
+#$Id: Build.PL,v 0.3.6.344763 ( r104:d2b11cc16de4 [mercurial] ) 2012/03/25 23:05:19 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -32,11 +32,11 @@ use 5.006; ##	# v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', t
 use English qw( -no_match_vars ); ##	# long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.3.6.334566 $ SCS tag
+# generate VERSION from $Version: 0.3.6.344763 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.6.334566 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.6.344763 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -570,9 +570,9 @@ $code{'ACTION_sign@_sign_dir'} = q{
 		my ($self, $dir) = @_;
 
 		unless (eval { require Module::Signature; 1 }) {
-		$self->log_warn("Couldn't load Module::Signature for signing action:\n $@\n");
-		return;
-		}
+			$self->log_warn("Missing Module::Signature; unable to sign the distribution\n");
+			return;
+			}
 
 		## override Module::Signature (based on VERSION) to quiet _has_gpg()
 		## : add $Module::Signature::VERSION gating when appropriate (upstream fixed)
