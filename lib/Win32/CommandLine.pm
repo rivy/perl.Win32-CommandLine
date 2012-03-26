@@ -21,7 +21,9 @@ our $VERSION = qw$Version$[1]
 
 # ToDO: write a note to the perl developers to add a note about Win32::CommandLine to the perl README.win32 (eg, http://search.cpan.org/~flora/perl-5.14.2/README.win32 @@ http://www.webcitation.org/66PGpLoga)
 
-# ToDO: ANSI C-quoting :: \XHH also currently is seen as a transform sequence (although capital versions of the other DO NOT cause a transformation)... ? remove \XHH ## this needs research
+# ToDO: ANSI C-quoting :: \XHH also currently is seen as a transform sequence (although capital versions of the other DO NOT cause a transformation)... ? remove \XHH or add capitals as acceptable for the other escapes? ## this needs research
+
+# ToDO: Add tests to make sure I/O redirection works correctly (no eaten STDIN, etc...)
 
 # ToDO: $ENV{~NAME} overrides ~NAME expansion, replacing the usual expansion, EXCEPT for $ENV{~} which does NOT override the expansion of ~
 #        :: should $ENV{~} override ~ expansion?; should ~ expand twice? (eg, == expansion of ~<CURRENTUSER> [which would allow $ENV{~CURRENTUSER} to override) or be left as a seperate direct expansion?
@@ -134,10 +136,14 @@ my %_G = ( # package globals
 	unbalanced_quotes	=> 0,
 	);
 
-BEGIN {## no critic ( ProhibitExcessComplexity ProhibitPunctuationVars )
+#BEGIN{ ## doesn't need to be a BEGIN for COMSPEC changes
+	# ToDO: update the documentation to note this under-the-sheets change (should have little or no impact, but give out the information in the GOTCHAS section)
+	## FIX: the BUG noted below breaks STDIN redirection via <
+	# so ... plan to just set COMSPEC, update the comments and notes, and be done
 	# NOTE: we REQUIRE a working subshell mechanism, so enforce it (? warning if we change anything like COMSPEC for subshell execution?)
 	# ToDO: rework this to better respect the users settings/wishes, but default to a working system avoiding mismatched subshell execution (eg, using "cmd.exe /x/d/c", ? prefix with unixified $ENV{SystemRoot}?)
 	# ToDO: when  done, remove the extra code from the perl scripts in @bin (wrap-cpan, etc)
+	# ??: but what if Win32::CommandLine is NOT installed for those scripts?
 	# see this code from wrap-cpan:
 	##	# avoid differing shells for COMSPEC and Perl subshell execution; this can cause weird behavior (eg, TCC parsing a BAT file but executing it with CMD, which causes all sorts of trouble)
 	##	# assume user knows best, however; so, if Perl5Shell is set, leave it alone
@@ -152,69 +158,88 @@ BEGIN {## no critic ( ProhibitExcessComplexity ProhibitPunctuationVars )
 	# NOTE: BEGIN is used because once a system() or backtick call has been issued, perl seems to ignore any changes to PERL5SHELL, so PERL5SHELL must be correct before any system() or backtick calls are done
 	# NOTE: generally, assume the user knows what they are doing, PERL5SHELL will either be empty or set up correctly corresponding to an executable in the PATH, so only change it if undefined
 	# NOTE: no changes to PATH (once again, user knows best)
-	my $isWorkingSystem;
-	my $cmd = q{};
-	my $exe;
-	my $p5s; my $badP5S = 0;
-	my $onPATH = 0;
+
+	## $ENV{COMSPEC} = $ENV{SystemRoot}.q{\\System32\\cmd.exe} if ($^O eq 'MSWin32') and not $ENV{PERL5SHELL} and -e $ENV{SystemRoot}.q{\\System32\\cmd.exe}; 	# avoid shell/sub-shell mismatches (see <BLOGPOST>)
+
+{
+## no critic ( ProhibitExcessComplexity ProhibitPunctuationVars RequireLocalizedPunctuationVars )
 	my $msg;
-	$exe = 'CMD.exe';
-	if (defined $ENV{PERL5SHELL}) {
-		# separate PERL5SHELL into components (assumes a string which is space-delimited with possible double-quote quoting)
-		# URLref: http://perldoc.perl.org/perlfaq4.html#How-can-I-split-a-%5bcharacter%5d-delimited-string-except-when-inside-%5bcharacter%5d%3f
-		my @tokens = (); my $text = $ENV{PERL5SHELL}; my $sep = q{ };
-		push(@tokens, $+) while $text =~ m{ "([^\"\\]*(?:\\.[^\"\\]*)*)"$sep?|([^$sep]+)$sep?|$sep}g;  ## no critic ( ProhibitPunctuationVars ) # ToDO: remove/revisit
-		push(@tokens, undef) if substr($text,-1,1) eq $sep;  	## no critic ( ProhibitMagicNumbers ) # ToDO: remove/revisit
-		#print "tokens = [ ".join(',', @tokens)." ]\n";
-		$exe = $tokens[0];
-		# PERL5SHELL must use doubled backslashes as path seperators in the executable path (if any are needed)
-		if ($exe =~ m/\//) { $exe = q{}; }  						# slashes as path seperators are incorrect (the executable path will be invalid for system() and backtick execution)
-		$exe =~ s/\\\\/\//g; $exe =~ s/\\//g; $exe =~ s/\//\\/g; 	# remove single slashes and turn any doubled backslashes into singles for an interpretation equivalent to system() and backtick execution
-		#print qq{exe = "$exe"\n};
-		if (@tokens < 2) { $badP5S = 1; }
-		};
-	if (-e $exe) {
-		$cmd = $exe;
-		#print "found directly @ '$cmd'\n";
-		$onPATH = 1;
-		}
-	if (not -e $cmd) {
-		# look for exe on PATH
-		my @paths = split(/;/,$ENV{PATH});
-		foreach my $path (@paths) {
-			#print qq{looking for '$exe' on PATH @ '$path'\n};
-			if (-e "$path\\$exe") {
-				$cmd = "$path\\$exe";
-				#print qq{found on PATH @ '$cmd'\n};
-				$onPATH = 1;
-				last;
+
+	if (($^O eq 'MSWin32') and not $ENV{PERL5SHELL}) {
+		my $regex = quotemeta( $ENV{SystemRoot}.q{\\system32\\cmd.exe} );
+		if (not $ENV{COMSPEC} =~ m/$regex/) {
+			if (-e $ENV{SystemRoot}.q{\\system32\\cmd.exe}) {
+				$ENV{COMSPEC} = $ENV{SystemRoot}.q{\\system32\\cmd.exe};
+				$msg = q{WARNING: $ENV{COMSPEC} was changed to point to CMD.exe (for compatibility since Perl defaults to using "cmd.exe /x/d/c" for subshell execution); set $ENV{PERL5SHELL} and/or $ENV{COMSPEC} to compatible values to correct this problem\n};
 				}
+			else { $msg = q{WARNING: $ENV{COMSPEC} may be incompatible with Perl subshell execution and CMD.exe was not found; set $ENV{PERL5SHELL} and/or $ENV{COMSPEC} to compatible values to correct this problem\n}; }
 			}
 		}
-	if (not -e $cmd and defined $ENV{PERL5SHELL}) { $badP5S = 1; }
-	if (not -e $cmd and -e $ENV{SystemRoot}.'\\System32\\CMD.exe') {
-		# set full path to CMD.exe (for WindowsXP+)
-		$cmd = $ENV{SystemRoot}.'\\System32\\CMD.exe';
-		#print "found @ $cmd\n";
-		}
-	if (not -e $cmd and -e $ENV{COMSPEC}) {
-		$cmd = $ENV{COMSPEC};
-		#print "found in COMSPEC @ $cmd\n";
-		}
-	if (-e $cmd) {
-		$p5s = $cmd;
-		$p5s =~ s/\\/\\\\/g;
-		#$p5s .= ' /x/c';	## [no /d for subshell consistency] ; /x == /E:ON == Enable command extensions ; /c  == transient shell (execute command and return) :: NOTE: this avoids concerns about autorun changing the subshell environment in unexpected ways
-		$p5s .= ' /x/d/c';	## /x == /E:ON == Enable command extensions ; /d == Disable execution of AutoRun commands ; /c  == transient shell (execute command and return) :: NOTE: this assumes that CMD autorun doesn't modify the environment (strange unexpected things can happen if this is note true)
-		}
-	if ($badP5S) { if (not $msg) { $msg = q{ERROR: PERL5SHELL is set incorrectly}.($onPATH ? q{} : qq{; the executable [$exe] was not found (PATH was also searched)}).($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
-	if (not $onPATH and not defined $ENV{PERL5SHELL} and $p5s) {
-		$ENV{PERL5SHELL} = $p5s;  	## no critic ( RequireLocalizedPunctuationVars )
-		if (not $msg) { $msg = qq{WARNING: PERL5SHELL was not set and CMD.exe not found on PATH; autocorrected [now, PERL5SHELL="$ENV{PERL5SHELL}"]; try "set PERL5SHELL=$ENV{PERL5SHELL}" to correct this problem\n} };
-		}
-	#print "ENV{PERL5SHELL}=$ENV{PERL5SHELL}\n";
-	$isWorkingSystem = eval { ``; return ( $? ? 0 : 1 ) };	# quietly test system() and backtick subshell calls
-	if (not $isWorkingSystem) { if (not $msg) { $msg = q{ERROR: Unable to find a shell (eg, CMD.exe) for system(); to correct the problem, add path for CMD.exe to PATH or set PERL5SHELL}.($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
+
+	# my $isWorkingSystem;
+	# my $cmd = q{};
+	# my $exe;
+	# my $p5s; my $badP5S = 0;
+	# my $onPATH = 0;
+	# my $msg;
+	# $exe = 'CMD.exe';
+	# if (defined $ENV{PERL5SHELL}) {
+		# # separate PERL5SHELL into components (assumes a string which is space-delimited with possible double-quote quoting)
+		# # URLref: http://perldoc.perl.org/perlfaq4.html#How-can-I-split-a-%5bcharacter%5d-delimited-string-except-when-inside-%5bcharacter%5d%3f
+		# my @tokens = (); my $text = $ENV{PERL5SHELL}; my $sep = q{ };
+		# push(@tokens, $+) while $text =~ m{ "([^\"\\]*(?:\\.[^\"\\]*)*)"$sep?|([^$sep]+)$sep?|$sep}g;  ## no critic ( ProhibitPunctuationVars ) # ToDO: remove/revisit
+		# push(@tokens, undef) if substr($text,-1,1) eq $sep;  	## no critic ( ProhibitMagicNumbers ) # ToDO: remove/revisit
+		# #print "tokens = [ ".join(',', @tokens)." ]\n";
+		# $exe = $tokens[0];
+		# # PERL5SHELL must use doubled backslashes as path seperators in the executable path (if any are needed)
+		# if ($exe =~ m/\//) { $exe = q{}; }  						# slashes as path seperators are incorrect (the executable path will be invalid for system() and backtick execution)
+		# $exe =~ s/\\\\/\//g; $exe =~ s/\\//g; $exe =~ s/\//\\/g; 	# remove single slashes and turn any doubled backslashes into singles for an interpretation equivalent to system() and backtick execution
+		# #print qq{exe = "$exe"\n};
+		# if (@tokens < 2) { $badP5S = 1; }
+		# };
+	# if (-e $exe) {
+		# $cmd = $exe;
+		# #print "found directly @ '$cmd'\n";
+		# $onPATH = 1;
+		# }
+	# if (not -e $cmd) {
+		# # look for exe on PATH
+		# my @paths = split(/;/,$ENV{PATH});
+		# foreach my $path (@paths) {
+			# #print qq{looking for '$exe' on PATH @ '$path'\n};
+			# if (-e "$path\\$exe") {
+				# $cmd = "$path\\$exe";
+				# #print qq{found on PATH @ '$cmd'\n};
+				# $onPATH = 1;
+				# last;
+				# }
+			# }
+		# }
+	# if (not -e $cmd and defined $ENV{PERL5SHELL}) { $badP5S = 1; }
+	# if (not -e $cmd and -e $ENV{SystemRoot}.'\\System32\\CMD.exe') {
+		# # set full path to CMD.exe (for WindowsXP+)
+		# $cmd = $ENV{SystemRoot}.'\\System32\\CMD.exe';
+		# #print "found @ $cmd\n";
+		# }
+	# if (not -e $cmd and -e $ENV{COMSPEC}) {
+		# $cmd = $ENV{COMSPEC};
+		# #print "found in COMSPEC @ $cmd\n";
+		# }
+	# if (-e $cmd) {
+		# $p5s = $cmd;
+		# $p5s =~ s/\\/\\\\/g;
+		# #$p5s .= ' /x/c';	## [no /d for subshell consistency] ; /x == /E:ON == Enable command extensions ; /c  == transient shell (execute command and return) :: NOTE: this avoids concerns about autorun changing the subshell environment in unexpected ways
+		# $p5s .= ' /x/d/c';	## /x == /E:ON == Enable command extensions ; /d == Disable execution of AutoRun commands ; /c  == transient shell (execute command and return) :: NOTE: this assumes that CMD autorun doesn't modify the environment (strange unexpected things can happen if this is note true)
+		# }
+	# if ($badP5S) { if (not $msg) { $msg = q{ERROR: PERL5SHELL is set incorrectly}.($onPATH ? q{} : qq{; the executable [$exe] was not found (PATH was also searched)}).($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
+	# if (not $onPATH and not defined $ENV{PERL5SHELL} and $p5s) {
+		# $ENV{PERL5SHELL} = $p5s;  	## no critic ( RequireLocalizedPunctuationVars )
+		# if (not $msg) { $msg = qq{WARNING: PERL5SHELL was not set and CMD.exe not found on PATH; autocorrected [now, PERL5SHELL="$ENV{PERL5SHELL}"]; try "set PERL5SHELL=$ENV{PERL5SHELL}" to correct this problem\n} };
+		# }
+	# #print "ENV{PERL5SHELL}=$ENV{PERL5SHELL}\n";
+# #!# BUG: the EVAL eats all STDIN redirected with "<"
+# #!#	$isWorkingSystem = eval { ``; return ( $? ? 0 : 1 ) };	# quietly test system() and backtick subshell calls
+# #!#	if (not $isWorkingSystem) { if (not $msg) { $msg = q{ERROR: Unable to find a shell (eg, CMD.exe) for system(); to correct the problem, add path for CMD.exe to PATH or set PERL5SHELL}.($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
 	if ($msg and not $ENV{HARNESS_ACTIVE}) { print {*STDERR} $msg; };  ## no critic ( RequireCheckedSyscalls ) # ToDO: remove/revisit
 }
 
@@ -579,20 +604,20 @@ sub	_gen_delimeted_regexp {
 	## no critic (ControlStructures::ProhibitCStyleForLoops)
 	my ($dels, $escs) = @_;
 	return q{} unless $dels =~ /^\S+$/;		## no critic (ProhibitPostfixControls)
-	$escs =	q{}	unless $escs;				## no critic (ProhibitPostfixControls)
+	$escs = q{} unless $escs;				## no critic (ProhibitPostfixControls)
 
 	#print "dels = $dels\n";
 	#print "escs = $escs\n";
 
-	my @pat	= ();
-	for	(my	$i=0; $i<length	$dels; $i++)
+	my @pat = ();
+	for	(my $i=0; $i<length $dels; $i++)
 		{
-			my $d =	quotemeta substr($dels,$i,1);
+			my $d = quotemeta substr($dels,$i,1);
 			if ($escs)
 				{
 				for	(my	$j=0; $j < length $escs; $j++)
 					{
-					my $e =	quotemeta substr($escs,$j,1);
+					my $e = quotemeta substr($escs,$j,1);
 					if ($d eq $e)
 						{
 						push @pat, "$d(?:[^$d]*(?:(?:$d$d)[^$d]*)*)$d";
@@ -603,7 +628,7 @@ sub	_gen_delimeted_regexp {
 						}
 					}
 				}
-			else { push	@pat, "$d(?:[^$d]*)$d";	}
+			else { push @pat, "$d(?:[^$d]*)$d"; }
 		}
 	my $pat	= join q{|}, @pat;
 
@@ -624,16 +649,16 @@ sub	_dequote{
 
 	my $me = (caller(0))[3];	## no critic ( ProhibitMagicNumbers )	## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 	my $opt_ref;
-	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last	argument only if it's a	HASH reference (assumed	to be options for our function)
-	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(exists	$opt{$_}) {	$opt{$_} = $opt_ref->{$_}; } else {	Carp::carp "Unknown	option '$_'	to for function	".$me; } } }
+	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	## no critic (ProhibitPostfixControls)	## pop last	argument only if it's a HASH reference (assumed	to be options for our function)
+	if ($opt_ref) {	for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown	option '$_' to for function ".$me; } } }
 
-	my $w =	$opt{surround_re};
-	my $q =	$opt{allowed_quotes_re};
+	my $w = $opt{surround_re};
+	my $q = $opt{allowed_quotes_re};
 	my $quoter = q{};
 
-	@_ = @_	? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
 
-	for	(@_	? @_ : $_)
+	for (@_ ? @_ : $_)
 		{
 		s/^$w($q)(.*)\1$w$/$2/;
 		if (defined($1)) { $quoter = $1; }
@@ -647,7 +672,7 @@ sub	_dequote{
 		#print "_ = @_\n";
 		}
 
-	return wantarray ? @_ :	"@_";
+	return wantarray ? @_ : "@_";
 	}
 
 sub	_zero_position_v1 {
@@ -657,7 +682,7 @@ sub	_zero_position_v1 {
 	# @args = the parsed argument array
 	use	English	qw(	-no_match_vars ) ;	# '-no_match_vars' avoids regex	performance	penalty
 
-	my $q_re =	shift @_;
+	my $q_re = shift @_;
 	my @args = @_;
 
 	my $pos;
@@ -665,49 +690,49 @@ sub	_zero_position_v1 {
 	#print "0 =	$0\n";
 	#win32 - filenames are case-preserving but case-insensitive	[so, solely case difference compares equal => convert to lowercase]
 	my $zero = $PROGRAM_NAME;	   ## no critic	(Variables::ProhibitPunctuationVars)
-	my $zero_lc	= lc($zero);
-	my $zero_dq	= _dequote($zero_lc, { allowed_quotes_re => $q_re } );  # dequoted $0
+	my $zero_lc = lc($zero);
+	my $zero_dq = _dequote($zero_lc, { allowed_quotes_re => $q_re } );  # dequoted $0
 
 	#print "zero = $zero\n";
-	#print "zero_lc	= $zero_lc\n";
-	#print "zero_dq	= $zero_dq\n";
+	#print "zero_lc = $zero_lc\n";
+	#print "zero_dq = $zero_dq\n";
 
 #	while (my $arg = shift @a) {
-	for	($pos=0; $pos<$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
-		my $arg	= $args[$pos];
-#	 for my	$arg (@a) {
-		#print "arg	= $arg\n";
+	for ($pos=0; $pos<$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
+		my $arg = $args[$pos];
+#	 for my $arg (@a) {
+		#print "arg = $arg\n";
 		if ($zero_lc eq	lc($arg))
-			{ #	direct match
-			#print "\tMATCH	(direct)\n";
+			{ # direct match
+			#print "\tMATCH (direct)\n";
 			last;
 			}
 		$arg =~	s/($q_re)(.*)\1/$2/;
 		#print "arg	= $arg\n";
 		if ($zero_lc eq	lc($arg))
 			{ #	dequoted match
-			#print "\tMATCH	(dequoted)\n";
+			#print "\tMATCH (dequoted)\n";
 			last;
 			}
 		#print 'rel2abs(arg) = '.File::Spec->rel2abs($arg)."\n";
 		# TODO: rethink file testing (-e is not sufficient as directories of same prefix may block resolution; but is -f or (-f & !-d) sufficient/correct? what about symbolic links/junctions, pipes, etc?
 		# TODO: add tests to specify appropriate behaviour for colliding names
-		if (-f $arg	&& (lc(File::Spec->rel2abs(	$zero_dq ))	eq lc(File::Spec->rel2abs( $arg	))))
-			{ #	rel2abs	match
-			#print "\tMATCH	(rel2abs)\n";
+		if (-f $arg && (lc(File::Spec->rel2abs( $zero_dq )) eq lc(File::Spec->rel2abs( $arg ))))
+			{ # rel2abs match
+			#print "\tMATCH (rel2abs)\n";
 			last;
 			}
 		if (!-f	$arg)
-			{ #	find file on PATH with File::Which (needed for compiled	perl executables)
+			{ # find file on PATH with File::Which (needed for compiled	perl executables)
 			my ($fn, $r);
 			my ($split_1, $split_2);
 			($split_1, $split_2, $fn) =	File::Spec->splitpath( $arg	);
-			#print "split_1	= $split_1\n";
-			#print "split_2	= $split_2\n";
+			#print "split_1 = $split_1\n";
+			#print "split_2 = $split_2\n";
 			#print "fn = $fn\n";
 			$r = File::Which::which($fn);
-			if (defined	$r)	{ $r = File::Spec->rel2abs(	$r ); }
-			#print $arg."\t\t=(find	with which)> ".((defined $r) ? $r :	"undef");
+			if (defined $r) { $r = File::Spec->rel2abs( $r ); }
+			#print $arg."\t\t=(find with which)> ".((defined $r) ? $r : "undef");
 			if (lc($r) eq lc(File::Spec->rel2abs($zero)))
 				{# which found
 				#print "\tMATCH (via which)\n";
@@ -723,14 +748,14 @@ sub	_zero_position_v1 {
 
 sub	_argv_parse{
 	# _argv( $ [,\%] ):	returns	@
-	# parse scalar using bash-like rules for quotes and subshell block replacements (no environment variable substitutions or globbing are performed)
+	# parse scalar using bash-like rules for quotes and subshell block replacements (no globbing or environment variable substitutions are performed)
 	# [\%]: an optional hash_ref containing function options as named parameters
 	## NOTE: once $(<...>) is implemented => need to parse "\n" as whitespace (use the /s argument for regexp) because there may be embedded newlines as whitespace
 	## TODO: formalize the grammar in documentation (very similar to bash shell grammer, except no $VAR interpretation, $(...) not interpreted within simple "..." (however, it is within $"..." => no further interpretation of $(...) output), quote removal within $(...) [to protect pipes]
 
 	## no critic ( ProhibitPunctuationVars ) # ToDO: remove/revisit
 
-	my %opt	= (
+	my %opt = (
 		_glob_within_qq => 0,		# = true/false [default = false]	# <private> if true, globbing within double quotes is performed, rather than only for "bare"/unquoted glob characters
 		_carp_unbalanced => 1,		# = 0/true/'quotes'/'subshells' [default = true] # <private> if true, carp for unbalanced command line quotes or subshell blocks
 		_die_subshell_error => 1,	# = true/false [default = true]		# <private> if true, die on any subshell call returning an error
@@ -741,7 +766,7 @@ sub	_argv_parse{
 
 	my $opt_ref;
 	$opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));	# pop trailing argument	only if	it's a HASH	reference (assumed to be options for our function)
-	if ($opt_ref) {	for	(keys %{$opt_ref}) { if	(defined $opt{$_}) { $opt{$_} =	$opt_ref->{$_};	} else { Carp::carp "Unknown option '$_' supplied for function ".$me;	} }	}
+	if ($opt_ref) {	for (keys %{$opt_ref}) { if (defined $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' supplied for function ".$me;	} }	}
 
 	my $command_line = shift @_;
 
@@ -750,7 +775,7 @@ sub	_argv_parse{
 	my $s = _ltrim($command_line, {trim_re => '(?s)[\s\n]+'});	# initial string to parse; prefix is whitespace trimmed		#???: need to change trim characters to include NL?
 	my $glob_this_token	= 1;
 
-	# $s ==	string being parsed
+	# $s == string being parsed
 	while ($s ne q{})
 		{# $s is non-empty and starts with non-whitespace character
 		Carp::Assert::assert( $s =~ /^\S/ );
@@ -864,7 +889,7 @@ sub	_argv_parse{
 						#$t .= $o;
 						push @argY, { token => $o, glob => 0, id => "[$type]" };
 						$t .= $argY[-1]->{token};
-						#push @{	$argX[ $i ] }, { token => _dequote($o), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
+						#push @{ $argX[ $i ] }, { token => _dequote($o), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
 						#print "\$dq.dq.0.t = `$t`\n";
 						#print "\$dq.dq.0.ss = `$ss`\n";
 						}
@@ -1147,11 +1172,11 @@ sub _argv_do_glob{
 
 		if ( $opt{nullglob} )
 			{
-			$glob_flags	|= GLOB_NOMAGIC;
+			$glob_flags |= GLOB_NOMAGIC;
 			}
 		else
 			{
-			$glob_flags	|= GLOB_NOCHECK;
+			$glob_flags |= GLOB_NOCHECK;
 			}
 
 		if ( $opt{glob} && $glob_this )
@@ -1256,26 +1281,26 @@ sub	_zero_position{
 	for	($pos=0; $pos<=$#args; $pos++) {		## no critic (ProhibitCStyleForLoops)
 		my $arg	= $args[$pos]->{token};
 #	 for my	$arg (@a) {
-		#print "pos	= $pos\n";
-		#print "arg	= $arg\n";
+		#print "pos = $pos\n";
+		#print "arg = $arg\n";
 		if ($zero_lc eq	lc($arg))
-			{ #	direct match
+			{ # direct match
 			#print "\tMATCH	(direct)\n";
 			last;
 			}
 		$arg =~	s/($q_re)(.*)\1/$2/;
 		#print "arg	= $arg\n";
 		if ($zero_lc eq	lc($arg))
-			{ #	dequoted match
-			#print "\tMATCH	(dequoted)\n";
+			{ # dequoted match
+			#print "\tMATCH (dequoted)\n";
 			last;
 			}
 		#print 'rel2abs(arg) = '.File::Spec->rel2abs($arg)."\n";
 		# TODO: rethink file testing (-e is not sufficient as directories of same prefix may block resolution; but is -f or (-f & !-d) sufficient/correct? what about symbolic links/junctions, pipes, etc?
 		# TODO: add tests to specify appropriate behaviour for colliding names
-		if (-f $arg	&& (lc(File::Spec->rel2abs(	$zero_dq ))	eq lc(File::Spec->rel2abs( $arg	))))
-			{ #	rel2abs	match
-			#print "\tMATCH	(rel2abs)";
+		if (-f $arg && (lc(File::Spec->rel2abs(	$zero_dq )) eq lc(File::Spec->rel2abs( $arg ))))
+			{ # rel2abs match
+			#print "\tMATCH (rel2abs)";
 			last;
 			}
 		if (!-f	$arg)
@@ -1283,11 +1308,11 @@ sub	_zero_position{
 			my ($fn, $r);
 			my ($split_1, $split_2);
 			($split_1, $split_2, $fn) =	File::Spec->splitpath( $arg	);
-			#print "split_1	= $split_1\n";
-			#print "split_2	= $split_2\n";
+			#print "split_1 = $split_1\n";
+			#print "split_2 = $split_2\n";
 			#print "fn = $fn\n";
 			$r = File::Which::which($fn);
-			if (defined	$r)	{ $r = File::Spec->rel2abs(	$r ); }
+			if (defined $r) { $r = File::Spec->rel2abs( $r ); }
 			#print $arg."\t\t=(find	with which)> ".((defined $r) ? $r :	"undef");
 			if ($r && (lc($r) eq lc(File::Spec->rel2abs($zero))) )
 				{# which found
@@ -1633,14 +1658,14 @@ sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 						#else { $t .= $4; $s = q{}; $_unbalanced_command_line = 1; last; }
 						}
 					}
-				else { Carp::croak q{no	match: shouldn't get here...}; };
+				else { Carp::croak q{no match: shouldn't get here...}; };
 				}
 			}
 
 		_ltrim($s);
 		if ( defined($t) )
 			{
-			#print "2-push `$t`	(g_ok =	$glob_this_token)\n";
+			#print "2-push `$t` (g_ok = $glob_this_token)\n";
 			push @argv2, $t;
 			push @argv2_globok, $glob_this_token;
 			#push @{ $argv_3[ $i ] }, { token => $t, glob => 1, id => '$t' };
@@ -1648,10 +1673,10 @@ sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 			}
 
 		# no prior token match
-		Carp::croak q{shouldn't	get	here...};
-		#print "*-push `$s`	(g_ok =	$glob_this_token)\n";
+		Carp::croak q{shouldn't get here...};
+		#print "*-push `$s` (g_ok = $glob_this_token)\n";
 		push @argv2, $s;
-		push @argv2_globok,	$glob_this_token;
+		push @argv2_globok, $glob_this_token;
 		push @{ $argv_3[ scalar(@argv_3) ] }, { token => $s, glob => 1,	id => 'WRONG:$s (shouldn\'t get here)' };		## no critic (RequireInterpolationOfMetachars)
 		$s = q{};
 		}
@@ -1863,12 +1888,12 @@ sub	_argv_v1{	## no critic ( Subroutines::ProhibitExcessComplexity )
 
 		if ( $opt{nullglob} )
 			{
-			#$glob_flags	|= GLOB_NOMAGIC;	# TEST: returns pattern ONLY if doesn't contain "*", "?" or "["? ## should this be something else instead?
-			#$glob_flags	&= ~GLOB_NOCHECK;
+			#$glob_flags |= GLOB_NOMAGIC;	# TEST: returns pattern ONLY if doesn't contain "*", "?" or "["? ## should this be something else instead?
+			#$glob_flags &= ~GLOB_NOCHECK;
 			}
 		else
 			{
-			$glob_flags	|= GLOB_NOCHECK;
+			$glob_flags |= GLOB_NOCHECK;
 			}
 
 		if ( $opt{glob} && $glob_this )
