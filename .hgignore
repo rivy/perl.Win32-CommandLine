@@ -21,6 +21,8 @@ Makefile$
 README$
 META.yml$
 MYMETA.yml$
+META.json$
+MYMETA.json$
 SIGNATURE$
 CHANGES\.log\.tmp$
 .*\.pyc$
