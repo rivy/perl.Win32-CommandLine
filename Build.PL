@@ -3,8 +3,11 @@
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
+## ToDO: expand upon assert_os to allow or disallow OS subtypes (Win9x, XP, ME, etc)
+
 ## TODO?: remove the '_' from the version for output dist files (>> will this cause a problem for PPM or CPAN with some sort of version mismatch between filename and META.yml
 ## TODO?: .. or just remove VERSION code generating the alpha '_' within the version? does it matter? does the '_' interfere with version comparisons on CPAN?
+## ...... these don't seem to be a problem
 
 # ToDO: open a defect ticket about error leakage for checking compiler presence in ExtUtils::CBuilder :: should be done in CBuilder with STDERR redirect
 # ToDO: open a defect ticket about error leakage for checking gpg presence in Module::Signature :: should be done in Module::Signature with STDERR redirect
@@ -66,8 +69,8 @@ $config{'xs_files_href'} = {};						# alternate XS file locations [to help with 
 $config{'PL_files_href'} = {};						# perl files to execute during processing (usually to generated .PL files from templates {see Module::Build::API docmentation under "PL_files"})
 $config{'c_source'} = undef;						# c source files to compile
 $config{'config_href'} = {};						# modify Config.pm values for the build
-$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib' ];		# globs matching extra files to clean up during "build clean"
-$config{'add_to_realcleanup_aref'} = [ 'MANIFEST', 'META.yml' ];			# globs matching extra files to clean up during "build realclean" (note: MANIFEST is always automatically generated from MANIFEST.SKIP)
+$config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib', 'MYMETA.json' ];		# globs matching extra files to clean up during "build clean"
+$config{'add_to_realcleanup_aref'} = [ 'MANIFEST', 'META.yml', 'META.json' ];			# globs matching extra files to clean up during "build realclean" (note: MANIFEST is always automatically generated from MANIFEST.SKIP)
 $config{'assert_os_aref'} = [];						# limit build to specific OS types (default = [] => any OS) [NOTE: entries are used as REGEXs for comparison VS $^O]
 $config{'custom_code_href'} = {};					# custom code overrides from config
 $config{'custom_ENV_href'} = {};					# custom environment overrides (set before each dispatch) [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
@@ -882,7 +885,7 @@ $code{'ACTION_realclean'} = q{
 				$full_progname = File::Spec::Functions::rel2abs($full_progname);
 
 				# Voodoo required to have a batch file delete itself without error;
-				# Syntax differs between 9x & NT: the later requires a null arg (???)
+				# Syntax differs between 9x & NT: the later requires an extra arg (Window Title)
 				## TODO: discuss race condition that occurs here: if other process completes 1st (which should almost never occur) the deletion will still be successful just a possible error message might occur = "The batch file cannot be found." & user may notice that the .bat file is still existant for a couple of seconds until the other process starts/inits/completes the deletion
 				## use /d to avoid AutoRUN as well (we only need a basic shell, no addons)
 				require Win32;
