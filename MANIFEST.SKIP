@@ -36,8 +36,10 @@
 (?:^|/)Build$
 (?:^|/)Build.bat$
 (?:^|/)_build/
-# avoid MYMETA.yml [ for Module::Build v0.35+ (August 2009); URLref: http://www.dagolden.com/index.php/479/mymeta-yml-in-the-wild ]
+# avoid MYMETA.yml  [ for Module::Build v0.35+ (August 2009); URLref: http://www.dagolden.com/index.php/479/mymeta-yml-in-the-wild @@ http://www.webcitation.org/66RIzfRJd ]
 (?:^|/)MYMETA.yml$
+# avoid MYMETA.json [ for Module::Build v0.38+ (March 2011); URLref: http://www.dagolden.com/index.php/1378/announcing-modulebuild-0-3800 @@ http://www.webcitation.org/66RJ9oZ1X ]
+(?:^|/)MYMETA.json$
 
 # Avoid Makemaker generated and utility files
 (?:^|/)MANIFEST\.bak$
