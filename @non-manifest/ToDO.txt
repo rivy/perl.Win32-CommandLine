@@ -1,3 +1,9 @@
+Update version requirements & documentation improvements
+
+CHANGED: update perl minimum requirement to v5.8.8 (the earliest version that can be tested against)
+CHANGED: comment and documentation improvements
+
+
 * [2012-03-18]
 	* wait for CPAN indexing and testing of 0.5.5_N
 	* if all goes well, update documentation

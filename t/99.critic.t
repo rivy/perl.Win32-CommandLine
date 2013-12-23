@@ -23,7 +23,8 @@ my %config;
 #$config{-severity} = 1;     # [ 5 = gentle, 4 = stern, 3 = harsh, 2 = cruel, 1 = brutal ]
 #$config{-exclude} = [ qw( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins Documentation::RequirePodAtEnd RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireLineBoundaryMatching Miscellanea::RequireRcsKeywords ControlStructures::ProhibitPostfixControls Subroutines::RequireArgUnpacking Variables::RequireLocalizedPunctuationVars ) ];
 $config{-severity} = 1;     # [ 5 = gentle, 4 = stern, 3 = harsh, 2 = cruel, 1 = brutal ]
-$config{-exclude} = [ qw( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ControlStructures::ProhibitPostfixControls Documentation::RequirePodAtEnd ) ];
+## ToDO: revisit exclusion of Modules::ProhibitExcessMainComplexity
+$config{-exclude} = [ qw( Modules::ProhibitExcessMainComplexity CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ControlStructures::ProhibitPostfixControls Documentation::RequirePodAtEnd ) ];
 $config{-verbose} = '[%l:%c]: (%p; Severity: %s) %m. %e. ';
 ##
 

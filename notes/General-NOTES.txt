@@ -1,5 +1,8 @@
 TODO
 
+THINK about changing the syntax to allow non-quoted balanced ()'s within shell execution blocks, "$(...)"
+* non-balanced parens must still be quote protected, as will all redirection characters "|<>" and seperators "&"
+
 DOCUMENT CHANGES
 
 Note: % issues for command line and variation between TCC and CMD shells

@@ -1,5 +1,6 @@
-@rem = q{--*-Perl-*--
+@rem = q{--* Perl *--
 @::# $Id$
+@::# (emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
 @echo off
 :: eXpand and eXecute command line
 :: similar to linux xargs
@@ -43,14 +44,14 @@ if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
 ::perl.exe -x -S %0 %*  	&:: if needed to avoid infinite recursion while using a PERL.BAT script
 perl -x -S %0 %*
 set _ERROR=%errorlevel%
-if NOT "%ERROR%" == "0" (
-	perl -e 0
-	if NOT "%errorlevel%" == "0" (
-		echo "ERROR: perl is required, but it is not executable; please install and/or add perl to the PATH"
-		)
-::  propagate %errorlevel%
-	exit /B %_ERROR%
+if "%_ERROR%" == "0" ( goto :NO_EXIT_ERROR )
+perl -e "exit 0"
+if NOT "%errorlevel%" == "0" (
+	echo "ERROR: perl is required, but it is not executable; please install Perl and/or add perl to the PATH [see http://strawberryperl.com]"
 	)
+::  propagate %errorlevel%
+exit /B %_ERROR%
+:NO_EXIT_ERROR
 endlocal
 goto :_DONE
 
@@ -97,9 +98,9 @@ goto :EOF
 :_DONE
 goto :endofperl
 @rem };
-#!perl -w  -- -*- tab-width: 4; mode: perl -*-
+#!perl -w --
 #NOTE: use '#line NN' (where NN = actual_line_number + 1) to set perl line # for errors/warnings
-#line 103
+#line 104
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
 

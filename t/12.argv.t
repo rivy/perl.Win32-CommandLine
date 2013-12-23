@@ -41,8 +41,27 @@ add_test( [ qq{$0 }.q{'"'} ], ( q{"} ) ); 	#"
 add_test( [ qq{$0 }.q{'"'}, { dosquote => 1 }  ], ( q{"\\""} ) ); 	#"
 add_test( [ qq{$0 }.q{"\\""}, { dosquote => 1 }  ], ( q{"\\""} ) ); 	#"
 
+add_test( [ qq{$0 }.q{$()} ], ( q{} ) );
+
+add_test( [ qq{$0 }.q{$} ], ( q{$} ) );
+add_test( [ qq{$0 }.q{$$} ], ( q{$$} ) );
+add_test( [ qq{$0 }.q{$a} ], ( q{$a} ) );
+add_test( [ qq{$0 }.q{a$} ], ( q{a$} ) );
+add_test( [ qq{$0 }.q{a$a} ], ( q{a$a} ) );
+
+add_test( [ qq{$0 }.q{$()$} ], ( q{$} ) );
+
 add_test( [ qq{$0 }.q{$""} ], ( q{} ) );
 add_test( [ qq{$0 }.q{$'\x25'} ], ( q{%} ) );
+
+add_test( [ qq{$0 }.q{$""$} ], ( q{$} ) );
+
+# ToDO: add systematic full testing of octal (1 to 3 digits), hex (1 to 2 digits), and control character escapes
+
+add_test( [ qq{$0 }.q{$'\0'} ], ( qq{\x00} ) );
+add_test( [ qq{$0 }.q{$'\1'} ], ( qq{\x01} ) );
+
+add_test( [ qq{$0 }.q{$'\z'} ], ( q{\z} ) );
 
 add_test( [ qq{$0 }.q{$'test'} ], ( q{test} ) );
 add_test( [ qq{$0 }.q{$"test"} ], ( q{test} ) );

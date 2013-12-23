@@ -1,4 +1,4 @@
-#!perl -w   -- -*- tab-width: 4; mode: perl -*-
+#!perl -w -- (emacs/sublime) -*- tab-width: 4; mode: perl -*-
 #$Id$
 
 # Script Summary

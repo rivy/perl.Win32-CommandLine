@@ -1,4 +1,5 @@
-@rem = '--*-Perl-*--
+@rem = q{--*-Perl-*--
+@::# (emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
 @echo off
 
 setlocal
@@ -16,9 +17,10 @@ if NOT %errorlevel% == 0 (
 
 goto endofperl
 
-@rem ';
-#!perl -w	-- -*- tab-width: 4; mode: perl -*-
-#line 19
+@rem };
+#!perl -w --
+#NOTE: use '#line NN' (where NN = actual_line_number + 1) to set perl line # for errors/warnings
+#line 24
 #$Id: dosify.pl,v 0.3.3.179015 ( r124:73041c265478 [mercurial] ) 2009/02/23 19:14:03 rivy $
 
 # Script Summary

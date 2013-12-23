@@ -1,6 +1,7 @@
-#!perl -w   -- -*- tab-width: 4; mode: perl -*-
+#!perl -w -- (emacs/sublime) -*- tab-width: 4; mode: perl -*-
 #$Id$
 
+## ToDO: remove requirement for Env::Path (currently, at least, the issue pointed out by showing the user a solution (see below))
 ## TODO: aliases? bash which doesn't see aliases -- make a switch to search aliases as well?
 
 # Script Summary
@@ -106,7 +107,13 @@ use diagnostics;
 #use File::Which;
 use File::Spec;
 
-use Env::Path qw(PATH);
+##use Env::Path qw(PATH);
+my $have_EnvPath = eval { require Env::Path; };
+if (! $have_EnvPath) {
+	print 'which: "Env::Path" is required (install via the command "cpan Env::Path")'.qq{\n};
+	exit -1;
+	}
+Env::Path->import( qw(PATH) );
 
 #sub dosify;
 
