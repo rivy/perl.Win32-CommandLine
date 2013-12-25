@@ -1,5 +1,4 @@
-package Win32::CommandLine;
-#$Id$
+package Win32::CommandLine; ## no critic ( ProhibitExcessMainComplexity )
 #(emacs/sublime) -*- tab-width: 4; mode: perl; -*-
 
 # Module Summary
@@ -10,7 +9,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
-our $VERSION = qw$Version$[1]
+our $VERSION = qw$Version: 0.5.9_1 $[1]
 
 =cut
 
@@ -55,11 +54,11 @@ use warnings;
 use 5.008008;       # earliest tested perl version (v5.8.8); v5.6.1 is no longer testable/reportable
 
 # VERSION: major.minor[.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version$ SCS tag
+# generate VERSION from $Version: 0.5.9_1 $ SCS tag
 # $defaultVERSION   :: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas  :: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version 0.74 qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version$ ))[-2]; if ($VERSION =~ /^\d+([._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[._](\d+)[._](\d+)(?:[._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers RequireConstantVersion )
+use version 0.74 qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version: 0.5.9_1 $ ))[-2]; if ($VERSION =~ /^\d+([._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[._](\d+)[._](\d+)(?:[._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers RequireConstantVersion )
 
 # Module base/ISA and Exports
 
@@ -1154,10 +1153,10 @@ sub _argv_do_glob{
     for my $k (keys %home_paths) { $home_paths{$k} =~ s/\\/\//g; }; # unixify path seperators
     my $home_path_re =  q{(?i)}.q{^~(}.join(q{|}, keys %home_paths ).q{)?(/|$)}; ## no critic (RequireInterpolationOfMetachars)
 
+    use File::Glob qw( :glob );
     my $s = q{};
     for (my $i=0; $i<=$#args; $i++)     ## no critic (ProhibitCStyleForLoops)
         {
-        use File::Glob qw( :glob );
         my @g = ();
         #print "args[$i] = $args[$i]->{token}\n";
         my $pat;
@@ -1848,9 +1847,9 @@ sub _argv_v1{   ## no critic ( Subroutines::ProhibitExcessComplexity )
     #for my $k (keys %home_paths) { #print "$k => $home_paths{$k}\n"; }
     #print "home_path_re = $home_path_re\n";
 
+    use File::Glob qw( :glob );
     for (my $i=0; $i<=$#argv2; $i++)        ## no critic (ProhibitCStyleForLoops)
         {
-        use File::Glob qw( :glob );
         my @g = ();
         #print "argv2[$i] = $argv2[$i] (globok = $argv2_globok[$i])\n";
         my $pat;

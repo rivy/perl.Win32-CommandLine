@@ -1,0 +1,35 @@
+# NOTE: default = GLOBSTAR syntax
+
+# ignore META-build and GnuPG generated files
+.gpg/**
+
+# ignore build generated files
+Build
+Build.bat
+_build/**
+blib/**
+lib/Win32/CommandLine.c
+lib/Win32/CommandLine.o
+lib/Win32/CommandLine.obj
+Win32-CommandLine*
+vc[1-9][0-9]+.pdb
+MANIFEST
+MANIFEST.bak
+Makefile.PL
+Makefile
+README
+META.yml
+MYMETA.yml
+META.json
+MYMETA.json
+SIGNATURE
+CHANGES\.log\.tmp
+pod2htmd.tmp
+**\.pyc
+
+# ignore pulled/imported code (if any)
+inc/**
+t/lib/**
+
+# ignore experimental code
+t/prelim/**
