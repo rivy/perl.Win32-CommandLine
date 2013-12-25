@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 
-
 # ToDO: modify add_test to take additional optional argument(s) which test for tests which fail correctly and for startup / breakdown evals
 
 {
@@ -28,8 +27,6 @@ delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 use Test::More;				# included with perl [see Standard Modules in perlmodlib]
 use Test::Differences;		# included with perl [see Standard Modules in perlmodlib]
 
-my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
-
 my $haveExtUtilsMakeMaker = eval { require ExtUtils::MakeMaker; 1; };
 
 if ( !$ENV{HARNESS_ACTIVE} ) {
@@ -43,6 +40,8 @@ my $haveRequired = 1;
 foreach (@modules) { if (!eval "use $_; 1;") { $haveRequired = 0; diag("$_ is not available");} }	## no critic (ProhibitStringyEval)
 
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if !$haveRequired;
+
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; }; # (should be AFTER any plan skip_all ...)
 
 sub add_test;
 sub test_num;

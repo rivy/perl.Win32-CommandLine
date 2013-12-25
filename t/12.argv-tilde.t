@@ -8,9 +8,10 @@ use warnings;
 #use lib 't/lib';
 use Test::More;
 use Test::Differences;
-my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
 #plan skip_all => 'Tilde tests are highly configuration dependent [to run: set TEST_FRAGILE]' unless $ENV{TEST_FRAGILE} or $ENV{TEST_ALL};
+
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; }; # runs the Test::NoWarnings test (must be AFTER any plan skip_all ...)
 
 if ( !$ENV{HARNESS_ACTIVE} ) {
 	# not executing under Test::Harness

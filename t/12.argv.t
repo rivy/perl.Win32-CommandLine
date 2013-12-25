@@ -287,9 +287,9 @@ add_test( [ qq{$0 1 't\\glob-file.tests\\'*} ], ( 1, glob('t/glob-file.tests/*')
 add_test( [ qq{$0 foo\\bar} ], ( q{foo\\bar} ) );
 
 # dosify (globbed [or all] ARGS which are files) vs dosquote (non-globbed ARGS) vs unixify (globbed [or all] ARGS which are files)
-# NOTE: These options are needs for cases of ARGS such as:
+# NOTE: These options are needed for cases of ARGS such as:
 #   perl -e "$x = split( /n/, q{Win32::CommandLine}); print $x;" (which would otherwise be translated to...) perl -e "$x = split( \n\, q{Win32::CommandLine}); print $x;"
-#   dosify = 1; DOS-quote all globbed args (which are files)
+# dosify = 1; DOS-quote all globbed args (which are files)
 # dosify = all; DOS-quote all args (which are files)
 # dosquote = 1 = all; DOS-quote all non-globbed ARGS, files or not
 ## VERY SLIGHTLY FRAGILE (but, with the token, the names should always be unique)
@@ -299,17 +299,21 @@ add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosify => 'all'} ], ( qq{nodr
 add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosquote => 1} ], ( qq{"nodrive\\not\\a file $token"} ) );
 add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosquote => 'all'} ], ( qq{"nodrive\\not\\a file $token"} ) );
 
-add_test( [ qq{$0 "c:\\documents and settings"} ], ( q{c:\\documents and settings} ) );
-add_test( [ qq{$0 "c:\\documents and settings"}, {dosify => 1} ], ( q{c:\\documents and settings} ) );
-add_test( [ qq{$0 "c:\\documents and settings"}, {dosify => 'all'} ], ( q{"c:\\documents and settings"} ) );
-add_test( [ qq{$0 "c:\\documents and settings"}, {dosquote => 1} ], ( q{"c:\\documents and settings"} ) );
-add_test( [ qq{$0 "c:\\documents and settings"}, {dosquote => 'all'} ], ( q{"c:\\documents and settings"} ) );
+### TEST_FRAGILE == tests which require a specific environment setup to work
+if ($ENV{TEST_FRAGILE}) {
+	add_test( [ qq{$0 "c:\\documents and settings"} ], ( q{c:\\documents and settings} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"}, {dosify => 1} ], ( q{c:\\documents and settings} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"}, {dosify => 'all'} ], ( q{"c:\\documents and settings"} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"}, {dosquote => 1} ], ( q{"c:\\documents and settings"} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"}, {dosquote => 'all'} ], ( q{"c:\\documents and settings"} ) );
 
-add_test( [ qq{$0 "c:\\documents and settings"*} ], ( q{c:/Documents and Settings} ) );
-add_test( [ qq{$0 "c:\\documents and settings"*}, {dosify => 1} ], ( q{"c:\\Documents and Settings"} ) );
-add_test( [ qq{$0 "c:\\documents and settings"*}, {dosify => 'all'} ], ( q{"c:\\Documents and Settings"} ) );
-add_test( [ qq{$0 "c:\\documents and settings"*}, {dosquote => 1} ], ( q{c:/Documents and Settings} ) );
-add_test( [ qq{$0 "c:\\documents and settings"*}, {dosquote => 'all'} ], ( q{c:/Documents and Settings} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"*} ], ( q{c:/Documents and Settings} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"*}, {dosify => 1} ], ( q{"c:\\Documents and Settings"} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"*}, {dosify => 'all'} ], ( q{"c:\\Documents and Settings"} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"*}, {dosquote => 1} ], ( q{c:/Documents and Settings} ) );
+	add_test( [ qq{$0 "c:\\documents and settings"*}, {dosquote => 'all'} ], ( q{c:/Documents and Settings} ) );
+	}
+###
 
 ## TODO: check both with and without nullglob, including using %opts for argv()
 add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );
