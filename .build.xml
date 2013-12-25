@@ -58,7 +58,7 @@
 	<available property="is.repo.HG" type="dir" file="${build.main.dir}/.hg"/>
 	<available property="is.repo.GIT" type="dir" file="${build.main.dir}/.git"/>
 
-	<available property="is.sign.GPG" type="dir" file="${build.main.dir}/.gpg"/>
+	<available property="is.sign.GPG" type="file" file="${build.main.dir}/.gpg.conf"/>
 
 	<ac:if><and><isset property="env.__DEBUG"/><and><or><equals arg1="${DEBUG.key}" arg2=""/><equals arg1="${DEBUG.key}" arg2="${env.__DEBUG}"/></or></and></and><ac:then>
 		<echo message="[ BUILD ]"/>
@@ -136,7 +136,7 @@
 </target>
 
 <target name="-instantiate.SIGN">
-	<available property="is.sign.GPG" type="dir" file="${build.main.dir}/.gpg"/>
+	<available property="is.sign.GPG" type="file" file="${build.main.dir}/.gpg.conf"/>
 	<ac:if><istrue value="${is.sign.GPG}"/>
 		<ac:then>
 			<antcall target="-instantiate.sign.GPG"/>

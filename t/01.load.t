@@ -1,6 +1,6 @@
 #!perl -w  -- -*- tab-width: 4; mode: perl -*-
 
-# t/00.load.t - check module loading
+# t/01.load.t - check module loading
 
 # ToDO: Modify untaint() to allow UNDEF argument(s) [needs to be changed across all tests]
 
