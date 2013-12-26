@@ -2521,18 +2521,20 @@ You can also look for further information at:
 
   * Search CPAN
 
-    http://kobesearch.cpan.org/dist/Win32-CommandLine
-    _or_
     http://search.cpan.org/dist/Win32-CommandLine
+    _or_
+    https://metacpan.org/search?q=Win32-CommandLine
+    _or_
+    http://kobesearch.cpan.org/dist/Win32-CommandLine
 
   * CPANTESTERS: Test results
 
     http://www.cpantesters.org/show/Win32-CommandLine.html
 
-=for possible_future_currently_defunct
-    * CPANTS: CPAN Testing Service
-        [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
-        [ used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
+  * CPANTS: CPAN Testing Service
+
+    [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
+    [ used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
 
 =for possible_future
     * CPANFORUM: Forum discussing Win32::CommandLine
