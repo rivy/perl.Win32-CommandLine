@@ -18,6 +18,8 @@ my $haveTestKwalitee = eval { require Test::Kwalitee; 1; };
 
 plan skip_all => 'Test::Kwalitee required to test CPANTS kwalitee' if !$haveTestKwalitee;
 
+local $ENV{AUTHOR_TESTING} = 1; ## Test::Kwalitee wants $ENV{AUTHOR_TESTING} and/or $ENV{RELEASE_TESTING} set or it will nag
+
 #Test::Kwalitee->import( tests => [ qw( use_strict has_tests ) ] );						# import specific kwalitee tests
 #Test::Kwalitee->import( tests => [ qw( -has_test_pod -has_test_pod_coverage ) ] );		# disable specific kwalitee tests
 import Test::Kwalitee;																	# all kwalitee tests

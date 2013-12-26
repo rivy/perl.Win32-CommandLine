@@ -1,5 +1,5 @@
 #!perl -w   -- ## emacs -*- tab-width: 4; mode: cperl indent-tabs-mode: nil; basic-offset: 2 -*- ## (jedit) :tabsize=4:mode=perl: ## (notepad++) vim:ts=4:sw=2:et:sta:sts=2
-#$Id: Build.PL,v 0.3.6.788311 ( r106:67039899fc6a [mercurial] ) 2012/03/31 02:16:20 rivy $
+#$Id: Build.PL,v 0.4.1.340 ( r112:594c42f8f73c [mercurial] ) 2013/12/26 05:30:45 rivy $
 
 ## no critic ( CodeLayout::RequireTidyCode CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins RequireExtendedFormatting RequireLineBoundaryMatching )
 
@@ -35,11 +35,11 @@ use 5.006001; ## v5.6.1: earliest tested version ## v5.5: for AUTHOR and ABSTRAC
 use English qw( -no_match_vars ); ##	# long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
 
 # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.1.0.143695936 $ SCS tag
+# generate VERSION from $Version: 0.1.0.198571514 $ SCS tag
 # $defaultVERSION 	:: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas	:: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.3'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.3.6.788311 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.4'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.4.1.340 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
 
 ##- config
 my %config;
@@ -304,6 +304,22 @@ Print all versioned files within module.
 
 Print all versioned files within module with their $VERSION.
 
+=item show_versions
+
+Print all versioned files within module with their $VERSION.
+
+=item smoke
+
+Build and "smoke test" the distribution (an alias of smoke_build).
+
+=item smoke_build
+
+Build and "smoke test" the distribution, using Build.PL for the target distribution build.
+
+=item smoke_make
+
+Build and "smoke test" the distribution, using Makefile.PL and make for the target distribution build.
+
 =item taint_test
 
 [version 0.01]
@@ -325,6 +341,9 @@ Execute a trial action (for testing purposes).
 =cut
 };
 $code{'@'} = q{
+	use strict;
+	use warnings;
+
 	use File::Basename;
 	use File::Spec;
 	use File::Spec::Functions;
@@ -355,9 +374,17 @@ $code{'@new'} = q{
 		#return $self;
 		my $self = shift;
 		my ($args, $action) = $self->read_args(@ARGV);
-		if ($action) { die "Too early to specify a build action '$action'.  Do 'perl Build.PL' instead.\n"; }
 
-		$self->add_property( use_color => 0 );
+		if ($action) {
+			$self->run_perl_script('Build.PL');
+			if ( -f 'Build' ) {
+				print "Executing: perl Build @ARGV\n";
+				#exit( $self->run_perl_script('Build', [], @ARGV) );
+				#exit( do 'Build' );
+				exit( $self->do_system("$^X Build @ARGV") );
+				}
+			else { die "Too early to specify a build action '$action'.  Do 'perl Build.PL' instead.\n"; }
+			}
 
 		return $self->SUPER::new(@_);
 		}
@@ -385,14 +412,20 @@ $code{'dispatch'} = q{
 foreach (keys %{$config{'custom_ENV_href'}}) { $code{'dispatch'} .= qq{\t\t}.'$ENV{'.$_.'} = q{'._encodeQ($config{'custom_ENV_href'}->{$_}).'};'.qq{\n}; }
 $code{'dispatch'} .= q{
 
+		my $haveWin32ConsoleANSI = eval q{use Win32::Console::ANSI; 1};
+
 		# OPTION color => 0/never/no/off; 1/on/yes; always
-		$self->{properties}{use_color} = 0; # 0/off/never/no
+		$self->{properties}{use_color} = $self->{properties}{use_color} || 0; # 0/never/no/off
 		if  ( defined($self->{args}{color}) ) {
 			my $option = lc( $self->{args}{color} );
 			$self->{properties}{use_color} = 1 if ( $option eq q{} || $option eq q{1} || $option eq q{on} || $option eq q{yes} );
 			$self->{properties}{use_color} = 'always' if $option eq q{always};
 			if ( not $self->{properties}{use_color} && not ( $option eq q{0} || $option eq q{never} || $option eq q{no} || $option eq q{off})) {
 				die "Malformed --color option (use --color=0|never|no|off|1|on|yes|always)\n";
+				};
+			## only warn if explicitly setting use_color=1 via the command line
+			if ( $^O =~ /\AMSWin/i && $self->{properties}{use_color} && not $haveWin32ConsoleANSI ) {
+				warn qq{Win32::Console::ANSI is recommended for reliable color output (but is not installed; to install, use "cpan Win32::Console::ANSI")\n};
 				};
 			}
 
@@ -404,18 +437,12 @@ $code{'dispatch'} .= q{
 			$self->{properties}{tap_harness_args}{formatter_class} = 'TAP::Formatter::Console';
 			}
 
-		my $haveWin32ConsoleANSI = eval q{use Win32::Console::ANSI; 1};
-
-		if ( $^O =~ /\AMSWin/i && $self->{properties}{use_color} && not $haveWin32ConsoleANSI ) {
-			warn qq{Win32::Console::ANSI is recommended for reliable color output (but is not installed; to install, use "cpan Win32::Console::ANSI")\n};
-			};
-
 		# HACK: convince TAP::Formatter::Color to use Term::ANSIColor if we can load Win32::Console::ANSI by masquerading as "linux" OS
 		# * this solves multiple color output problems for TAP testing output (works with CMD and TCC shells as well)
 		# NOTE: this might be moved into test, testall, etc. (but it's single source here)
 		# ToDO: move to test_setup_color() and add to test(), testall(), retest(), disttest(), taint_test(), taint_testall(), testcover(), testdb(), testpod(), testpodcoverage() ## is there a common origin?
 		if ( $self->{properties}{use_color} ) {
-			if ($hasWin32ConsoleANSI)
+			if ($haveWin32ConsoleANSI)
 				{
 				# if Win32::Console::ANSI is installed/exists => force TAP::Formatter::Color to ignore MSWin32 and use Term::ANSIColor (via masquerade as "linux" OS)
 				local $^O="linux";
@@ -770,6 +797,61 @@ $code{'ACTION_disttestall'} = q{
 		  });
 		}
 };
+$code{'ACTION_smoke'} = q{
+	#[ADD] NEW actions = smoke, smoke_build, smoke_make - smoke test distribution
+	# FROM Module::Build::ACTION_disttest()
+
+	# usual smoke testing procedure:
+	# *	$ENV{AUTOMATED_TESTING}=1
+	# *	<build distribution>
+	# *	cd $BUILD_DIRECTORY
+	# *	perl Makefile.PL
+	# *	make
+	# *	make test
+
+	sub ACTION_smoke {
+		my ($self) = @_;
+
+		# default to using build
+		$self->ACTION_smoke_build( @_ );
+		}
+	sub ACTION_smoke_build {
+		my ($self) = @_;
+
+		$self->depends_on('distdir');
+
+		$ENV{AUTOMATED_TESTING} = 1;
+		$self->_do_in_dir
+		( $self->dist_dir,
+		  sub {
+
+			$self->run_perl_script('Build.PL') # XXX Should this be run w/ --nouse-rcfile
+			  or die "Error executing 'Build.PL' in dist directory: $!";
+			$self->run_perl_script('Build')
+			  or die "Error executing 'Build' in dist directory: $!";
+			$self->run_perl_script('Build', [], ['test'])
+			  or die "Error executing 'Build test' in dist directory";
+		  });
+		}
+	sub ACTION_smoke_make {
+		my ($self) = @_;
+
+		$self->depends_on('distdir');
+
+		$ENV{AUTOMATED_TESTING} = 1;
+		$self->_do_in_dir
+		( $self->dist_dir,
+		  sub {
+
+			$self->run_perl_script('Makefile.PL') # XXX Should this be run w/ --nouse-rcfile
+			  or die "Error executing 'Makefile.PL' in dist directory: $!";
+			$self->do_system('make')
+			  or die "Error executing 'make' in dist directory: $!";
+			$self->do_system('make test')
+			  or die "Error executing 'make test' in dist directory";
+		  });
+		}
+};
 $code{'ACTION_upload_cpan'} = q{
 	#[ADD] NEW action = upload_cpan - use CPAN::Uploader to upload finished / test-complete distributions to CPAN
 	sub ACTION_upload_cpan {
@@ -942,7 +1024,7 @@ $code{'ACTION_ppmdist@htmlify_pods'} = q{
 		  my @dirs = File::Spec->splitdir( File::Spec->canonpath( $path ) );
 		  pop( @dirs ) if $dirs[-1] eq File::Spec->curdir;
 
-		  my $fulldir = File::Spec->catfile($htmldir, @rootdirs, @dirs);
+		  my $fulldir = File::Spec->catfile($htmldir, undef, @dirs);
 		  my $outfile = File::Spec->catfile($fulldir, "${name}.html");
 		  my $infile  = File::Spec->abs2rel($pod);
 
