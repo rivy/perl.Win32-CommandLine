@@ -11,6 +11,7 @@ blib/**
 lib/Win32/CommandLine.c
 lib/Win32/CommandLine.o
 lib/Win32/CommandLine.obj
+lib/Win32/CommandLine_def.old
 Win32-CommandLine*
 vc[1-9][0-9]+.pdb
 MANIFEST
