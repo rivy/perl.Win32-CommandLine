@@ -3,12 +3,12 @@
 
 # NOTE: AVOID trailing comments because of the trailing comment bug noted. It causes incorrect results from other programs, notably 'cpansign', which doesn't collect the correct file names.
 
-# NOTE: regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
+# NOTE: some regexps here may depend on being matched against the _full_ file path (the standard ExtUtils::Manifest only gives relative paths on Win32)
 # NOTE: scripts/modules using the default ExtUtils::Manifest code (eg, 'cpansign') will not interpret lines with ${dist_<X>} correctly and may complain
 # NOTE: some regexps assume paths have canonical path format with '/' characters as path dividers
 # NOTE: regexps all assume no embedded newlines
 
-# REMINDER: \w == "word character" == (alphanumeric + '_'); \b == boundary between word characters
+# NOTE: REMINDER: \w == "word character" == (alphanumeric + '_'); \b == boundary between word characters
 
 # TODO: ExtUtils::Manifest - Submit bug report regarding trailing comments (trailing comments are interpreted incorrectly as part of the regexp [see BUGFIX in Build.PL code])
 # TODO: ExtUtils::Manifest - Submit bug report(?) regarding regexps starting with \b used as defaults when MANIFEST.SKIP is missing in ExtUtils::Manifest (suggest below alternatives using "(?:^|/)" as an improvement)
@@ -96,6 +96,10 @@
 # Avoid local configuration files
 (?:^|/)\.perltidyrc$
 
-# Avoid files specified as non-manifest
+# Avoid folders specified as non-manifest or tagged as no distribute
 (?:^|/)@non-manifest/
+(?:^|/)#non-manifest/
 
+# Avoid folders tagged as no distribute
+\.@no-dist/
+\.#no-dist/
