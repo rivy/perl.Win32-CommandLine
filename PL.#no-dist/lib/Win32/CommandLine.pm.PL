@@ -50,7 +50,7 @@ package Win32::CommandLine;
 
 =head1 VERSION
 
-our $VERSION = "#{{$VERSION}}#"
+our $VERSION = '#{{$VERSION}}#'
 
 =cut
 
