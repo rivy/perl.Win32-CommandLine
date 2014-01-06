@@ -27,7 +27,7 @@ use File::Path;
 
 my ($vol, $dir, undef) = File::Spec->splitpath( $output_filename );
 my $output_dir = $vol.$dir;
-if (not -e $output_dir) { File::Path::make_path( $output_dir ); }
+if (not -e $output_dir) { File::Path::mkpath( $output_dir ); }
 
 my $fh;
 open( $fh, ">", $output_filename ) or die "cannot write to '$output_filename': $OS_ERROR";
