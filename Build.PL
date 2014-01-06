@@ -455,6 +455,46 @@ $code{'version_set_next'} = q{
         close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
         }
 };
+$code{'version_set_next_release'} = q{
+    #[ADD] version_set_next_release - update version in $build->notes('VERSION_filename') to next alpha build number
+    # NOTE VERSION == major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+    sub ACTION_version_set_next_release {
+        my $self = shift;
+
+        use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
+
+        my $VERSION_filename = $self->notes('VERSION_filename');
+
+        my $v_default = '0.1.0';
+
+        my $fh;
+
+        open( $fh, '<', $VERSION_filename ) or die "Can't read from '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
+        my $v = <$fh>;
+        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+        $v = q{} if not defined $v;
+        chomp $v;
+        $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
+        $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
+        # v -> M.m.r[.b]
+        if ( $v eq q{} ) { $v = $v_default; }
+        if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
+        if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
+        if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
+            {
+            my ($M, $m, $r, $b) = ($1, $2, $3, $4);
+            $m++;
+            if ($m % 2) { $m++; }
+            my @v = ( $M, $m, $r );
+            if ( defined $b ) { push @v, $b; }
+            $v = join( q{.}, @v );
+            }
+          else { $v = $v_default; }
+        open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
+        print $fh $v;
+        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+        }
+};
 $code{'repo'} = q{
     sub is_repo
     {
