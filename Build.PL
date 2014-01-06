@@ -49,13 +49,14 @@ $config{'rc_filename'} = 'Build.PL.config'; ##  # configuration file name (in .N
 
 # Module::Build DEFAULTS [ ** DO NOT CHANGE, use the Build.PL.config to set the values ]
 $config{'module_name'} = undef;
+$config{'dist_abstract'} = undef;
 $config{'dist_author'} = undef;
 $config{'license'} = undef;                         # must be chosen by the author of the module/distribution
 $config{'requires_href'} = {};                      # module requirements (no obvious default)
 $config{'recommends_href'} = {};                    # module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0.74, 'Cwd' => 0, 'File::Find' => 0, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'FindBin' => 0, 'ExtUtils::Manifest' => '1.54' };   # basic module requirements for Build.PL [version v0.74+ needed for v5.10+ extended version support; NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
+$config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0.77, 'Cwd' => 0, 'File::Find' => 0, 'File::Glob' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'FindBin' => 0, 'ExtUtils::Manifest' => '1.54' };   # basic module requirements for Build.PL [version v0.74+ needed for v5.10+ extended version support; NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 #$config{'configure_requires_href'} = { 'Module::Build' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0 };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
-$config{'configure_requires_href'} = { 'Module::Build' => 0, 'Test::Harness'=>'3.0', 'TAP::Harness' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0 };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ] ## Test::Harness v3.0 required (1st version that includes TAP::Harness)
+$config{'configure_requires_href'} = { 'Module::Build' => 0, 'Test::Harness'=>'3.0', 'TAP::Harness' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0, 'Text::Template' => '1.44' };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ] ## Test::Harness v3.0 required (1st version that includes TAP::Harness)
 $config{'sign'} = 'true';                           # always sign the module distribution, if possible (note: this is only used when the distribution is built/tested (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
 $config{'create_readme'} = 'true';                  # create README from module pod
 #$config{'create_makefile_pl'} = 'passthrough';     # (DEPRECATED, using 'small' & configure_requires => Module::Build) passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
@@ -76,15 +77,11 @@ $config{'assert_os_aref'} = [];                     # limit build to specific OS
 #
 $config{'versioned_file_aref'} = [];                # globs matching files which should have the module version number upon a successful build (defaults to [$config{module_path}, bin/*] if not set in config)
 #
+$config{'repo_commit_id_length_medium'} = 12;       # length of 'medium' commit ID ('excellent' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):100,000,000,000,000)
+$config{'repo_commit_id_length_short'} = 6;         # length of 'short' commit ID ('good' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):10,000,000)
+#
 $config{'custom_code_href'} = {};                   # custom code overrides from config
 $config{'custom_ENV_href'} = {};                    # custom environment overrides (set before each dispatch) for state transfer to subordinate executables [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
-
-# versioning
-# setv => strip any extra version and add b = YYYY.MMDD.<DaySeconds> to version
-# setv --setv_release   => increment last version digit AND b = 0
-$config{'v_files'} = undef;                         # GLOB                                  # UNDEF => module_path
-$config{'v_source'} = undef;                        # GLOB - source for version and dates   # UNDEF => module_path
-$config{'v_n'} = 3;                                 # M.m.r [ valid range: any number > 0 ]
 
 ##
 
@@ -104,6 +101,76 @@ use Module::Build;
 # $config{} helper variables
 $config{'lib_path'} = undef;                        # auto-generated from $config{'module_name'} during .config file parsing (should NOT be set in .config, since it is regenerated after each successful $config{'module_name'} parse in the .config parsing section)
 $config{'module_path'} = undef;                     # auto-generated from $config{'module_name'} during .config file parsing (should NOT be set in .config, since it is regenerated after each successful $config{'module_name'} parse in the .config parsing section)
+
+# $config{VERSION}
+$config{'VERSION_filename'} = 'VERSION';
+$config{'VERSION'} = undef;                         # generated from any existing VERSION file in the main directory
+
+# pull in repo code
+my %code = rivy_builder_code_subs();
+eval $code{repo};
+
+$config{'repo_type'} = is_repo();
+my $repo;   # reference to hash reference to code
+
+if ( $config{'repo_type'} ) { $repo = repo_commands( $config{'repo_type'} ) };
+
+if ( $repo ) {
+    print "Gathering current [".$config{'repo_type'}."] repo & commit information\n";
+    $config{'repo_branch'} = $repo->{branch}();
+    $config{'repo_is_dirty'} = $repo->{is_dirty}();
+    $config{'repo_commit_id'} = $repo->{commit_id}();
+    $config{'repo_commit_id_medium'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_medium'};
+    $config{'repo_commit_id_short'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_short'};
+    $config{'repo_commit_number'} = $repo->{commit_number}();
+    $config{'repo_commit_author'} = $repo->{commit_author}();
+    $config{'repo_commit_describe'} = $repo->{commit_describe}();
+    }
+
+# determine VERSION from file, if present
+$config{'VERSION'} = undef;
+my $VERSION_filename = rel2abs($config{'VERSION_filename'}, dirname(rel2abs($0)));
+if ( -e $VERSION_filename )
+{
+    my $fh;
+    open( $fh, '<', $VERSION_filename ) or die "Can't open '$config{'VERSION_filename'}': $OS_ERROR\n"; ## no critic ( RequireCarping )
+    my $v = <$fh>;
+    $v = q{} if not defined $v;
+    chomp $v;
+    $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
+
+    print "Found [VERSION <= '$v'] in '$config{'VERSION_filename'}'\n";
+
+    $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
+
+    # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+    # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
+    # v -> M.m.r[.b]
+    if ( $v eq q{} ) { $v = '0.1.0'; }
+    if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
+    if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
+    if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
+        {
+        $config{'VERSION_M'} = $1;
+        $config{'VERSION_m'} = $2;
+        $config{'VERSION_r'} = $3;
+        if ( defined $4 ) { $config{'VERSION_b'} = $4 };
+
+        if (!$config{'VERSION_r'}) { $config{'VERSION_r'} = $config{'repo_commit_number'} ? $config{'repo_commit_number'} : q{0} };
+        if ( defined $config{'VERSION_b'} && !$config{'VERSION_b'} ) { $config{'VERSION_b'} = $config{'repo_commit_id_short'} ? hex $config{'repo_commit_id_short'} : q{0} };
+
+        my $v_is_alpha = $config{'VERSION_m'} % 2;
+        $v = $config{'VERSION_M'}.'.'.$config{'VERSION_m'};
+        if ( not defined $config{'VERSION_b'} ) { $v .=  ( $v_is_alpha ?q{_}:q{.}) . $config{'VERSION_r'} }
+          else { $v .= q{.} . $config{'VERSION_r'} . ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_b'}; }
+        }
+      else { $v = '0.1.0'; }
+    $config{'VERSION'} = 'v'.$v;
+
+    close $fh or die "Can't close '$config{'VERSION_filename'}' after reading: $OS_ERROR\n"; ## no critic ( RequireCarping )
+}
+
+##print '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
 
 # include configuration options, if the file exists
 # config file format:
@@ -180,7 +247,7 @@ if ( @{$config{'PL_folders_aref'}} > 0 )
     }
 
 # SETUP versioned_files
-if ( @{$config{'versioned_file_aref'}} <= 0 ) { $config{'versioned_file_aref'} = [ $config{module_path}, qw( bin/*.pl bin/*.bat ) ] };
+if ( @{$config{'versioned_file_aref'}} <= 0 ) { $config{'versioned_file_aref'} = [ $config{module_path}, qw( bin/* ) ] };
 ##if ( @{$config{'versioned_file_globs_exclude_aref'}} <= 0 ) { $config{'versioned_file_globs_exclude_aref'} = [ qw( bin/*.pl.pl ) ] };
 
 #use Data::Dumper;
@@ -201,17 +268,26 @@ if (lc($Config{'cc'}) eq 'cl') { $config{'add_to_cleanup_aref'} = [ 'vc[1-9][0-9
 if ($config{'create_makefile_pl'}) { $config{'add_to_realcleanup_aref'} = [ 'Makefile.PL', @{$config{'add_to_realcleanup_aref'}} ]; }
 # automatically add README to cleanup if $config{'create_readme'} == 'true'
 if ($config{'create_readme'}) { $config{'add_to_realcleanup_aref'} = [ 'README', @{$config{'add_to_realcleanup_aref'}} ]; }
+# automatically add PL_files
+my @PL_files;
+while (my (undef, $to) = each %{$config{'PL_files_href'}}) {
+    push @PL_files, $to;
+    }
+$config{'add_to_realcleanup_aref'} = [ @PL_files, @{$config{'add_to_realcleanup_aref'}} ];
 
 ##
 
-if ( !$config{'module_name'} ) { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
-if ( !$config{'dist_author'} ) { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
-if ( !$config{'license'} )     { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'module_name'} )   { die '$config{module_name} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'dist_abstract'} ) { die '$config{dist_abstract} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'dist_author'} )   { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+if ( !$config{'license'} )       { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
+
+if ( $config{'VERSION'} ) { $config{'dist_version'} = $config{'VERSION'}; }
 
 #assert( $config{'lib_path'} ) # should be defined if $config{'module_name'} has been parsed (as asserted above)
 
 if ( !$config{'custom_ENV_href'}->{'_BUILD_module_name'} ) { $config{'custom_ENV_href'}->{'_BUILD_module_name'} = $config{'module_name'}; }
-if ( !$config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} ) { $config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} = join(q{;}, ( $config{module_path}, qw( bin/*.pl bin/*.bat ) )); }   ## versioned files default to main file and all files in the bin directory
+##if ( !$config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} ) { $config{'custom_ENV_href'}->{'_BUILD_versioned_file_globs'} = join(q{;}, ( $config{module_path}, qw( bin/*.pl bin/*.bat ) )); }   ## versioned files default to main file and all files in the bin directory
 ## ToDO: # CHANGE: '_BUILD_versioned_file_globs' => [ map {recursive_glob} qw{lib/*.pm bin/*.bat bin/*.pl} ]
 
 #use lib 'inc';
@@ -232,8 +308,11 @@ my $build = $class->new(
     get_options => { color => { type => '=s' } }, ## option to output in color ## OPTION color => 0/never/no/off; 1/on/yes; always # parsed in dispatch()
 
     module_name    => $config{'module_name'},
+    dist_abstract  => $config{'dist_abstract'},
     dist_author    => $config{'dist_author'},
     license        => $config{'license'},
+
+    dist_version   => $config{'dist_version'},
 
     requires       => { %{$config{'requires_href'}} },
     recommends     => { %{$config{'recommends_href'}} },
@@ -259,123 +338,23 @@ my $build = $class->new(
 $build->notes('versioned_file_aref' => $config{'versioned_file_aref'} );
 ##$build->notes('versioned_file_globs_exclude_aref' => $config{'versioned_file_globs_exclude_aref'} );
 
-$build->notes('repo_type' => is_repo());
+# VERSION file
+$build->notes('VERSION_filename' => $config{'VERSION_filename'} );
 
-my $repo;   # reference to hash reference to code
-
-if ( $build->notes('repo_type') ) { $repo = repo_commands( $build->notes('repo_type') ) };
-
+# push $config{repo_*} info into $build->notes
+$build->notes('repo_type' => $config{'repo_type'});
 if ( $repo ) {
-    print "repo_type = ".$build->notes('repo_type')."\n";
-    $build->notes('repo_commit_number' => $repo->{commit_number}() );
-    print "repo_commit_number = ".$build->notes('repo_commit_number')."\n";
-    $build->notes('repo_commit_id' => $repo->{commit_id}() );
-    print "repo_commit_number = ".$build->notes('repo_commit_id')."\n";
-    $build->notes('repo_describe' => $repo->{describe}() );
-    print "repo_describe = ".$build->notes('repo_describe')."\n";
-    $build->notes('repo_is_dirty' => $repo->{is_dirty}() );
-    print "repo_is_dirty = ".$build->notes('repo_is_dirty')."\n";
+    foreach ( sort keys %config ) {
+        next unless /^repo_.*$/;
+        $build->notes($_ => $config{$_});
+        ##print "$_ => ".$build->notes($_)."\n";
+        }
     }
 
 $build->create_build_script;
 
 ####
-sub is_repo
-{
-    use File::Spec::Functions qw( rel2abs );
-    use File::Basename qw( dirname );
 
-    my $filename;
-
-    # prefer GIT
-    # : GIT
-    $filename = rel2abs('.git', dirname(rel2abs($0)));
-    if ( -d $filename )
-        {
-        if ( system('git --version') == 0 ) { return 'git' };
-        }
-
-    # : Mercurial
-    $filename = rel2abs('.hg', dirname(rel2abs($0)));
-    if ( -d $filename )
-        {
-        if ( system('hg --version') == 0 ) { return 'hg' };
-        }
-
-    return undef;
-}
-sub repo_commands
-{
-    my $repo_type = shift;
-
-    my $repo_function_ref;
-    my $function_name;
-
-    # URLref: [Mercurial for GIT users] http://mercurial.selenic.com/wiki/GitConcepts @@ http://archive.is/pnLtQ @@ http://webcitation.org/6MAMUgtwV
-
-    # commit_number
-    $function_name = 'commit_number';
-    $repo_function_ref->{git}{$function_name} = sub {
-        my @lines = qx{git rev-list HEAD};
-        return scalar(@lines);
-        };
-    $repo_function_ref->{hg}{$function_name} = sub {
-        my @lines = qx{hg log -r . --template '{rev}'};
-        my $RETval = $lines[0];
-        chomp( $RETval );
-        return $RETval;
-        };
-
-    # commit_id
-    $function_name = 'commit_id';
-    $repo_function_ref->{git}{$function_name} = sub {
-        # URLref: [How to retrieve the hash for the current commit in Git?] http://stackoverflow.com/a/949391/43774
-        my @lines = qx{git rev-parse HEAD};
-        my $RETval = $lines[0];
-        chomp( $RETval );
-        return $RETval;
-        };
-    $repo_function_ref->{hg}{$function_name} = sub {
-        my @lines = qx{hg log -r . --template '{node}'};
-        my $RETval = $lines[0];
-        chomp( $RETval );
-        return $RETval;
-        };
-
-    # describe
-    $function_name = 'describe';
-    $repo_function_ref->{git}{$function_name} = sub {
-        my @lines = qx{git describe --tags};
-        my $RETval = $lines[0];
-        chomp( $RETval );
-        return $RETval;
-        };
-    $repo_function_ref->{hg}{$function_name} = sub {
-        my @lines = qx{hg log -r . --template '{latesttag}-{latesttagdistance}-{node|short}\n'};
-        my $RETval = $lines[0];
-        chomp( $RETval );
-        return $RETval;
-        };
-
-    # is_dirty
-    $function_name = 'is_dirty';
-    $repo_function_ref->{git}{$function_name} = sub {
-        # URLref: http://stackoverflow.com/questions/2657935/checking-for-a-dirty-index-or-untracked-files-with-git
-        my @lines = qx{git diff --shortstat};
-        return scalar(@lines) != 0;
-        };
-    $repo_function_ref->{hg}{$function_name} = sub {
-        my @lines = qx{hg status -mard};
-        return scalar(@lines) != 0;
-        };
-
-    if ( $repo_type )
-        {
-        return $repo_function_ref->{$repo_type};
-        }
-    return $repo_function_ref;
-}
-####
 sub _is_const { return !eval { ($_[0]) = $_[0]; 1; }; }
 sub _encodeQQ
 {
@@ -401,12 +380,229 @@ sub _encodeQ
     }
     return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
+
 ####
 
 sub rivy_builder_code
+{
+    my $code = q{};
+    my %code = rivy_builder_code_subs();
+    for (keys %{$config{custom_code_href}}) { $code{$_} = $config{custom_code_href}->{$_}; }
+    for (sort keys %code) { $code .= $code{$_}; }
+    return $code;
+}
+sub rivy_builder_code_subs
 { ## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
-my $code = q{};
 my %code;
+$code{'version_set'} = q{
+    #[ADD] version_set( v ) - write version to $build->notes('VERSION_filename')
+    sub ACTION_version_set {
+        my $self = shift;
+
+        use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
+
+        my $VERSION_filename = $self->notes('VERSION_filename');
+
+        my $v = '0.1.0';    # default version == 0.1.0
+
+        my $args_aref = $self->args('ARGV');
+        print "args() = [ @{$args_aref} ]\n";
+        if ( scalar(@{$args_aref}) > 0 ) { $v = @{$args_aref}[0]; }
+
+        my $fh;
+        open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
+        print $fh $v;
+        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+        }
+};
+$code{'version_set_next'} = q{
+    #[ADD] version_set_next - update version in $build->notes('VERSION_filename') to next alpha build number
+    # NOTE VERSION == major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+    sub ACTION_version_set_next {
+        my $self = shift;
+
+        use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
+
+        my $VERSION_filename = $self->notes('VERSION_filename');
+
+        my $v_default = '0.1.0';
+
+        my $fh;
+
+        open( $fh, '<', $VERSION_filename ) or die "Can't read from '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
+        my $v = <$fh>;
+        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+        $v = q{} if not defined $v;
+        chomp $v;
+        $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
+        $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
+        # v -> M.m.r[.b]
+        if ( $v eq q{} ) { $v = $v_default; }
+        if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
+        if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
+        if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
+            {
+            my ($M, $m, $r, $b) = ($1, $2, $3, $4);
+            $m++;
+            if (not ($m % 2)) { $m++; }
+            my @v = ( $M, $m, $r );
+            if ( defined $b ) { push @v, $b; }
+            $v = join( q{.}, @v );
+            }
+          else { $v = $v_default; }
+        open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
+        print $fh $v;
+        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+        }
+};
+$code{'repo'} = q{
+    sub is_repo
+    {
+        use File::Spec::Functions qw( rel2abs );
+        use File::Basename qw( dirname );
+
+        my $filename;
+
+        my $null = File::Spec->devnull();
+
+        # prefer GIT
+        # : GIT
+        $filename = rel2abs('.git', dirname(rel2abs($0)));
+        if ( -d $filename )
+            {
+            if ( system("git --version 2>&1 1>$null") == 0 ) { return 'git' };
+            }
+
+        # : Mercurial
+        $filename = rel2abs('.hg', dirname(rel2abs($0)));
+        if ( -d $filename )
+            {
+            if ( system("hg --version 2>&1 1>$null") == 0 ) { return 'hg' };
+            }
+
+        return undef;
+    }
+    sub repo_commands
+    {
+        my $repo_type = shift;
+
+        my $repo_function_ref;
+        my $function_name;
+
+        # URLref: [Mercurial for GIT users] http://mercurial.selenic.com/wiki/GitConcepts @@ http://archive.is/pnLtQ @@ http://webcitation.org/6MAMUgtwV
+
+        # branch
+        $function_name = 'branch';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = qx{git rev-parse --abbrev-ref HEAD};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg branch};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+
+        # commit_author
+        $function_name = 'commit_author';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = qx{git show --pretty="%aN <%aE>"};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg log -r . --template '{author}'};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+
+        # commit_number
+        $function_name = 'commit_number';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = qx{git rev-list HEAD};
+            return scalar(@lines);
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg log -r . --template '{rev}'};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+
+        # commit_id
+        $function_name = 'commit_id';
+        $repo_function_ref->{git}{$function_name} = sub {
+            # URLref: [How to retrieve the hash for the current commit in Git?] http://stackoverflow.com/a/949391/43774
+            my @lines = qx{git rev-parse HEAD};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg log -r . --template '{node}'};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+
+        # commit_id_of_size
+        $function_name = 'commit_id_of_size';
+        $repo_function_ref->{git}{$function_name} = sub {
+            # URLref: [How to retrieve the hash for the current commit in Git?] http://stackoverflow.com/a/949391/43774
+            my $size = shift;
+            my @lines = qx{git rev-parse --short=$size HEAD};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my $size = shift;
+            my @lines = qx{hg log -r . --template '{node}'};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return substr ( $RETval, 0, $size );
+            };
+
+        # commit_describe
+        $function_name = 'commit_describe';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = qx{git describe --tags};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg log -r . --template '{latesttag}-{latesttagdistance}-{node|short}\n'};
+            my $RETval = $lines[0];
+            chomp( $RETval );
+            return $RETval;
+            };
+
+        # is_dirty
+        $function_name = 'is_dirty';
+        $repo_function_ref->{git}{$function_name} = sub {
+            # URLref: http://stackoverflow.com/questions/2657935/checking-for-a-dirty-index-or-untracked-files-with-git
+            my @lines = qx{git diff --shortstat};
+            return scalar(@lines) != 0;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg status -mard};
+            return scalar(@lines) != 0;
+            };
+
+        if ( $repo_type )
+            {
+            return $repo_function_ref->{$repo_type};
+            }
+        return $repo_function_ref;
+    }
+};
+####
 $code{'#pod'} = q{
 =head1 OPTIONS (CUSTOM)
 
@@ -462,9 +658,9 @@ Print all versioned files within module.
 
 Print all versioned files within module with their $VERSION.
 
-=item show_versions
+=item show_PL_targets
 
-Print all versioned files within module with their $VERSION.
+Print all PL script target files within module.
 
 =item smoke
 
@@ -589,6 +785,28 @@ $code{'ACTION_PL_files'} = q{
 
         #print "s->n(vfa) = @{$self->notes('versioned_files_aref')}\n";
       }
+};
+$code{'get_template_vars'} = q{
+    sub get_template_vars {
+        my $self = shift;
+
+        my %vars = ();
+
+        $vars{module_name} = $self->module_name;
+        $vars{dist_abstract} = $self->dist_abstract;
+        $vars{VERSION} = $self->dist_version;
+        $vars{repo_type} = $self->notes('repo_type');
+        $vars{branch} = $self->notes('repo_branch');
+        $vars{commit_author} = $self->notes('repo_commit_author');
+        $vars{commit_describe} = $self->notes('repo_describe');
+        $vars{commit_rev} = $self->notes('repo_commit_number');
+        $vars{commit_id} = $self->notes('repo_commit_id');
+        $vars{commit_id_medium} = $self->notes('repo_commit_id_medium');
+        $vars{commit_id_short} = $self->notes('repo_commit_id_short');
+        $vars{commit_info} = "$vars{VERSION} ( [$vars{repo_type}:$vars{branch}] r$vars{commit_rev}:$vars{commit_id_medium}; $vars{commit_author} )";
+
+        return %vars;
+        }
 };
 $code{'ACTION_build'} = q{
     sub ACTION_build {
@@ -1148,6 +1366,23 @@ $code{'ACTION_show_versions'} = q{
         return %versions;
       }
 };
+$code{'ACTION_show_PL_targets'} = q{
+    #[ADD] NEW action = show_PL_targets - show all PL script target files within the module
+    sub ACTION_show_PL_targets {
+        my ($self) = @_;
+
+        my $files_href = $self->find_PL_files;
+        my @files;
+
+        while (my ($file, $to) = each %$files_href) {
+            push @files, @$to;
+            }
+
+        print join(qq{\n}, @files);
+
+        return @files;
+      }
+};
 $code{'ACTION_realclean'} = q{
     sub ACTION_realclean {
         ## BUG in Module::Build v0.30 : Win32 is case-insensitive => so comparisons should be case insensitive => '$basename eq $self->build_script' should be 'lc($basename) eq lc($self->build_script)'
@@ -1699,9 +1934,11 @@ $code{'ACTION_manifest'} = q{
 #           return ($f =~ qr{$opts$regex});
 #           };
         return sub {
-            # check each regex against the full filename
-            # this is not noticibly slower than the single regex against the relative/shortened filename
-            my $f = File::Spec->rel2abs($_[0]);
+            ## NOT # check each regex against the full filename
+            ## ... # this is not noticibly slower than the single regex against the relative/shortened filename
+            ## ... my $f = File::Spec->rel2abs($_[0]);
+            # check each regex vs relative filename
+            my $f = $_[0];
             if ($^O eq 'MSWin32') {$f =~ s:\\\\:/:g;};      # unixify path for Win32
             my $found = 0;
             #print "[$_[0]=>$f]:";
@@ -1846,12 +2083,7 @@ $code{'ACTION_test'} = q{
         return $self->SUPER::ACTION_test;
       }
 };
-
-    for (keys %{$config{custom_code_href}}) { $code{$_} = $config{custom_code_href}->{$_}; }
-
-    for (sort keys %code) { $code .= $code{$_}; }
-
-    return $code;
+return %code;
 }
 
 
