@@ -15,49 +15,50 @@
 
 # Avoid PACKAGE DISTRIBUTION FILES
 # :: ${dist_<X>} used; ok since these are BUILD generated files and 'clean'ed up (simply 'build clean' prior to running tools [such as 'cpansign'] using the default ExtUtils::Manifest code)
-^${dist_path}/${dist_name}-${dist_version}\.tar\.gz$
-^${dist_path}/${dist_name}-${dist_version}-PPM\.tar\.gz$
-^${dist_path}/${dist_name}-${dist_version}\.tgz$
-^${dist_path}/${dist_name}\.ppd$
-^${dist_path}/${dist_name}-${dist_version}-[^/]*\.par$
-^${dist_path}/${dist_name}-${dist_version}/
+##^${dist_path}/${dist_name}-${dist_version}\.tar\.gz$
+##^${dist_path}/${dist_name}-${dist_version}-PPM\.tar\.gz$
+##^${dist_path}/${dist_name}-${dist_version}\.tgz$
+##^${dist_path}/${dist_name}\.ppd$
+##^${dist_path}/${dist_name}-${dist_version}-[^/]*\.par$
+##^${dist_path}/${dist_name}-${dist_version}/
+^${dist_name}-${dist_version}\.tar\.gz$
+^${dist_name}-${dist_version}-PPM\.tar\.gz$
+^${dist_name}-${dist_version}\.tgz$
+^${dist_name}\.ppd$
+^${dist_name}-${dist_version}-[^/]*\.par$
+^${dist_name}-${dist_version}/
+
+# :: Avoid VERSION
+^VERSION$
 
 # :: compiler detrus in the lib directory
-(?:^|/)lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds|lib|ccs)$
+^lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds|lib|ccs)$
 # :: MSVC compiler detrus
 (?:^|/)vc[1-9][0-9]+\.pdb$
 
-# :: other possible/optional generated PACKAGE FILES to avoid
-# :: : needed for clean testing after 'build install' which uses PPM for install (and generates -PPM.tar.gz and .ppd files) [also works 'build ppmdist']
-(?:^|/).*-PPM\.tar\.gz$
-(?:^|/).*\.ppd$
-
 # Avoid Module::Build generated and utility files
-(?:^|/)Build$
-(?:^|/)Build.bat$
-(?:^|/)_build/
+^Build$
+^Build.bat$
+^_build/
 # avoid MYMETA.yml  [ for Module::Build v0.35+ (August 2009); URLref: http://www.dagolden.com/index.php/479/mymeta-yml-in-the-wild @@ http://www.webcitation.org/66RIzfRJd ]
-(?:^|/)MYMETA.yml$
+^MYMETA.yml$
 # avoid MYMETA.json [ for Module::Build v0.38+ (March 2011); URLref: http://www.dagolden.com/index.php/1378/announcing-modulebuild-0-3800 @@ http://www.webcitation.org/66RJ9oZ1X ]
-(?:^|/)MYMETA.json$
+^MYMETA.json$
 
 # Avoid Makemaker generated and utility files
-(?:^|/)MANIFEST\.bak$
-(?:^|/)Makefile$
-(?:^|/)blib/
-(?:^|/)MakeMaker-\d
-(?:^|/)pm_to_blib\.ts$
-(?:^|/)pm_to_blib$
+^MANIFEST\.bak$
+^Makefile$
+^blib/
+^MakeMaker-\d
+^pm_to_blib\.ts$
+^pm_to_blib$
 # :: 6.18 through 6.25 generated 'blibdirs\.ts'
-(?:^|/)blibdirs\.ts$
+^blibdirs\.ts$
 
 # Avoid META-build files (ANT/NANT)
-# :: regexp matches .build/.build.xml/.build.xml* in any directory (including subs)
-(?:^|/)\.build$
-(?:^|/)\.build\.xml[^/]*$
-# :: regexp matches .build/.build.xml ONLY in main directory; unfortunately, other tools complain => eg, causes MANIFEST mismatches for SIGNATURE
-#^${dist_path}/\.build$
-#^${dist_path}/\.build\.xml$
+# :: regexp matches .build/.build.xml/.build.xml* ONLY the main directory
+^\.build$
+^\.build\.xml[^/]*$
 
 # Avoid version control files
 # :: TODO: check on correcting the trailing '\b' to a '/' for the SCS directories
@@ -96,10 +97,10 @@
 # Avoid local configuration files
 (?:^|/)\.perltidyrc$
 
-# Avoid folders specified as non-manifest or tagged as no distribute
+# Avoid folders specified as non-manifest or tagged as no-distribute
 (?:^|/)@non-manifest/
 (?:^|/)#non-manifest/
 
-# Avoid folders tagged as no distribute
+# Avoid folders tagged as no-distribute
 \.@no-dist/
 \.#no-dist/
