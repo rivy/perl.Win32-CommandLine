@@ -1,15 +1,56 @@
-package Win32::CommandLine; ## no critic ( ProhibitExcessMainComplexity )
 #(emacs/sublime) -*- tab-width: 4; mode: perl; -*-
+use strict;
+use warnings;
+
+my $output_filename = shift;
+
+use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
+
+print("Building $output_filename (from $0)... ");
+
+use Module::Build;
+my $mb = Module::Build->current();
+
+use Text::Template;
+my @lines = <DATA>;
+my $template = Text::Template->new(TYPE => 'ARRAY', SOURCE => [ @lines ], DELIMITERS => [ "#{{", "}}#" ]) or die $Text::Template::ERROR;
+
+my %vars = $mb->get_template_vars();
+
+$vars{ME_filename} = $output_filename;
+$vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename.ext, v0.0.0.1 ( [git:master] 207:97f85f62496a; AUTHOR )
+
+my $text = $template->fill_in( PACKAGE => 'TEMPLATE', HASH => \%vars );
+
+my $fh;
+open( $fh, ">", $output_filename ) or die "cannot write to '$output_filename': $OS_ERROR";
+print $fh $text;
+
+##print $fh 'print "mb::name = '. $mb->module_name .'"."\n";' ."\n";
+##print $fh 'print "mb::dist_name = '. $mb->dist_name .'"."\n";' ."\n";
+##print $fh q{my $defaultVERSION = '0.4';}.qq{\n};
+##my $v = ( $mb->dist_version =~ s/^v//r );
+##print $fh 'use version 0.77 qw(); our $VERSION = version->declare( "'. $v .'" );' ."\n";
+###print $fh 'print "globs = '. $mb->notes('globs') .'"."\n";' ."\n";
+###print $fh 'print "v_f = '. "@{$mb->notes('versioned_files_aref')}" .'"."\n";' ."\n";
+
+close( $fh );
+print "DONE\n";
+
+__END__
+## (emacs/sublime) -*- tab-width: 4; mode: perl; -*-
+# #{{$ME_ID}}#
+package Win32::CommandLine;
 
 # Module Summary
 
 =head1 NAME
 
-Win32::CommandLine - Retrieve and reparse the Win32 command line
+#{{$module_name}}# - #{{$dist_abstract}}#
 
 =head1 VERSION
 
-our $VERSION = qw$Version: 0.5.9_1 $[1]
+our $VERSION = "#{{$VERSION}}#"
 
 =cut
 
@@ -54,11 +95,8 @@ use warnings;
 use 5.008008;       # earliest tested perl version (v5.8.8); v5.6.1 is no longer testable/reportable
 
 # VERSION: major.minor[.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# generate VERSION from $Version: 0.5.9_1 $ SCS tag
-# $defaultVERSION   :: used to make the VERSION code resilient vs missing keyword expansion
-# $generate_alphas  :: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version 0.74 qw(); our $VERSION; { my $defaultVERSION = '0_5'; my $generate_alphas = 1; $VERSION = ( $defaultVERSION, qw( $Version: 0.5.9_1 $ ))[-2]; if ($VERSION =~ /^\d+([._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[._](\d+)[._](\d+)(?:[._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers RequireConstantVersion )
+use version 0.77 qw(); our $VERSION = version->declare('#{{$VERSION}}#');  ## no critic ( RequireConstantVersion )
 
 # Module base/ISA and Exports
 
@@ -89,7 +127,8 @@ sub argv;           # get commandline and reparse it, returning a new ARGV array
 
 # Module Implementation
 
-bootstrap Win32::CommandLine (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
+##bootstrap Win32::CommandLine (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
+bootstrap Win32::CommandLine $VERSION;
 
 sub command_line{
     # command_line(): returns $
@@ -174,7 +213,7 @@ my %_G = ( # package globals
     ## :: avoid shell/sub-shell mismatches
     ## :: increase multishell environment robustness & avoid shell/sub-shell mismatches
     ## :: may not be necessary if we stop using TCC
-    ## :: NOTE: [2013-06-24] msys uses COMSPEC=c:\Windows\SysWOW64\cmd.exe on 64-bit systems (? why: it looks like MSYS depends on "PROCESSOR_ARCHITECTURE=x86" in subshells, not sure why...) 
+    ## :: NOTE: [2013-06-24] msys uses COMSPEC=c:\Windows\SysWOW64\cmd.exe on 64-bit systems (? why: it looks like MSYS depends on "PROCESSOR_ARCHITECTURE=x86" in subshells, not sure why...)
 
 {
 ## no critic ( ProhibitExcessComplexity ProhibitPunctuationVars RequireLocalizedPunctuationVars )
@@ -1099,15 +1138,15 @@ sub _get_next_chunk{
                 $s = defined($2) ? $2 : q{};
                 }
             else
-            	{# cover the case for isolated $
-	            ## no critic ( ProhibitCaptureWithoutTest )		## ToDO: revisit / reanalyze & remove
-            	$s =~ /^(\S)(.*)$/s;
+                {# cover the case for isolated $
+                ## no critic ( ProhibitCaptureWithoutTest )     ## ToDO: revisit / reanalyze & remove
+                $s =~ /^(\S)(.*)$/s;
                 # $1 = non-whitespace character
                 # $2 = rest of string [if exists]
                 #Carp::Assert::assert( defined $1 );
                 $ret_chunk .= defined($1) ? $1 : q{};
                 $s = defined($2) ? $2 : q{};
-            	}
+                }
             }
         }
 

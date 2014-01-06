@@ -12,6 +12,7 @@ blib/.*
 lib/Win32/CommandLine\.c$
 lib/Win32/CommandLine\.o$
 lib/Win32/CommandLine\.obj$
+lib/Win32/CommandLine_def\.old$
 Win32-CommandLine.*$
 vc[1-9][0-9]+.pdb$
 MANIFEST$
@@ -25,6 +26,7 @@ META.json$
 MYMETA.json$
 SIGNATURE$
 CHANGES\.log\.tmp$
+pod2htmd.tmp$
 .*\.pyc$
 
 # ignore pulled/imported code (if any)
@@ -33,3 +35,8 @@ t/lib/.*
 
 # ignore experimental code
 t/prelim/.*
+
+#### auto-generated files
+# PL generated files
+bin/xx.bat
+lib/Win32/CommandLine.pm
