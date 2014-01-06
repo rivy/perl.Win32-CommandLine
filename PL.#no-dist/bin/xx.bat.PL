@@ -22,6 +22,13 @@ $vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename.ext, v
 
 my $text = $template->fill_in( PACKAGE => 'TEMPLATE', HASH => \%vars );
 
+use File::Spec;
+use File::Path;
+
+my ($vol, $dir, undef) = File::Spec->splitpath( $output_filename );
+my $output_dir = $vol.$dir;
+if (not -e $output_dir) { File::Path::make_path( $output_dir ); }
+
 my $fh;
 open( $fh, ">", $output_filename ) or die "cannot write to '$output_filename': $OS_ERROR";
 print $fh $text;

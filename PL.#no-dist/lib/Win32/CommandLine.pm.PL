@@ -1,4 +1,4 @@
-#(emacs/sublime) -*- tab-width: 4; mode: perl; -*-
+#(emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
 use strict;
 use warnings;
 
@@ -22,18 +22,16 @@ $vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename.ext, v
 
 my $text = $template->fill_in( PACKAGE => 'TEMPLATE', HASH => \%vars );
 
+use File::Spec;
+use File::Path;
+
+my ($vol, $dir, undef) = File::Spec->splitpath( $output_filename );
+my $output_dir = $vol.$dir;
+if (not -e $output_dir) { File::Path::make_path( $output_dir ); }
+
 my $fh;
 open( $fh, ">", $output_filename ) or die "cannot write to '$output_filename': $OS_ERROR";
 print $fh $text;
-
-##print $fh 'print "mb::name = '. $mb->module_name .'"."\n";' ."\n";
-##print $fh 'print "mb::dist_name = '. $mb->dist_name .'"."\n";' ."\n";
-##print $fh q{my $defaultVERSION = '0.4';}.qq{\n};
-##my $v = ( $mb->dist_version =~ s/^v//r );
-##print $fh 'use version 0.77 qw(); our $VERSION = version->declare( "'. $v .'" );' ."\n";
-###print $fh 'print "globs = '. $mb->notes('globs') .'"."\n";' ."\n";
-###print $fh 'print "v_f = '. "@{$mb->notes('versioned_files_aref')}" .'"."\n";' ."\n";
-
 close( $fh );
 print "DONE\n";
 
