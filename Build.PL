@@ -406,7 +406,7 @@ $code{'version_set'} = q{
         my $v = '0.1.0';    # default version == 0.1.0
 
         my $args_aref = $self->args('ARGV');
-        print "args() = [ @{$args_aref} ]\n";
+        ##print "args() = [ @{$args_aref} ]\n";
         if ( scalar(@{$args_aref}) > 0 ) { $v = @{$args_aref}[0]; }
 
         my $fh;
