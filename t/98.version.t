@@ -54,8 +54,8 @@ ok( (scalar(@files) > 0), "Found ".scalar(@files)." files to check");
 for (@files) {
     my $v = MM_parse_version($_);
     isnt( $v, 'undef', "'$_' (v$v) has ExtUtils::MakeMaker parsable version");
-    ok( (version_non_alpha_form($v) =~ /[0-9]+\.[0-9_]+\.[0-9_]+/), "'$_' has at least M.m.r version");
-    ok( ($v =~ /^([0-9]+\.)?[0-9]+\.[0-9_]+[_.][0-9_]+$/), "'$_' has version with correct canonical form [M.m.r[.b] and correct '_' position for alphas]");
+    ok( (version_non_alpha_form($v) =~ /^v[0-9]+\.[0-9]+\.[0-9]+/), "'$_' has version in correct canonical form (vM.m.r[.b])");
+    ok( ($v =~ /^v([0-9]+\.)?[0-9]+\.[0-9]+[_.][0-9]+$/), "'$_' has version with correct '_' position for alphas (if alpha)");
     }
 
 #-----------------------------------------------------------------------------
