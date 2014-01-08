@@ -1,3 +1,4 @@
+#define PERL_NO_GET_CONTEXT 	/* increase efficiency, decrease dll size (~5+%); URLref: http://perldoc.perl.org/perlguts.html#How-multiple-interpreters-and-concurrency-are-supported */
 #include "EXTERN.h"
 /*
  ##// disable MSVC warning for redefinition of ENOTSOCK [ C:\Perl\lib\CORE\sys/socket.h(32) : warning C4005: 'ENOTSOCK' : macro redefinition ; C:\Program Files\Microsoft Visual Studio 10.0\VC\INCLUDE\errno.h(120) : see previous definition of 'ENOTSOCK' ]
