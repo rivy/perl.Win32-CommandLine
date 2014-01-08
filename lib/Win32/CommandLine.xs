@@ -120,84 +120,84 @@ _info_PROCESSENTRY32 ()
 	INIT:
 		AV * results;
 		AV * row;
-		results = (AV *)sv_2mortal((SV *)newAV());
+		results = newAV();
 	CODE:
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "PROCESSENTRY32", 0 ));
   		av_push(row, newSVnv( sizeof(PROCESSENTRY32) ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "dwSize", 0 ));
   		av_push(row, newSVpv( "DWORD", 0 ));
   		av_push(row, newSVnv( offsetof(PROCESSENTRY32, dwSize) ));
   		av_push(row, newSVpv( "L!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "cntUsage", 0 ));
   		av_push(row, newSVpv( "DWORD", 0 ));
   		av_push(row, newSVnv( offsetof(PROCESSENTRY32, cntUsage) ));
   		av_push(row, newSVpv( "L!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "th32ProcessID", 0 ) );
   		av_push(row, newSVpv( "DWORD", 0 ) );
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, th32ProcessID) ));
  		av_push(row, newSVpv( "L!", 0 ) );
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "th32DefaultHeapID", 0 ));
 	  	av_push(row, newSVpv( "ULONG_PTR", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, th32DefaultHeapID) ));
  		av_push(row, newSVpv( "P", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "th32ModuleID", 0 ));
   		av_push(row, newSVpv( "DWORD", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, th32ModuleID) ));
  		av_push(row, newSVpv( "L!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_inc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "cntThreads", 0 ));
   		av_push(row, newSVpv( "DWORD", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, cntThreads) ));
  		av_push(row, newSVpv( "L!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "th32ParentProcessID", 0 ));
   		av_push(row, newSVpv( "DWORD", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, th32ParentProcessID) ));
  		av_push(row, newSVpv( "L!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_inc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "pcPriClassBase", 0 ));
   		av_push(row, newSVpv( "LONG", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, pcPriClassBase) ));
  		av_push(row, newSVpv( "l!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "dwFlags", 0 ));
   		av_push(row, newSVpv( "DWORD", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, dwFlags) ));
  		av_push(row, newSVpv( "L!", 0 ));
-  		av_push(results, newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
- 		row = (AV *)sv_2mortal((SV *)newAV());
+		row = newAV();
   		av_push(row, newSVpv( "szExeFile", 0 ));
   		av_push(row, newSVpv( "TCHAR[]", 0 ));
 		av_push(row, newSVnv( offsetof(PROCESSENTRY32, szExeFile) ));
  		av_push(row, newSVpv( "Z", 0 ));
  		av_push(row, newSVnv( MAX_PATH ));
-  		av_push(results,  newRV((SV *)row));
+		av_push(results, newRV_noinc((SV *)row));
 
-		RETVAL = newRV((SV *)results);
+		RETVAL = newRV_noinc((SV *)results);
 	OUTPUT:
 		RETVAL
