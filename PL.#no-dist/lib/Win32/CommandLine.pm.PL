@@ -1,4 +1,4 @@
-#(emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
+#(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 use strict;
 use warnings;
 
@@ -8,7 +8,7 @@ use Module::Build;
 my $mb = Module::Build->current()->expand_template( $output_filename, [ <DATA> ] );
 
 __END__
-## (emacs/sublime) -*- tab-width: 4; mode: perl; -*-
+#(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 # #{{$ME_ID}}#
 package Win32::CommandLine;
 
