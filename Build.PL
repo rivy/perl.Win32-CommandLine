@@ -79,6 +79,7 @@ $config{'versioned_file_aref'} = [];                # globs matching files which
 #
 $config{'repo_commit_id_length_medium'} = 12;       # length of 'medium' commit ID ('excellent' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):100,000,000,000,000)
 $config{'repo_commit_id_length_short'} = 6;         # length of 'short' commit ID ('good' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):10,000,000)
+$config{'repo_commit_id_length_tiny'} = 4;          # length of 'tiny' commit ID ('likely' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):50,000)
 #
 $config{'custom_code_href'} = {};                   # custom code overrides from config
 $config{'custom_ENV_href'} = {};                    # custom environment overrides (set before each dispatch) for state transfer to subordinate executables [default $ENV{_BUILD_module_name} == $config{'module_name'} [SET after Build.PL.config is read, unless set within config]]
@@ -122,6 +123,7 @@ if ( $repo ) {
     $config{'repo_commit_id'} = $repo->{commit_id}();
     $config{'repo_commit_id_medium'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_medium'};
     $config{'repo_commit_id_short'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_short'};
+    $config{'repo_commit_id_tiny'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_tiny'};
     $config{'repo_commit_number'} = $repo->{commit_number}();
     $config{'repo_commit_author'} = $repo->{commit_author}();
     $config{'repo_commit_describe'} = $repo->{commit_describe}();
@@ -157,7 +159,7 @@ if ( -e $VERSION_filename )
         if ( defined $4 ) { $config{'VERSION_b'} = $4 };
 
         if (!$config{'VERSION_r'}) { $config{'VERSION_r'} = $config{'repo_commit_number'} ? $config{'repo_commit_number'} : q{0} };
-        if ( defined $config{'VERSION_b'} && !$config{'VERSION_b'} ) { $config{'VERSION_b'} = $config{'repo_commit_id_short'} ? hex $config{'repo_commit_id_short'} : q{0} };
+        if ( defined $config{'VERSION_b'} && !$config{'VERSION_b'} ) { $config{'VERSION_b'} = $config{'repo_commit_id_tiny'} ? hex $config{'repo_commit_id_tiny'} : q{0} };
 
         my $v_is_alpha = $config{'VERSION_m'} % 2;
         $v = $config{'VERSION_M'}.'.'.$config{'VERSION_m'};
@@ -843,6 +845,7 @@ $code{'get_template_vars'} = q{
         $vars{commit_id} = $self->notes('repo_commit_id');
         $vars{commit_id_medium} = $self->notes('repo_commit_id_medium');
         $vars{commit_id_short} = $self->notes('repo_commit_id_short');
+        $vars{commit_id_tiny} = $self->notes('repo_commit_id_tiny');
         $vars{commit_info} = "$vars{VERSION} ( [$vars{repo_type}:$vars{branch}] r$vars{commit_rev}:$vars{commit_id_medium}; $vars{commit_author} )";
 
         return %vars;
