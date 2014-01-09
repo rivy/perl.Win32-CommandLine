@@ -16,7 +16,7 @@ package #{{$module_name}}#;
 
 =head1 NAME
 
-B<#{{$module_name}}#> - #{{$dist_abstract}}#
+#{{$module_name}}# - #{{$dist_abstract}}#
 
 =head1 VERSION
 
@@ -1138,7 +1138,7 @@ sub _argv_do_glob{
         dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
         unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
         glob => 1,      ## REMOVE this??
-        nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]  # if true, patterns which match no files are expanded to a null string (no token), rather than  the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
+        nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]  # if true, patterns which match no files are expanded to a null string (no token), rather than the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
         );
 
     # read/expand optional named parameters
@@ -1370,7 +1370,7 @@ sub _argv{
         dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
         dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
         unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
-        nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]  # if true, patterns which match no files are expanded to a null string (no token), rather than  the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
+        nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]  # if true, patterns which match no files are expanded to a null string (no token), rather than the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
         glob => 1,                  # = 0/<true> [default = true]       # when true, globbing is performed
         ## TODO: rework this ... need carp/croak on unbalanced quotes/subshells (? carp_ub_quotes, carp_ub_shells, carp = 0/1/warn/carp/die/croak)
         croak_unbalanced => 1,      # = 0/true/'quotes'/'subshells' [default = true] # if true, croak for unbalanced command line quotes or subshell blocks (takes precedence over carp_unbalanced)
@@ -2184,67 +2184,89 @@ B<E<nbsp>E<nbsp>E<nbsp>E<nbsp>_or_>
     Write a full description of the module and its features here.
     Use subsections (=head2, =head3) as appropriate.
 
-This module is used to reparse the Win32 command line, automating better quoting, command substitution, and globbing of the command line. Globbing is full bash POSIX compatible globbing. With the use of the companion script (B<C<xx.bat>>) and B<C<doskey>> for macro aliasing, you can add fully implemented, bash compatible, string quoting/expansion and file globbing to I<any> Win32 executable.
+This module is used to reparse the Win32 command line, automating better quoting, command substitution, and globbing of the command line.
+Globbing is full bash POSIX compatible globbing. With the use of the companion script (B<C<xx.bat>>), and B<C<doskey>> for macro aliasing,
+you can add fully implemented, bash compatible, string quoting/expansion and file globbing to I<any> Win32 executable.
 
-This module is compatible with both B<C<cmd.exe>> and B<C<4nt/tcc/tcmd>> shells, and can be used to add better parsing and bash glob expansion to I<any> external command (by using the included B<C<xx.bat>> batch script).
+This module is compatible with both B<C<cmd.exe>> and C<4nt/tcc/tcmd> shells, and can be used to add better parsing and bash glob
+expansion to I<any> external command (by using the included B<C<xx.bat>> batch script).
 
-=head2 C<CMD.EXE>
+=head2 B<C<CMD.EXE>>
 
-    doskey type=call xx type $*
-    type [a-c]*.pl
-    doskey perl=call xx perl $*
-    perl -e 'print "test"'      [would otherwise FAIL]
+=over
+
+ doskey type=call xx type $*
+ type [a-c]*.pl
+ doskey perl=call xx perl $*
+ perl -e 'print "test"'      [would otherwise FAIL]
+
+=back
 
 =head2 C<4NT/TCC/TCMD>
 
-    alias type=call xx type
-    type [a-c]*.pl
-    .
-    alias perl=call xx perl
-    perl -e 'print "test"'      [would otherwise FAIL]
+=over
 
-Note that bash-compatible argument expansion and globbing is available, including command substitution and globbing. Glob meta-notations such as "C<a[bc]*>" or "C<foo.{bat,pl,exe,o}>" are also available.
+ alias type=call xx type
+ type [a-c]*.pl
+ alias perl=call xx perl
+ perl -e 'print "test"'      [would otherwise FAIL]
+
+=back
+
+Note that bash-compatible globbing and argument expansion are supplied, including command substitution. Glob patterns may also
+contain meta-notations, such as 'C<a[bc]*>' or 'C<foo.{bat,pl,exe,o}>'.
 
 =for another_example
     cpan $(dzil listdeps)   :: with a CPAN wrapper program
 
 =head2 Command line string/character expansion
 
-  '...'    literal (no escapes and no globbing within quotes)
-  "..."    literal (no escapes and no globbing within quotes) * Note-1
-  $'...'   string including all ANSI C string escapes (see Note-2); no globbing within quotes
-  $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
-  $( ... ) command substitution
-  $("...") command substitution (quotes removed; allows redirection & continuation within the subshell)
+=over
 
-NOTE: Command substitution (replacing C<$(...)> argument with the standard output of the argument's execution)
-NOTE-1: DOS character escape sequences (such as "\"") are parsed prior to being put into the command line and so are valid and interpreted (unavoidably so).
-NOTE-2: ANSI C string escapes are  (\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \[0-9]{1,3}, \x[0-9a-fA-f]{1,2}, \c[@A-Z[\\\]\^_`]; all other escaped characters are left in place without transformation (\<x> => \<x>).
-NOTE: command substitution strings are not automatically expanded (use C<$(xx CMD)> for bash expansion of the subshell command line).
+ '...'    literal (no escapes and no globbing within quotes)
+ "..."    literal (no escapes and no globbing within quotes) (see *NOTE-1)
+ $'...'   string including all ANSI C string escapes (see *NOTE-2); no globbing within quotes
+ $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
+ $( ... ) command substitution (see *NOTE-3)
+ $("...") command substitution (quotes removed; see *NOTE-4)
+
+=back
+
+NOTE-1: DOS character escape sequences (such as C<"\"">) are parsed prior to being put into the command
+line and, so, are valid and still (unavoidably) interpreted within double-quotes.
+
+NOTE-2: ANSI C string escapes are C<\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \[0-9]{1,3}, \x[0-9a-fA-f]{1,2}, \c[@A-Z[\\\]\^_`]>;
+all other escaped characters are left in place without transformation (C<< \<x> => \<x> >>).
+
+NOTE-3: Command substitution replaces the C<$(...)> argument with the standard output of that
+argument's execution. Command substitution strings are not, themselves, automatically expanded;
+use C<$(xx.bat >C<I<COMMAND>)>) to trigger expansion of the subshell command line.
+
+NOTE-4: C<$("...")> is present to enable delayed DOS/Windows interpretation of redirection & continuation characters. This
+allows redirection & continuation characters to be used within the subshell command string.
 
 URLref: [bash ANSI-C Quoting] L<http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html> @@ L<http://www.webcitation.org/66M8skmP8>
 
 =for ToDO
     NOTE: \XHH also currently works (although capitalized versions of the other escape sequences DO NOT cause a transformation)... ? remove \XHH ## needs research
 
-=for TODO
-    Explain that $("...") with quote removal was added to allow redirection and continuation characters within the subshell
-
 =head2 GLOB META CHARACTERS
 
-  \           Quote the next metacharacter
-  []          Character class
-  {}          Multiple pattern
-  *           Match any string of characters
-  ?           Match any single character
-  ~           Current user home directory
-  ~USERNAME   Home directory of USERNAME
-  ~TEXT       Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USERNAME expansion]
+=over
 
+ \           Quote the next metacharacter
+ []          Character class
+ {}          Multiple pattern
+ *           Match any string of characters
+ ?           Match any single character
+ ~           Current user home directory
+ ~USERNAME   Home directory of USERNAME
+ ~TEXT       Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USERNAME expansion]
 
-The multiple pattern metanotation C<a{b,c,d}e> is a shorthand for C<abe ace ade>.  Left to
-right order is preserved, with results of matches being sorted separately
-at a low level to preserve this order.
+=back
+
+The multiple pattern metanotation 'C<a{b,c,d}e>' is a shorthand for 'C<abe ace ade>'.  Left to
+right order is preserved, with results of matches being sorted separately at a low level to preserve this order.
 
 =for CHECK-THIS
     As special cases C<{}> and umatched C<}> are passed through undisturbed to the final command line. [TRUE]
@@ -2257,32 +2279,41 @@ at a low level to preserve this order.
 
 To install this module, run the following commands:
 
-    perl Build.PL
-    ./Build
-    ./Build test
-    ./Build install
+=over
 
-Or, if you're on a platform (like DOS or Windows) that doesn't require the "./" notation, you can replace C<./Build> with just C<Build>.
+ perl Build.PL
+ ./Build
+ ./Build test
+ ./Build install
 
-Alternatively, the standard make idiom is also available (though it is deprecated):
+=back
 
-    perl Makefile.PL
-    make
-    make test
-    make install
+Or, if you're on a platform (like DOS or Windows) that doesn't require the leading 'C<./>' notation, you can
+replace 'C<./Build>' with just 'C<Build>'.
 
-(On Windows platforms, you should use B<C<nmake>> or B<C<dmake>> instead of B<C<make>>.)
+Alternatively, the standard make idiom is also available (although it is deprecated):
+
+=over
+
+ perl Makefile.PL
+ make
+ make test
+ make install
+
+=back
+
+(On Windows platforms, you should use B<C<nmake>>or B<C<dmake>>, instead of B<C<make>>.)
 
 Note that the Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
 Makefile.PL will throw an exception if Module::Build is missing from your current installation. C<cpan> will
 notify the user of the build prerequisites (and install them for the build, if it is setup to do so [see the cpan
 configuration option C<build_requires_install_policy>]).
 
-PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [http://trouchelle.com/ppm/package.xml]).
+PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [L<http://trouchelle.com/ppm/package.xml>]).
 
-Note: On ActivePerl installations, "C<./Build install>" will do a full installation using B<C<ppm>> (see ppm).
+Note: On ActivePerl installations, 'C<./Build install>' will do a full installation using B<C<ppm>> (see ppm).
 During the installation, a PPM package is constructed locally and then subsequently used for the final module install.
-This allows for uninstalls (using "C<ppm uninstall >I<C<MODULE>>" and also keeps local HTML documentation current.
+This allows for uninstalls (using 'C<ppm uninstall >C<I<MODULE>>' and also keeps local HTML documentation current.
 
 =for future_possibles
     Check into using the PPM perl module, if installed, for installation of this module (removes the ActiveState requirement).
@@ -2297,23 +2328,62 @@ This allows for uninstalls (using "C<ppm uninstall >I<C<MODULE>>" and also keeps
     exported, or methods that may be called on objects belonging to the
     classes provided by the module.
 
-=head2 command_line( )
+=head2 C<command_line( ): $>
 
-C<command_line( )>: returns $
+=over
 
-:: returns the full Win32 command line as a string.
+=item * [out] : the original command line for the process, as a string
 
-=head2 argv( [\%] )
+=back
 
-C<argv( [\%] )>: returns @
+ my $commandline = command_line();
 
-:: reparse & glob-expand the original command line; returning a new, replacement argument array.
+Use the Win32 API to recapture the original command line for the current process.
 
-=head2 parse( $ [,\%] )
+=head2 C<argv( [\%options] ): @>
 
-C<parse( $ [,\%] )>: returns @
+=over
 
-:: parse & glob-expand a string argument; returns the parsed argument string as an array.
+=item * [in] : (optional) reference to hash containing function options
+
+=item * [out] : returns a new argument array (which can replace @ARGV)
+
+=back
+
+ @ARGV = argv();
+
+Reparse & glob-expand the original command line, returning a new argument array (which is a drop-in replacement for @ARGV).
+
+=head2 C<parse( $ [,\%options ] ): @>
+
+=over
+
+=item * [in] : string argument to parse/glob-expand
+
+=item * [in] : (optional) reference to hash containing function options
+
+=item * [out] : returns an argument array
+
+=back
+
+ my @argv_new = parse( command_line() );
+
+Parse & glob-expand a string argument; returns the results of parsed/expanded argument as an array.
+
+=head2 Function Options ( C<\%options> )
+
+    my %options = (
+        remove_exe_prefix => 1,     # = 0/<true> [default = true]       # if true, remove all initial args up to and including the exe name from the @args array
+        dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
+        dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
+        unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
+        nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]  # if true, patterns which match no files are expanded to a null string (no token), rather than the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
+        glob => 1,                  # = 0/<true> [default = true]       # when true, globbing is performed
+        ## TODO: rework this ... need carp/croak on unbalanced quotes/subshells (? carp_ub_quotes, carp_ub_shells, carp = 0/1/warn/carp/die/croak)
+        croak_unbalanced => 1,      # = 0/true/'quotes'/'subshells' [default = true] # if true, croak for unbalanced command line quotes or subshell blocks (takes precedence over carp_unbalanced)
+        carp_unbalanced => 1,       # = 0/true/'quotes'/'subshells' [default = true] # if true, carp for unbalanced command line quotes or subshell blocks
+        ## ToDO: add globstar option
+        );
 
 =head1 SUBROUTINES/METHODS
 
@@ -2372,19 +2442,19 @@ So, an initial XS solution was implemented. And from that point, the lure of C<b
 
 This is a list of internal XS functions (brief descriptions will be added at a later date):
 
-  SV * _wrap_GetCommandLine() :: [XS] Use C and Win32 API to get the command line.
+  SV * _wrap_GetCommandLine() // [XS] Use C and Win32 API to get the command line
   HANDLE _wrap_CreateToolhelp32Snapshot ( dwFlags, th32ProcessID )
   bool _wrap_Process32First ( hSnapshot, lppe )
   bool _wrap_Process32Next ( hSnapshot, lppe )
   bool _wrap_CloseHandle ( hObject )
-  ##// Pass useful CONSTANTS back to perl
+  // Pass useful CONSTANTS back to perl
   int _const_MAX_PATH ()
   HANDLE _const_INVALID_HANDLE_VALUE ()
   DWORD _const_TH32CS_SNAPPROCESS ()
-  ##// Pass useful sizes back to Perl (for testing) */
+  // Pass useful sizes back to Perl (for testing) */
   unsigned int _info_SIZEOF_HANDLE ()
   unsigned int _info_SIZEOF_DWORD ()
-  #// Pass PROCESSENTRY32 structure info back to Perl
+  // Pass PROCESSENTRY32 structure info back to Perl
   SV * _info_PROCESSENTRY32 ()
 
 =for further_expansion
@@ -2431,11 +2501,30 @@ C<#{{$module_name}}#> requires no configuration files or environment variables.
 
 =head2 OPTIONAL Environment Variables
 
-$ENV{NULLGLOB} = 0/1 => overrides default 'nullglob' setting
+=over
+
+=item C<NULLGLOB> - override the default glob expansion behavior for empty matches
+
+ $ENV{NULLGLOB} = 1; # undef/0 | <true>
+
+Default glob expansion, as in bash, expands glob patterns which match nothing into the glob pattern itself.
+Use C<$ENV{NULLGLOB}> to override this default behavior.
+
+Analogous to the bash command 'C<shopt -s nullglob>', when C<$ENV{NULLGLOB}> is set to a true (non-NULL, non-zero)
+value, a glob expansion which matches nothing will expand to the null string (aka, C<q{}>).
+
+Note: the default glob expansion behavior can also be modified programmatically
+via the function option, C<nullglob>, when passed to the argv() and parse() functions.
+This option, when passed to C<argv()> or C<parse()>, will override both the default behavior
+I<and> the C<$ENV{NULLGLOB}> setting.
 
 =for possible_future
+    $ENV{GLOBSTAR} = 0 | TRUE ... URLref:https://www.gnu.org/software/bash/manual/html_node/The-Shopt-Builtin.html#The-Shopt-Builtin
+        If set, the pattern '**' used in a filename expansion context will match all files and zero or more directories and subdirectories. If the pattern is followed by a '/', only directories and subdirectories match.
     $ENV{WIN32_COMMANDLINE_RULE} = "sh" | "bash" (case doesn't matter) => argv will parse in "sh/bash" manner if set to "default"|"undef"
     - will warn (not carp) if value unrecognized
+
+=back
 
 =for readme continue
 
@@ -2628,22 +2717,22 @@ of the build, followed by a 'build test'.
 
 =head1 LICENSE AND COPYRIGHT
 
-  Copyright (c) 2007-2009, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
+ Copyright (c) 2007-2013, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
 
 =head1 DISCLAIMER OF WARRANTY
 
-  THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
-  AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
-  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
-  ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
-  BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
-  INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
-  THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
+ AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
+ ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
+ BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
+ THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-  [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
+ [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -2652,7 +2741,7 @@ point for the module) during a discussion on PerlMonks (see L<http://www.perlmon
 
 =for TODO
     POST in REPLY to http://www.perlmonks.org/?parent=625182;node_id=3333
-    I just wanted to drop you a note to let you know that I used your post here as a starting point and ultimately went in for the full monty. After a lot of research, investigation, and coding, I've just released Win32::CommandLine [1] on CPAN last week.
+    I just wanted to drop you a note to let you know that I used your post here as a starting point and ultimately went in for the full monty. After a lot of research, investigation, and coding, I've just released #{{$module_name}}# [1] on CPAN last week.
     It does a little more than just grab the command line now. :)
     Thanks for the help and encouragement.
     - Roy
