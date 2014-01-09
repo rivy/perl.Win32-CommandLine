@@ -830,8 +830,9 @@ $code{'ACTION_PL_files'} = q{
 };
 $code{'get_template_vars'} = q{
     sub get_template_vars {
+        # get_template_vars( [$output_filename] ) ): %vars
         my $self = shift;
-
+        my $output_filename = shift;
         my %vars = ();
 
         $vars{module_name} = $self->module_name;
@@ -848,7 +849,48 @@ $code{'get_template_vars'} = q{
         $vars{commit_id_tiny} = $self->notes('repo_commit_id_tiny');
         $vars{commit_info} = "$vars{VERSION} ( [$vars{repo_type}:$vars{branch}] r$vars{commit_rev}:$vars{commit_id_medium}; $vars{commit_author} )";
 
+        if (defined $output_filename) {
+            # define file specific variables
+            $vars{ME_filename} = $output_filename;
+            $vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename, v0.0.0.1 ( [git:master] 207:97f85f62496a; AUTHOR )
+            }
+
         return %vars;
+        }
+};
+$code{'expand_template'} = q{
+    sub expand_template {
+        # expand_template( $output_filename, \@template ) ): %vars
+        my $self = shift;
+        my $output_filename = shift;
+        my $template_aref = shift;
+
+        my $delim_start = '#{{';
+        my $delim_stop  = '}}#';
+
+        my %vars = $self->get_template_vars( $output_filename );
+
+        use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
+
+        print("Building $output_filename (from $0) ... ");
+
+        use Text::Template;
+        my $template = Text::Template->new(TYPE => 'ARRAY', SOURCE => $template_aref, DELIMITERS => [ $delim_start, $delim_stop ]) or die $Text::Template::ERROR;
+
+        my $text = $template->fill_in( PACKAGE => 'TEMPLATE', HASH => \%vars );
+
+        use File::Spec;
+        use File::Path;
+
+        my ($vol, $dir, undef) = File::Spec->splitpath( $output_filename );
+        my $output_dir = $vol.$dir;
+        if (not -e $output_dir) { File::Path::mkpath( $output_dir ); }
+
+        my $fh;
+        open( $fh, ">", $output_filename ) or die "cannot write to '$output_filename': $OS_ERROR";
+        print $fh $text;
+        close( $fh );
+        print "ok\n";
         }
 };
 $code{'ACTION_build'} = q{

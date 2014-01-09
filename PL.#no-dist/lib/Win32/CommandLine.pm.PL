@@ -4,36 +4,8 @@ use warnings;
 
 my $output_filename = shift;
 
-use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
-
-print("Building $output_filename (from $0)... ");
-
 use Module::Build;
-my $mb = Module::Build->current();
-
-use Text::Template;
-my @lines = <DATA>;
-my $template = Text::Template->new(TYPE => 'ARRAY', SOURCE => [ @lines ], DELIMITERS => [ "#{{", "}}#" ]) or die $Text::Template::ERROR;
-
-my %vars = $mb->get_template_vars();
-
-$vars{ME_filename} = $output_filename;
-$vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename.ext, v0.0.0.1 ( [git:master] 207:97f85f62496a; AUTHOR )
-
-my $text = $template->fill_in( PACKAGE => 'TEMPLATE', HASH => \%vars );
-
-use File::Spec;
-use File::Path;
-
-my ($vol, $dir, undef) = File::Spec->splitpath( $output_filename );
-my $output_dir = $vol.$dir;
-if (not -e $output_dir) { File::Path::mkpath( $output_dir ); }
-
-my $fh;
-open( $fh, ">", $output_filename ) or die "cannot write to '$output_filename': $OS_ERROR";
-print $fh $text;
-close( $fh );
-print "DONE\n";
+my $mb = Module::Build->current()->expand_template( $output_filename, [ <DATA> ] );
 
 __END__
 ## (emacs/sublime) -*- tab-width: 4; mode: perl; -*-
