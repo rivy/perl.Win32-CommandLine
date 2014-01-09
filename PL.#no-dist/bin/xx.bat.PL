@@ -146,7 +146,7 @@ xx - eXpand (reparse) and eXecute the command line
 
 =head1 VERSION
 
-This document describes C<xx> (#{{$VERSION}}#).
+This document describes C<xx>, #{{$VERSION}}#.
 
 =head1 SYNOPSIS
 

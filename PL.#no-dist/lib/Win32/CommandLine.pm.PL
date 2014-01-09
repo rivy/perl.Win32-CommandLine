@@ -10,17 +10,21 @@ my $mb = Module::Build->current()->expand_template( $output_filename, [ <DATA> ]
 __END__
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 # #{{$ME_ID}}#
-package Win32::CommandLine;
+package #{{$module_name}}#;
 
 # Module Summary
 
 =head1 NAME
 
-#{{$module_name}}# - #{{$dist_abstract}}#
+B<#{{$module_name}}#> - #{{$dist_abstract}}#
 
 =head1 VERSION
 
-our $VERSION = '#{{$VERSION}}#'
+=over
+
+ $#{{$module_name}}#::VERSION = version->declare( '#{{$VERSION}}#' );
+
+=back
 
 =cut
 
@@ -97,8 +101,8 @@ sub argv;           # get commandline and reparse it, returning a new ARGV array
 
 # Module Implementation
 
-##bootstrap Win32::CommandLine (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
-bootstrap Win32::CommandLine $VERSION;
+##bootstrap #{{$module_name}}# (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
+bootstrap #{{$module_name}}# $VERSION;
 
 sub command_line{
     # command_line(): returns $
@@ -264,7 +268,7 @@ my %_G = ( # package globals
 # #!# BUG: the EVAL eats all STDIN redirected with "<"
 # #!#   $isWorkingSystem = eval { ``; return ( $? ? 0 : 1 ) };  # quietly test system() and backtick subshell calls
 # #!#   if (not $isWorkingSystem) { if (not $msg) { $msg = q{ERROR: Unable to find a shell (eg, CMD.exe) for system(); to correct the problem, add path for CMD.exe to PATH or set PERL5SHELL}.($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
-    if ($msg and not $ENV{HARNESS_ACTIVE}) { print {*STDERR} 'Win32::CommandLine :: '.$msg.qq{\n}; };  ## no critic ( RequireCheckedSyscalls ) # ToDO: remove/revisit
+    if ($msg and not $ENV{HARNESS_ACTIVE}) { print {*STDERR} '#{{$module_name}}# :: '.$msg.qq{\n}; };  ## no critic ( RequireCheckedSyscalls ) # ToDO: remove/revisit
 }
 
 sub _getparentname {
@@ -2162,13 +2166,17 @@ return %home_paths;
     This section will be as far as many users bother reading
     so make it as educational and exemplary as possible.
 
-    @ARGV = Win32::CommandLine::argv() if eval { require Win32::CommandLine; };
+=over
 
-    _or_
+ @ARGV = #{{$module_name}}#::argv() if eval { require #{{$module_name}}#; };
 
-    use Win32::CommandLine qw( command_line );
-    my $commandline = command_line();
-    ...
+B<E<nbsp>E<nbsp>E<nbsp>E<nbsp>_or_>
+
+ use #{{$module_name}}# qw( command_line );
+ my $commandline = command_line();
+ ...
+
+=back
 
 =head1 DESCRIPTION
 
@@ -2419,7 +2427,7 @@ Pending documentation...
     that can be set. These descriptions must also include details of any
     configuration language used.
 
-C<Win32::CommandLine> requires no configuration files or environment variables.
+C<#{{$module_name}}#> requires no configuration files or environment variables.
 
 =head2 OPTIONAL Environment Variables
 
@@ -2439,7 +2447,7 @@ $ENV{NULLGLOB} = 0/1 => overrides default 'nullglob' setting
     the module is part of the standard Perl distribution, part of the
     module's distribution, or must be installed separately. ]
 
-C<Win32::CommandLine> requires C<Carp::Assert> for internal error checking and warnings.
+C<#{{$module_name}}#> requires C<Carp::Assert> for internal error checking and warnings.
 
 The optional modules C<Win32>, C<Win32::Security::SID>, and C<Win32::TieRegistry> are recommended to allow full glob tilde expansions
 for user home directories (eg, C<~administrator> expands to C<C:\Users\Administrator>). Expansion of the single tilde (C<~>) has a backup
@@ -2469,16 +2477,16 @@ None reported.
     limitations on the size of data sets, special cases that are not
     (yet) handled, etc.
 
-Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-CommandLine. The developers will be notified, and you'll automatically be notified of progress on your bug as any changes are made.
+Please report any bugs or feature requests to C<bug-#{{$module_name=~s/::/-/gr}}#@rt.cpan.org>, or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=#{{$module_name=~s/::/-/gr}}#>. The developers will be notified, and you'll automatically be notified of progress on your bug as any changes are made.
 
 =head2 Operational Notes
 
-IMPORTANT NOTE: Special shell characters (shell redirection [ '|', '<', '>' ] and continuation '&') must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "foo | bar" >>). The shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by quoting them with double-quote characters.
+IMPORTANT NOTE: Special shell characters (shell redirection [ C<'|'>, C<'<'>, C<'>'> ] and continuation C<'&'>) must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "foo | bar" >>). The shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by quoting them with double-quote characters.
 
 =for CORRECTION
     special characters need to be DOUBLE-QUOTED or escaped (usually the escape character is ^)...
 
-C<< %<X> >> is also replaced by the corresponding %ENV variable by the shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line (eg, C<< perl -e "use Win32::CommandLine; %%x = Win32::CommandLine::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>).
+C<< %<X> >> is also replaced by the corresponding %ENV variable by the shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line (eg, C<< perl -e "use #{{$module_name}}#; %%x = #{{$module_name}}#::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>).
 
 =for CORRECTION
     for TCC: %X and %X% are replaced prior to expansion
@@ -2512,42 +2520,69 @@ No bugs have been reported.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Win32::CommandLine
+=over
+
+ perldoc #{{$module_name}}#
+
+=back
 
 You can also look for further information at:
 
-  * AnnoCPAN: Annotated CPAN documentation
+=over
 
-    http://annocpan.org/dist/Win32-CommandLine
+=item * CPAN
 
-  * CPAN Ratings
+=over
 
-    http://cpanratings.perl.org/dist/Win32-CommandLine
+L<https://metacpan.org/search?q=#{{$module_name=~s/::/-/gr}}#>
 
-  * RT: CPAN's request tracker (aka buglist)
+L<http://search.cpan.org/dist/#{{$module_name=~s/::/-/gr}}#>
 
-    http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine
+L<http://kobesearch.cpan.org/dist/#{{$module_name=~s/::/-/gr}}#>
 
-  * Search CPAN
+=back
 
-    http://search.cpan.org/dist/Win32-CommandLine
-    _or_
-    https://metacpan.org/search?q=Win32-CommandLine
-    _or_
-    http://kobesearch.cpan.org/dist/Win32-CommandLine
+=item * CPAN Ratings
 
-  * CPANTESTERS: Test results
+=over
 
-    http://www.cpantesters.org/show/Win32-CommandLine.html
+L<http://cpanratings.perl.org/dist/#{{$module_name=~s/::/-/gr}}#>
 
-  * CPANTS: CPAN Testing Service
+=back
 
-    [kwalitee] http://cpants.perl.org/dist/kwalitee/Win32-CommandLine
-    [ used by] http://cpants.perl.org/dist/used_by/Win32-CommandLine
+=item * RT: CPAN's request tracker (aka buglist)
+
+=over
+
+L<http://rt.cpan.org/Public/Dist/Display.html?Name=#{{$module_name=~s/::/-/gr}}#>
+
+=back
+
+=item * CPANTESTERS: Test results
+
+=over
+
+L<http://www.cpantesters.org/show/#{{$module_name=~s/::/-/gr}}#.html>
+
+=back
+
+=item * CPANTS: CPAN Testing Service
+
+=over
+
+C<[kwalitee]> L<http://cpants.perl.org/dist/kwalitee/#{{$module_name=~s/::/-/gr}}#>
+
+C<[ used by]> L<http://cpants.perl.org/dist/used_by/#{{$module_name=~s/::/-/gr}}#>
+
+=back
+
+=back
 
 =for possible_future
-    * CPANFORUM: Forum discussing Win32::CommandLine
-      http://www.cpanforum.com/dist/Win32-CommandLine
+    * AnnoCPAN: Annotated CPAN documentation
+      http://annocpan.org/dist/#{{$module_name=~s/::/-/gr}}#
+    * CPANFORUM: Forum discussing #{{$module_name}}#
+      http://www.cpanforum.com/dist/#{{$module_name=~s/::/-/gr}}#
 
 =head1 TODO
 
