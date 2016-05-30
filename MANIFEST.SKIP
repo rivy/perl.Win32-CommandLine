@@ -75,6 +75,8 @@
 (?:^|/)\.hgrc
 # :: git
 (?:^|/)\.git/
+(?:^|/)\.gitattributes$
+(?:^|/)\.gitignore$
 
 # Avoid signature GPG configuration files
 (?:^|/)\.gpg/
