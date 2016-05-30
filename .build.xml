@@ -173,12 +173,14 @@
 	<property name="hg.destination.dir" value=".hg"/>
 	<available property="has.hgrc" file="${hg.destination.dir}/hgrc"/>
 	<available property="has.HG.dirstamp" file="${hg.destination.dir}/hgrc.ANT.dirstamp"/>
-	<loadfile property="hgrc.ANT.dirstamp" srcFile="${hg.destination.dir}/hgrc.ANT.dirstamp" quiet="true">
-		<filterchain>
-			<headfilter lines="1"/>
-			<striplinebreaks/>
-		</filterchain>
-	</loadfile>
+    <ac:if><istrue value="${has.HG.dirstamp}"/><ac:then>
+        <loadfile property="hgrc.ANT.dirstamp" srcFile="${hg.destination.dir}/hgrc.ANT.dirstamp" quiet="true">
+            <filterchain>
+                <headfilter lines="1"/>
+                <striplinebreaks/>
+            </filterchain>
+        </loadfile>
+    </ac:then></ac:if>
 	<!--
 	<uptodate property="dest.HG.uptodate">
 		<srcfiles dir="${hg.source.dir}"><patternset refid="hg.source.patternset"/></srcfiles>
@@ -239,12 +241,14 @@
 	<property name="gpg.destination.dir" value=".gpg"/>
 	<available property="has.gpg.conf" file="${gpg.destination.dir}/gpg.conf"/>
 	<available property="has.GPG.dirstamp" file="${gpg.destination.dir}/gpg.conf.ANT.dirstamp"/>
-	<loadfile property="gpg.conf.ANT.dirstamp" srcFile="${gpg.destination.dir}/gpg.conf.ANT.dirstamp" quiet="true">
-		<filterchain>
-			<headfilter lines="1"/>
-			<striplinebreaks/>
-		</filterchain>
-	</loadfile>
+    <ac:if><istrue value="${has.GPG.dirstamp}"/><ac:then>
+        <loadfile property="gpg.conf.ANT.dirstamp" srcFile="${gpg.destination.dir}/gpg.conf.ANT.dirstamp" quiet="true">
+            <filterchain>
+                <headfilter lines="1"/>
+                <striplinebreaks/>
+            </filterchain>
+        </loadfile>
+    </ac:then></ac:if>
 	<uptodate property="dest.GPG.uptodate" srcfile=".gpg.conf" targetfile=".gpg/gpg.conf"/>
 
 	<condition property="is.GPG.instance.uptodate">
@@ -456,11 +460,15 @@
 					<echo level="debug" message="TASK: copy file &quot;${s.fname}&quot; tofile=&quot;${d.fname}&quot;"/>
 					<ac:if><not><isreference refid="@{copy.filter.refid}"/></not>
 						<ac:then>
-							<attrib hidden="false" readonly="false"><fileset file="${d.fname}"/></attrib><!-- to deal with hidden & readonly files at the destination (avoids java.io.FileNotFoundException) -->
+                            <ac:if><available file="${d.fname}"/><ac:then>
+                                <attrib hidden="false" readonly="false"><fileset file="${d.fname}"/></attrib><!-- to deal with hidden & readonly files at the destination (avoids java.io.FileNotFoundException) -->
+                            </ac:then></ac:if>
 							<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="${DO.overwrite}" verbose="@{copy.verbose}"/>
 						</ac:then>
 						<ac:else>
-							<attrib hidden="false" readonly="false"><fileset file="${d.fname}"/></attrib><!-- to deal with hidden & readonly files at the destination (avoids java.io.FileNotFoundException) -->
+                            <ac:if><available file="${d.fname}"/><ac:then>
+                                <attrib hidden="false" readonly="false"><fileset file="${d.fname}"/></attrib><!-- to deal with hidden & readonly files at the destination (avoids java.io.FileNotFoundException) -->
+                            </ac:then></ac:if>
 							<copy file="${s.fname}" tofile="${d.fname}" preservelastmodified="true" overwrite="${DO.overwrite}" verbose="@{copy.verbose}">
 								<filterset refid="@{copy.filter.refid}"/>
 							</copy>
