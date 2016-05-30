@@ -1999,7 +1999,7 @@ $code{'ACTION_manifest'} = q{
         #print "dist_version = $dist_version\n";
         #print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
         # insert vars into regexps
-        for (@skip) { s:\$\{(\w+)\}:eval '${'.$1.'}':eg}
+        for (@skip) { s:\$\\{(\w+)\\}:eval '${'.$1.'}':eg}
 
         return sub {0} unless (scalar @skip > 0);
 
