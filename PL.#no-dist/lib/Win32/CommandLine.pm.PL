@@ -383,7 +383,7 @@ sub _dosify {
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
     @_ = @_ ? @_ : $_ if defined wantarray;     ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
-    ## no critic ( ProhibitUnusualDelimiters ) # ToDO: remove/revisit
+    ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
     # TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, _likely_ escape character [^], [%]?, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
     #   **  should we make the assumption that these are paths? or pass an argument to that effect (eg, path => 0/1) _OR_ separate function (ie, _dosify_path() )?
@@ -413,7 +413,7 @@ sub _dos_quote {
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
     @_ = @_ ? @_ : $_ if defined wantarray;     ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
-    ## no critic ( ProhibitUnusualDelimiters ) # ToDO: remove/revisit
+    ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
     # TODO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
     my $dos_special_chars = '"<>|';
@@ -1240,7 +1240,7 @@ sub _argv_do_glob{
                 #print "s = $s\n";
                 if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
                 if ($opt{dosify}) { foreach (@g) { _dosify($_); }}
-                elsif ($opt{unixify}) { foreach (@g) { $_ =~ s:\\:\/:g; }}
+                elsif ($opt{unixify}) { foreach (@g) { $_ =~ s:\\:\/:g; }}          ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
                 }
             }
         else
@@ -1248,9 +1248,9 @@ sub _argv_do_glob{
             @g = ( $s );
             # TODO: CHECK this and think about correct function names... (both here and in successful glob function above)
             # TODO: CHECK unixify ... does it need the  "if (-e $_)" gate similar to dosify?
-            if ($opt{dosify} eq 'all') { foreach (@g) { if (-e $_) { _dosify($_); }}}
+            if ($opt{dosify} eq 'all') { foreach (@g) { if (-e $_) { _dosify($_); }}}   ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
             elsif ($opt{dosquote}) { foreach (@g) { _dos_quote($_); }}
-            elsif ($opt{unixify} eq 'all') { foreach (@g) { $_ =~ s:\\:\/:g; }}
+            elsif ($opt{unixify} eq 'all') { foreach (@g) { $_ =~ s:\\:\/:g; }}         ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
             }
         #print "glob_this = $glob_this\n";
         #print "s   = `$s`\n";
