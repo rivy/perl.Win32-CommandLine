@@ -34,6 +34,8 @@ unless ($message || $haveNonEmptySIGNATURE) { $message = 'Empty SIGNATURE file';
 
 plan tests => 2;
 
+local $ENV{TEST_SIGNATURE} = (defined $ENV{TEST_SIGNATURE} && $ENV{TEST_SIGNATURE}) || 1;   # Module::Signature only considers MANIFEST.SKIP when $ENV{TEST_SIGNATURE} is set (bug?)
+
 # BUGFIX: ExtUtils::Manifest::manifind is File::Find::find() tainted; REPLACE with fixed version
 # URLref: [Find::File and taint mode] http://www.varioustopics.com/perl/219724-find-file-and-taint-mode.html
 {## no critic ( ProhibitNoWarnings )
