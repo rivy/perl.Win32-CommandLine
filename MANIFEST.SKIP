@@ -35,6 +35,11 @@
 ^lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds|lib|ccs)$
 # :: MSVC compiler detrus
 (?:^|/)vc[1-9][0-9]+\.pdb$
+# :: Module::Build->find_dist_packages detrus
+^compilet.base$
+^compilet.def$
+^compilet.exp$
+^compilet.lds$
 
 # Avoid Module::Build generated and utility files
 ^Build$

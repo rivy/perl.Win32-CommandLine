@@ -908,6 +908,21 @@ $code{'ACTION_build'} = q{
         return wantarray ? @RETval : $RETval[0];
       }
 };
+$code{'get_metadata'} = q{
+    sub get_metadata {
+        my $self = shift;
+
+        # BUGFIX: if no_index is defined, Module::Build erroneously skips including "provides" in the meta-data
+        # ToDO?: will this correctly skip 'no_index' areas of the distribution?
+        my $pkgs = eval { $self->find_dist_packages };
+        if (%$pkgs) { $self->meta_add->{provides} = $pkgs; };
+
+        # my $metadata_href = $self->SUPER::get_metadata( @_ );
+        # return $metadata_href;
+
+        return $self->SUPER::get_metadata( @_ );
+      }
+};
 $code{'known_actions'} = q{
     sub known_actions{
           my ($self) = @_;
