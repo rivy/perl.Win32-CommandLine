@@ -146,37 +146,35 @@ if ( -e $VERSION_filename )
 
     $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
 
-    # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-    # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-    # v -> M.m.r[.b]
-    if ( $v eq q{} ) { $v = '0.1.0'; }
-    if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
-    if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
+    # VERSION: Major.minor[_alpha] { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+    # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
+    # v == M.m[_a]
+    if ( $v eq q{} ) { $v = '0.1'; }
+    if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1'; }
     #
-    if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
+    if ( $v =~ /(\d+)[._](\d+)(?:[\._](\d+))?(?:[\._](\d+))?/ )
         {
         $config{'VERSION_M'} = $1;
         $config{'VERSION_m'} = $2;
-        $config{'VERSION_r'} = $3;
-        if ( defined $4 ) { $config{'VERSION_b'} = $4 };
-
-        if (!$config{'VERSION_r'}) { $config{'VERSION_r'} = $config{'repo_commit_number'} ? $config{'repo_commit_number'} : q{0} };
-        if ( defined $config{'VERSION_b'} && !$config{'VERSION_b'} ) { $config{'VERSION_b'} = $config{'repo_commit_id_tiny'} ? hex $config{'repo_commit_id_tiny'} : q{0} };
+        if ( defined $3 ) { $config{'VERSION_a'} = $3; };
 
         my $v_is_alpha = $config{'VERSION_m'} % 2;
-        $v = $config{'VERSION_M'}.'.'.$config{'VERSION_m'};
-        if ( not defined $config{'VERSION_b'} ) { $v .=  ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_r'} }
-          else { $v .= q{.} . $config{'VERSION_r'} . ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_b'}; }
+        if ($v_is_alpha && not defined $config{'VERSION_a'}) { $config{'VERSION_a'} = 1; }
+        my $v_m_min_spacing = 2;
+        $config{'VERSION_m'} = (sprintf qq{%0${v_m_min_spacing}d}, $config{'VERSION_m'});
+        $v = $config{'VERSION_M'}.q{.}.$config{'VERSION_m'};
+        $v .= (q{_}.$config{'VERSION_a'}) if $v_is_alpha;
         }
       else {
         die "Can't parse version string ('$v')\n";  ## no critic ( RequireCarping )
         }
-    $config{'VERSION'} = 'v'.$v;    # VERSION == basic (triple or quad) dotted perl version string
+    $config{'VERSION'} = $v;    # VERSION == basic single-dotted perl version string
+    print "\$VERSION = '$v'\n";
 
     close $fh or die "Can't close '$config{'VERSION_filename'}' after reading: $OS_ERROR\n"; ## no critic ( RequireCarping )
 }
 
-##print '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
+##print STDERR '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
 
 # include configuration options, if the file exists
 # config file format:
@@ -288,7 +286,7 @@ if ( !$config{'dist_abstract'} ) { die '$config{dist_abstract} must be defined' 
 if ( !$config{'dist_author'} )   { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 if ( !$config{'license'} )       { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//i; $v =~ s:([._])(\d+):eval '$1.(sprintf q{%03d},$2)':eg; $config{'dist_version'} = $v; }
+if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//i; $config{'dist_version'} = $v; }
 
 #assert( $config{'lib_path'} ) # should be defined if $config{'module_name'} has been parsed (as asserted above)
 

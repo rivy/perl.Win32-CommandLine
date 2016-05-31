@@ -54,8 +54,8 @@ ok( (scalar(@files) > 0), "Found ".scalar(@files)." files to check");
 for (@files) {
     my $v = MM_parse_version($_);
     isnt( $v, 'undef', "'$_' (v$v) has ExtUtils::MakeMaker parsable version");
-    ok( (version_non_alpha_form($v) =~ /^v[0-9]+\.[0-9]+\.[0-9]+/), "'$_' has version in correct canonical form (vM.m.r[.b])");
-    ok( ($v =~ /^v([0-9]+\.)?[0-9]+\.[0-9]+[_.][0-9]+$/), "'$_' has version with correct '_' position for alphas (if alpha)");
+    ok( (version_non_alpha_form($v) =~ /^[0-9]+\.[0-9]+$/), qq{'$_' has version ("}.version_non_alpha_form($v).qq{") in correct canonical form (M.m[_alpha])});
+    ok( ($v =~ /^[0-9]+\.[0-9]+(_[0-9]+)?$/), "'$_' has version with correct '_' position for alphas (if alpha)");
     }
 
 #-----------------------------------------------------------------------------
@@ -105,7 +105,7 @@ sub version_non_alpha_form
     for my $v ( @{$v_ref} ) {
         if (defined($v)) {
             if (_is_const($v)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-            $v =~ s/_/./g;  # replace interior '_' with '.'
+            $v =~ s/_//g;  # numify # remove all interior '_'
             }
         }
 
