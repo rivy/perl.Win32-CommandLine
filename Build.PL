@@ -168,7 +168,9 @@ if ( -e $VERSION_filename )
         if ( not defined $config{'VERSION_b'} ) { $v .=  ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_r'} }
           else { $v .= q{.} . $config{'VERSION_r'} . ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_b'}; }
         }
-      else { $v = '0.1.0'; }
+      else {
+        die "Can't parse version string ('$v')\n";  ## no critic ( RequireCarping )
+        }
     $config{'VERSION'} = 'v'.$v;    # VERSION == basic (triple or quad) dotted perl version string
 
     close $fh or die "Can't close '$config{'VERSION_filename'}' after reading: $OS_ERROR\n"; ## no critic ( RequireCarping )
