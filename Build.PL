@@ -68,7 +68,7 @@ $config{'pm_files_href'} = {};                      # alternate PM file location
 $config{'pod_files_href'} = {};                     # alternate POD file locations [to help with MakeMaker transitions]
 $config{'xs_files_href'} = {};                      # alternate XS file locations [to help with MakeMaker transitions]
 $config{'PL_files_href'} = {};                      # perl files to execute during processing (usually to generated .PL files from templates {see Module::Build::API docmentation under "PL_files"})
-$config{'PL_folders_aref'} = [ 'PL{,.#no-dist}'];   # globs matching folders used to hold templating PL files; after config file processing. entries ae added into the PL_files href for each matching PL file within the template folder(s) (target file location within the distribution is set automatically, reflected from the corresponding PL file location within the PL folder to the main distribution directory)
+$config{'PL_folders_aref'} = [ 'PL{,.#no-dist}'];   # globs matching folders used to hold templating PL files; after config file processing, entries are added into the PL_files href for each matching PL file within the template folder(s) (target file location within the distribution is set automatically, reflected from the corresponding PL file location within the PL folder to the main distribution directory)
 $config{'c_source'} = undef;                        # c source files to compile
 $config{'config_href'} = {};                        # modify Config.pm values for the build
 $config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib', 'MYMETA.json', 'SIGNATURE' ];       # globs matching extra files to clean up during "build clean"
@@ -137,11 +137,12 @@ if ( -e $VERSION_filename )
     my $fh;
     open( $fh, '<', $VERSION_filename ) or die "Can't open '$config{'VERSION_filename'}': $OS_ERROR\n"; ## no critic ( RequireCarping )
     my $v = <$fh>;
+
     $v = q{} if not defined $v;
     chomp $v;
     $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
 
-    print "Found [VERSION <= '$v'] in '$config{'VERSION_filename'}'\n";
+    print "Found version ('$v') in '$config{'VERSION_filename'}'\n";
 
     $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
 
@@ -151,6 +152,7 @@ if ( -e $VERSION_filename )
     if ( $v eq q{} ) { $v = '0.1.0'; }
     if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
     if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
+    #
     if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
         {
         $config{'VERSION_M'} = $1;
@@ -163,11 +165,11 @@ if ( -e $VERSION_filename )
 
         my $v_is_alpha = $config{'VERSION_m'} % 2;
         $v = $config{'VERSION_M'}.'.'.$config{'VERSION_m'};
-        if ( not defined $config{'VERSION_b'} ) { $v .=  ( $v_is_alpha ?q{_}:q{.}) . $config{'VERSION_r'} }
+        if ( not defined $config{'VERSION_b'} ) { $v .=  ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_r'} }
           else { $v .= q{.} . $config{'VERSION_r'} . ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_b'}; }
         }
       else { $v = '0.1.0'; }
-    $config{'VERSION'} = 'v'.$v;
+    $config{'VERSION'} = 'v'.$v;    # VERSION == basic (triple or quad) dotted perl version string
 
     close $fh or die "Can't close '$config{'VERSION_filename'}' after reading: $OS_ERROR\n"; ## no critic ( RequireCarping )
 }
@@ -300,12 +302,12 @@ if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $fo
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my %optional_args = ();     # Module::Build::new() optional args (only included if they are non-empty; otherwise, if included as empty list(s)/hash(es) in new(), Module::Build carps that the specified [and needed] files are missing)
-if ( keys %{$config{'configure_requires_href'}} ) { %optional_args = ( %optional_args, configure_requires =>  { %{$config{'configure_requires_href'}} }); }
+if ( keys %{$config{'configure_requires_href'}} )   { %optional_args = ( %optional_args, configure_requires =>  { %{$config{'configure_requires_href'}} }); }
 if ( keys %{$config{'no_index_href'}} )             { %optional_args = ( %optional_args, no_index =>  { %{$config{'no_index_href'}} }); }
-if ( @{$config{'script_files_aref'}} )                  { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
+if ( @{$config{'script_files_aref'}} )              { %optional_args = ( %optional_args, script_files => [ @{$config{'script_files_aref'}} ]); }
 if ( keys %{$config{'pm_files_href'}} )             { %optional_args = ( %optional_args, pm_files =>  { %{$config{'pm_files_href'}} }); }
 if ( keys %{$config{'pod_files_href'}} )            { %optional_args = ( %optional_args, pod_files => { %{$config{'pod_files_href'}} }); }
-if ( keys %{$config{'xs_files_href'}} )                 { %optional_args = ( %optional_args, xs_files =>  { %{$config{'xs_files_href'}} }); }
+if ( keys %{$config{'xs_files_href'}} )             { %optional_args = ( %optional_args, xs_files =>  { %{$config{'xs_files_href'}} }); }
 my $build = $class->new(
     get_options => { color => { type => '=s' } }, ## option to output in color ## OPTION color => 0/never/no/off; 1/on/yes; always # parsed in dispatch()
 
