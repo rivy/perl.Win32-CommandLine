@@ -219,7 +219,7 @@ if ( -e $config_filename )
                 }
             if ($key eq 'module_name') {
                 $config{'lib_path'} = 'lib/' . join( q{/}, split( /::/xms, ( $config{'module_name'} =~ m/(.*)::.*?$/xms ? $1 : q{} ) ) );   # relative path to the module's lib location (using standard Module::Builder rules)
-                $config{'module_path'} = $config{lib_path} . q{/} . (split(q{::},$config{module_name}))[-1] . '.pm';                            # relative path to the usual location of a module's package file (using 'lib_path')
+                $config{'module_path'} = $config{lib_path} . q{/} . (split(q{::},$config{module_name}))[-1] . '.pm';                        # relative path to the usual location of a module's package file (using 'lib_path')
                 }
             }
             else { die "Unknown configuration key '$key' @ ($config{'rc_filename'}, line $line)\n"; }
