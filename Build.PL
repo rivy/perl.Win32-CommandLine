@@ -2007,9 +2007,10 @@ $code{'ACTION_manifest'} = q{
   my $dist_path = q{};
     ## FROM: ExtUtils::Manifest (v1.54)
     sub my_maniskip {
-        #print "HERE in my_maniskip()\n";
+        # print STDERR "HERE in my_maniskip()\n";
         my @skip ;
         my $mfile = shift || "$ExtUtils::Manifest::MANIFEST.SKIP";
+        # print STDERR "my_maniskip(): mfile = $mfile\n";
         ExtUtils::Manifest::_check_mskip_directives($mfile) if -f $mfile;
         local(*M, $_);
         open M, "< $mfile" or open M, "< $ExtUtils::Manifest::DEFAULT_MSKIP" or return sub {0};
@@ -2044,7 +2045,10 @@ $code{'ACTION_manifest'} = q{
         #print "dist_version = $dist_version\n";
         #print 'skip['.scalar(@skip)."] = {". join(':', @skip) ."}]\n\n";
         # insert vars into regexps
-        for (@skip) { s:\$\\{(\w+)\\}:eval '${'.$1.'}':eg}
+        for (@skip) {
+            s:\$\\{(\w+)\\}:eval '${'.$1.'}':eg;
+            # print STDERR "skip: $_\n";
+            }
 
         return sub {0} unless (scalar @skip > 0);
 
@@ -2078,18 +2082,8 @@ $code{'ACTION_manifest'} = q{
             return $found;
             };
       }
-    sub ACTION_manifest {
+    sub my_maniskip_init {
         my ($self) = @_;
-        #my ($self, $quiet) = @_;
-
-        #use Sub::Override;
-        require ExtUtils::Manifest; #ExtUtils::Manifest->import();
-        my $codeRef = \&my_maniskip;
-        #my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
-        #local *ExtUtils::Manifest::_maniskip = &my_maniskip;
-        {no warnings 'redefine';
-        *ExtUtils::Manifest::maniskip = $codeRef;
-        }
 
         use File::Spec::Functions qw( rel2abs );
         use File::Basename qw( dirname );
@@ -2099,6 +2093,24 @@ $code{'ACTION_manifest'} = q{
         $dist_version = quotemeta( $self->dist_version );
         $dist_path = dirname(rel2abs($0)); $dist_path =~ s:\\\\:\/:g; $dist_path = quotemeta( $dist_path );
         #print "dist_path = $dist_path\n";
+    }
+    sub ACTION_manifest {
+        my ($self) = @_;
+        #my ($self, $quiet) = @_;
+
+        #use Sub::Override;
+        require ExtUtils::Manifest; #ExtUtils::Manifest->import();
+        my $codeRef = \&my_maniskip;
+        #my $override = Sub::Override->new( 'ExtUtils::Manifest::maniskip' => $codeRef );
+        #local *ExtUtils::Manifest::_maniskip = \&my_maniskip;
+        {no warnings 'redefine';
+        *ExtUtils::Manifest::maniskip = $codeRef;
+        }
+
+        use File::Spec::Functions qw( rel2abs );
+        use File::Basename qw( dirname );
+
+        $self->my_maniskip_init();
 
         # URLrefs: [Capture::Tiny] http://search.cpan.org/~DAGOLDEN/Capture-Tiny , [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136
 #       my ($OUT, $o, $ERR, $e);
