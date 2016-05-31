@@ -908,6 +908,24 @@ $code{'ACTION_build'} = q{
         return wantarray ? @RETval : $RETval[0];
       }
 };
+$code{'known_actions'} = q{
+    sub known_actions{
+          my ($self) = @_;
+
+          my %actions;
+          no strict 'refs';
+
+          foreach my $class ($self->super_classes) {
+            foreach ( keys %{ $class . '::' } ) {
+              $actions{$1}++ if /^ACTION_(\\w+)/;
+            }
+          }
+
+          delete $actions{'manifest_skip'};
+
+          return wantarray ? sort keys %actions : \\%actions;
+        }
+};
 $code{'dispatch'} = q{
     sub dispatch \{
         #my $self = shift;
