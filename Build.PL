@@ -288,7 +288,7 @@ if ( !$config{'dist_abstract'} ) { die '$config{dist_abstract} must be defined' 
 if ( !$config{'dist_author'} )   { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 if ( !$config{'license'} )       { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-if ( $config{'VERSION'} ) { $config{'dist_version'} = $config{'VERSION'}; }
+if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//i; $v =~ s:([._])(\d+):eval '$1.(sprintf q{%03d},$2)':eg; $config{'dist_version'} = $v; }
 
 #assert( $config{'lib_path'} ) # should be defined if $config{'module_name'} has been parsed (as asserted above)
 
