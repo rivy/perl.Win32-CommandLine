@@ -1105,12 +1105,20 @@ $code{'ACTION_TRIALaction'} = q{
         #for (sort keys %ENV) { print "$_ = $ENV{$_}\n"; }
       }
 };
+$code{'harness_switches'} = q{
+    sub harness_switches {
+        my $self = shift;
+        my @res = $self->SUPER::harness_switches;
+        push @res, '-T' if $self->notes('taintcheck');
+        return @res;
+    }
+};
 $code{'ACTION_taint_test'} = q{
     #[ADD] NEW action = taint_test - run regression tests (via test) with taint-mode ON
     sub ACTION_taint_test {
         my $self = shift;
 
-        $self->{properties}{tap_harness_args}{switches} .= ($self->{properties}{tap_harness_args}{switches} ? q{ }:q{}) . '-T';     # add '-T' taint mode option to harness args
+        $self->notes('taintcheck' => 1);
 
         $self->ACTION_test( @_ );
       }
@@ -1120,7 +1128,7 @@ $code{'ACTION_taint_testall'} = q{
     sub ACTION_taint_testall {
         my $self = shift;
 
-        $self->{properties}{tap_harness_args}{switches} .= ($self->{properties}{tap_harness_args}{switches} ? q{ }:q{}) . '-T';     # add '-T' taint mode option to harness args
+        $self->notes('taintcheck' => 1);
 
         $self->ACTION_testall( @_ );
       }
