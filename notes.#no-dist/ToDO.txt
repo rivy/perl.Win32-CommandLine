@@ -1,3 +1,31 @@
+# evaluate finding/using ExtUtils::Manifest.maniskip()
+
+```
+sub _check_mymeta_skip {
+  my $self = shift;
+  my $maniskip = shift || 'MANIFEST.SKIP';
+
+  require ExtUtils::Manifest;
+  local $^W; # ExtUtils::Manifest is not warnings clean.
+
+  # older ExtUtils::Manifest had a private _maniskip
+  my $skip_factory = ExtUtils::Manifest->can('maniskip')
+                  || ExtUtils::Manifest->can('_maniskip');
+
+  my $mymetafile = $self->mymetafile;
+  # we can't check it, just add it anyway to be safe
+  for my $file ( $self->mymetafile, $self->mymetafile2 ) {
+    unless ( $skip_factory && $skip_factory->($maniskip)->($file) ) {
+      $self->log_warn("File '$maniskip' does not include '$file'. Adding it now.\n");
+      my $safe = quotemeta($file);
+      $self->_append_maniskip("^$safe\$", $maniskip);
+    }
+  }
+}
+```
+
+####
+
 Update version requirements & documentation improvements
 
 CHANGED: update perl minimum requirement to v5.8.8 (the earliest version that can be tested against)
