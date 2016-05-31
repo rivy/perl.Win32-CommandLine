@@ -22,7 +22,7 @@ package #{{$module_name}}#;
 
 =over
 
- $#{{$module_name}}#::VERSION = version->declare( '#{{$VERSION}}#' );
+ $#{{$module_name}}#::VERSION = "#{{$VERSION}}#";
 
 =back
 
@@ -68,9 +68,12 @@ use warnings;
 #use diagnostics;   # invoke blabbermouth warning mode
 use 5.008008;       # earliest tested perl version (v5.8.8); v5.6.1 is no longer testable/reportable
 
-# VERSION: major.minor[.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version 0.77 qw(); our $VERSION = version->declare('#{{$VERSION}}#');  ## no critic ( RequireConstantVersion )
+# VERSION: Major.minor[_alpha]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+# * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
+{;## no critic ( RequireConstantVersion )
+our $VERSION = '#{{$VERSION}}#';    # VERSION definition
+$VERSION =~ s/_//g;     # numify VERSION (needed for alpha versions)
+}
 
 # Module base/ISA and Exports
 
@@ -102,7 +105,7 @@ sub argv;           # get commandline and reparse it, returning a new ARGV array
 # Module Implementation
 
 ##bootstrap #{{$module_name}}# (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
-bootstrap #{{$module_name}}# $VERSION;
+bootstrap #{{$module_name}}# '#{{$VERSION}}#';
 
 sub command_line{
     # command_line(): returns $

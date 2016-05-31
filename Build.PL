@@ -136,47 +136,55 @@ if ( -e $VERSION_filename )
 {
     my $fh;
     open( $fh, '<', $VERSION_filename ) or die "Can't open '$config{'VERSION_filename'}': $OS_ERROR\n"; ## no critic ( RequireCarping )
-    my $v = <$fh>;
+    my $v;
+    {# slurp entire VERSION file
+        local $/ = undef;
+        $v = <$fh>;
+    }
 
+    my $v_default = '0.1';
     $v = q{} if not defined $v;
-    chomp $v;
-    $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
 
-    print "Found version ('$v') in '$config{'VERSION_filename'}'\n";
+    # remove and save any leading whitespace and/or trailing non-version text (comments, etc)
+    if ( $v =~ /^([\s\n]*)((?:\d|[._])+)((?:.|\s)*?)$/s )
+        {
+        $config{'VERSION_prefix'} = $1;
+        $v = $2;
+        $config{'VERSION_suffix'} = $3;
+        $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
+        print "Found version ('$v') in '$config{'VERSION_filename'}'\n";
+        }
+    else
+        {
+        $v = $v_default;
+        print STDERR "WARN: using default version ('$v'); no version found in '$config{'VERSION_filename'}'\n";
+        }
 
-    $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
-
-    # VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-    # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-    # v -> M.m.r[.b]
-    if ( $v eq q{} ) { $v = '0.1.0'; }
-    if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
-    if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
+    # VERSION: Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
+    # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
+    # v == M.m[_a]
+    if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.0'; }
     #
-    if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
+    if ( $v =~ /(\d+)[._](\d+)(?:[\._](\d+))?(?:[\._](\d+))?/ )
         {
         $config{'VERSION_M'} = $1;
         $config{'VERSION_m'} = $2;
-        $config{'VERSION_r'} = $3;
-        if ( defined $4 ) { $config{'VERSION_b'} = $4 };
+        $config{'VERSION_a'} = defined $3 ? $3 : q{};
 
-        if (!$config{'VERSION_r'}) { $config{'VERSION_r'} = $config{'repo_commit_number'} ? $config{'repo_commit_number'} : q{0} };
-        if ( defined $config{'VERSION_b'} && !$config{'VERSION_b'} ) { $config{'VERSION_b'} = $config{'repo_commit_id_tiny'} ? hex $config{'repo_commit_id_tiny'} : q{0} };
-
-        my $v_is_alpha = $config{'VERSION_m'} % 2;
-        $v = $config{'VERSION_M'}.'.'.$config{'VERSION_m'};
-        if ( not defined $config{'VERSION_b'} ) { $v .=  ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_r'} }
-          else { $v .= q{.} . $config{'VERSION_r'} . ( $v_is_alpha ?q{_}:q{.} ) . $config{'VERSION_b'}; }
+        my $v_is_alpha = ($config{'VERSION_m'} % 2);
+        $v = $config{'VERSION_M'}.q{.}.$config{'VERSION_m'};
+        $v .= (q{_}.(($config{'VERSION_a'} ne q{}) ? $config{'VERSION_a'} : '1')) if $v_is_alpha;
         }
       else {
         die "Can't parse version string ('$v')\n";  ## no critic ( RequireCarping )
         }
-    $config{'VERSION'} = 'v'.$v;    # VERSION == basic (triple or quad) dotted perl version string
+    $config{'VERSION'} = $v;    # VERSION == basic single-dotted perl version string
+    print "\$VERSION = '$v'\n";
 
     close $fh or die "Can't close '$config{'VERSION_filename'}' after reading: $OS_ERROR\n"; ## no critic ( RequireCarping )
 }
 
-##print '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
+##print STDERR '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
 
 # include configuration options, if the file exists
 # config file format:
@@ -288,7 +296,7 @@ if ( !$config{'dist_abstract'} ) { die '$config{dist_abstract} must be defined' 
 if ( !$config{'dist_author'} )   { die '$config{dist_author} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 if ( !$config{'license'} )       { die '$config{license} must be defined' . "\n"; } ## no critic ( RequireCarping RequireInterpolation )
 
-if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//i; $v =~ s:([._])(\d+):eval '$1.(sprintf q{%03d},$2)':eg; $config{'dist_version'} = $v; }
+if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//i; $config{'dist_version'} = $v; }
 
 #assert( $config{'lib_path'} ) # should be defined if $config{'module_name'} has been parsed (as asserted above)
 
@@ -344,8 +352,14 @@ my $build = $class->new(
 $build->notes('versioned_file_aref' => $config{'versioned_file_aref'} );
 ##$build->notes('versioned_file_globs_exclude_aref' => $config{'versioned_file_globs_exclude_aref'} );
 
-# VERSION file
+# VERSION file / VERSION
 $build->notes('VERSION_filename' => $config{'VERSION_filename'} );
+$build->notes('VERSION_prefix' => $config{'VERSION_prefix'} );
+$build->notes('VERSION_suffix' => $config{'VERSION_suffix'} );
+$build->notes('VERSION_M' => $config{'VERSION_M'} );
+$build->notes('VERSION_m' => $config{'VERSION_m'} );
+$build->notes('VERSION_a' => $config{'VERSION_a'} );
+$build->notes('VERSION' => $config{'VERSION'} );
 
 # push $config{repo_*} info into $build->notes
 $build->notes('repo_type' => $config{'repo_type'});
@@ -409,21 +423,40 @@ $code{'version_set'} = q{
 
         my $VERSION_filename = $self->notes('VERSION_filename');
 
-        my $v = '0.1.0';    # default version == 0.1.0
+        my $fh;
+
+        my $v;
+        my ($M, $m, $a);
 
         my $args_aref = $self->args('ARGV');
         ##print "args() = [ @{$args_aref} ]\n";
         if ( scalar(@{$args_aref}) > 0 ) { $v = @{$args_aref}[0]; }
 
-        my $fh;
+        if ( $v =~ /(\d+)[._](\d+)(?:[\._](\d+))?(?:[\._](\d+))?/ )
+            {
+            $M = $1;
+            $m = $2;
+            $a = defined $3 ? $3 : q{};
+            }
+        else {
+            die "Can't parse version string ('$v')\n";  ## no critic ( RequireCarping )
+            }
+
         open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
-        print $fh $v;
+        print $fh $self->notes('VERSION_prefix').$v.$self->notes('VERSION_suffix');
         close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+
+        $self->notes('VERSION_M' => $M);
+        $self->notes('VERSION_m' => $m);
+        $self->notes('VERSION_a' => $a);
+        $self->notes('VERSION' => $v);
+
+        print "Version set (\$VERSION = '$v')\n";
         }
 };
 $code{'version_set_next'} = q{
     #[ADD] version_set_next - update version in $build->notes('VERSION_filename') to next alpha build number
-    # NOTE VERSION == major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+    # NOTE: VERSION == Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
     sub ACTION_version_set_next {
         my $self = shift;
 
@@ -431,39 +464,37 @@ $code{'version_set_next'} = q{
 
         my $VERSION_filename = $self->notes('VERSION_filename');
 
-        my $v_default = '0.1.0';
-
         my $fh;
 
-        open( $fh, '<', $VERSION_filename ) or die "Can't read from '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
-        my $v = <$fh>;
-        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
-        $v = q{} if not defined $v;
-        chomp $v;
-        $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
-        $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
-        # v -> M.m.r[.b]
-        if ( $v eq q{} ) { $v = $v_default; }
-        if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
-        if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
-        if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
-            {
-            my ($M, $m, $r, $b) = ($1, $2, $3, $4);
+        my $v;
+        my $M = $self->notes('VERSION_M');
+        my $m = $self->notes('VERSION_m');
+        my $a = $self->notes('VERSION_a');
+
+        if ($a ne q{}) { $a++ }
+        else {
             $m++;
-            if (not ($m % 2)) { $m++; }
-            my @v = ( $M, $m, $r );
-            if ( defined $b ) { push @v, $b; }
-            $v = join( q{.}, @v );
+            if (($m % 2) eq 0) { $m++ };
             }
-          else { $v = $v_default; }
+
+        $v = join( q{.}, ($M, $m) );
+        $v .= q{_}.$a if $a ne q{};
+
         open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
-        print $fh $v;
+        print $fh $self->notes('VERSION_prefix').$v.$self->notes('VERSION_suffix');
         close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+
+        $self->notes('VERSION_M' => $M);
+        $self->notes('VERSION_m' => $m);
+        $self->notes('VERSION_a' => $a);
+        $self->notes('VERSION' => $v);
+
+        print "Version set (\$VERSION = '$v')\n";
         }
 };
 $code{'version_set_next_release'} = q{
     #[ADD] version_set_next_release - update version in $build->notes('VERSION_filename') to next alpha build number
-    # NOTE VERSION == major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+    # NOTE: VERSION == Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
     sub ACTION_version_set_next_release {
         my $self = shift;
 
@@ -471,34 +502,30 @@ $code{'version_set_next_release'} = q{
 
         my $VERSION_filename = $self->notes('VERSION_filename');
 
-        my $v_default = '0.1.0';
-
         my $fh;
 
-        open( $fh, '<', $VERSION_filename ) or die "Can't read from '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
-        my $v = <$fh>;
-        close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
-        $v = q{} if not defined $v;
-        chomp $v;
-        $v =~ s/^\s*((?:\d|[._])*).*$/$1/;  # remove trailing non-version text (comments, etc)
-        $v =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
-        # v -> M.m.r[.b]
-        if ( $v eq q{} ) { $v = $v_default; }
-        if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.1.0'; }
-        if ( $v =~ /^(\d+[._]\d+)[._]*$/ ) { $v = $1 . '.0'; }
-        if ( $v =~ /(\d+)[._](\d+)[\._](\d+)(?:[\._](\d+))?/ )
-            {
-            my ($M, $m, $r, $b) = ($1, $2, $3, $4);
-            $m++;
-            if ($m % 2) { $m++; }
-            my @v = ( $M, $m, $r );
-            if ( defined $b ) { push @v, $b; }
-            $v = join( q{.}, @v );
-            }
-          else { $v = $v_default; }
+        my $v;
+        my $M = $self->notes('VERSION_M');
+        my $m = $self->notes('VERSION_m');
+        my $a = $self->notes('VERSION_a');
+
+        $a = q{};
+        $m++;
+        if (($m % 2) ne 0) { $m++ };
+
+        $v = join( q{.}, ($M, $m) );
+        $v .= q{_}.$a if $a ne q{};
+
         open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
-        print $fh $v;
+        print $fh $self->notes('VERSION_prefix').$v.$self->notes('VERSION_suffix');
         close $fh or die "Can't close '$VERSION_filename' after writing: $OS_ERROR\n"; ## no critic ( RequireCarping )
+
+        $self->notes('VERSION_M' => $M);
+        $self->notes('VERSION_m' => $m);
+        $self->notes('VERSION_a' => $a);
+        $self->notes('VERSION' => $v);
+
+        print "Version set (\$VERSION = '$v')\n";
         }
 };
 $code{'repo'} = q{

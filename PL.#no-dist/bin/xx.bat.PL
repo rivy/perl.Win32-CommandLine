@@ -146,7 +146,7 @@ xx - eXpand (reparse) and eXecute the command line
 
 =head1 VERSION
 
-This document describes C<xx>, #{{$VERSION}}#.
+This document describes C<xx>, v #{{$VERSION}}#.
 
 =head1 SYNOPSIS
 
@@ -226,9 +226,12 @@ Here are some examples of what's possible in the standard cmd and tcc shells:
 use strict;
 use warnings;
 
-# VERSION: major.minor.release[.build]]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version 0.77 qw(); our $VERSION = version->declare('#{{$VERSION}}#');  ## no critic ( RequireConstantVersion )
+# VERSION: Major.minor[_alpha]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
+# * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
+{;## no critic ( RequireConstantVersion )
+our $VERSION = '#{{$VERSION}}#';    # VERSION definition
+$VERSION =~ s/_//g;     # numify VERSION (needed for alpha versions)
+}
 
 use Pod::Usage;
 
