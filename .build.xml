@@ -10,7 +10,8 @@
 </target>
 
 <target name="meta.build" depends="-init" description="perform a full META.build (including needed reinstantiation)">
-	<property environment="env"/>
+	<property environment="env"/><!-- NOTE: environment case issues: see http://ant.1045680.n5.nabble.com/How-to-refer-PATH-environment-variable-in-lt-exec-gt-Ant-task-td1345221.html @@ https://archive.is/XxU06 -->
+
 	<available property="avail.parent.BUILD" file="../${ant.file.name}"/>
 	<ac:if><and><isset property="env.__DEBUG"/><and><or><equals arg1="${DEBUG.key}" arg2=""/><equals arg1="${DEBUG.key}" arg2="${env.__DEBUG}"/></or></and></and><ac:then>
 		<echo level="info" message="avail.parent.BUILD = ${avail.parent.BUILD}"/>
@@ -35,7 +36,7 @@
 </target>
 
 <target name="meta.help" description="print META build file help">
-	<property environment="env"/>
+	<property environment="env"/><!-- NOTE: environment case issues: see http://ant.1045680.n5.nabble.com/How-to-refer-PATH-environment-variable-in-lt-exec-gt-Ant-task-td1345221.html @@ https://archive.is/XxU06 -->
 	<exec executable="${env.ComSpec}" dir="." failonerror="false" resultproperty="exitcode" outputproperty="help.output">
 		<arg value="/c"/>
 		<arg value="call &quot;${env.ANT_HOME}/bin/ant&quot; -projecthelp -f &quot;${ant.file}&quot; &amp; exit %ERRORLEVEL%"/>
@@ -47,7 +48,7 @@
 </target>
 
 <target name="-init" depends="-init.load.antContrib, -init.macros">
-	<property environment="env"/>
+	<property environment="env"/><!-- NOTE: environment case issues: see http://ant.1045680.n5.nabble.com/How-to-refer-PATH-environment-variable-in-lt-exec-gt-Ant-task-td1345221.html @@ https://archive.is/XxU06 -->
 	<property name="DEBUG.key" value=""/>
 
 	<property name="copy.verbose" value=""/>
@@ -150,7 +151,7 @@
 
 <target name="-instantiate.repo.HG" if="is.repo.HG">
 	<echo level="debug" message="in repo.HG"/>
-	<property environment="env"/>
+	<property environment="env"/><!-- NOTE: environment case issues: see http://ant.1045680.n5.nabble.com/How-to-refer-PATH-environment-variable-in-lt-exec-gt-Ant-task-td1345221.html @@ https://archive.is/XxU06 -->
 	<property name="hg.source.dir" value="${basedir}"/>
 	<filtermapper id="hg.source.mapper">
 		<replaceregex pattern="^\.hgrc$$" replace="hgrc" flags="i"/>
@@ -217,7 +218,7 @@
 
 <target name="-instantiate.sign.GPG" if="is.sign.GPG">
 	<echo level="debug" message="in sign.GPG"/>
-	<property environment="env"/>
+	<property environment="env"/><!-- NOTE: environment case issues: see http://ant.1045680.n5.nabble.com/How-to-refer-PATH-environment-variable-in-lt-exec-gt-Ant-task-td1345221.html @@ https://archive.is/XxU06 -->
 	<property name="gpg.source.dir" value="${basedir}"/>
 	<filtermapper id="gpg.source.mapper">
 		<replaceregex pattern="^\.gpg.conf$$" replace="gpg.conf" flags="i"/>
@@ -228,9 +229,13 @@
 
 	<fail message="'ID_dev' (and/or 'ID_dev_PERL'), in the environment, must be set to a GPG compatible email ID for instantiation of GPG.conf" unless="final.ID_dev"/>
 
+    <!-- for MSwin, allow alternate cases of env variable (especially for variables set/used by non-user controlled tools) -->
+    <!-- NOTE: on systems with case sensitive environment variables and variables differing only in case, this will fail; ToDO: write OS-gated macro to read environment variables -->
+    <ac:propertyselector property="n.GnuPGHome" match="env\.GnuPGHome" select="\0" casesensitive="false" />
+    <ac:propertycopy property="v.GnuPGHome" from="${n.GnuPGHome}" />
+
 	<filterset id="gpg.source.filter">
-		<filter token="build.main.dir" value="${build.main.dir}"/>
-		<filter token="env.GnuPGHome" value="${env.GnuPGHome}"/>
+        <filter token="env.GnuPGHome" value="${v.GnuPGHome}"/>
 		<filter token="env.ID_dev" value="${env.ID_dev}"/>
 		<filter token="env.ID_dev_PERL" value="${env.ID_dev_PERL}"/>
 		<filter token="final.ID_dev" value="${final.ID_dev}"/>
