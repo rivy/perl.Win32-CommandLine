@@ -56,7 +56,7 @@ $config{'requires_href'} = {};                      # module requirements (no ob
 $config{'recommends_href'} = {};                    # module recommendations (no obvious default)
 $config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0.77, 'Cwd' => 0, 'File::Find' => 0, 'File::Glob' => 0, 'File::Path' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'FindBin' => 0, 'ExtUtils::Manifest' => '1.54', 'Module::Build' => 0 };   # basic module requirements for Build.PL [version v0.77+ needed for v5.10+ extended version support & declare->(); NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
 #$config{'configure_requires_href'} = { 'Module::Build' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0 };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
-$config{'configure_requires_href'} = { 'Module::Build' => 0, 'Test::Harness'=>'3.0', 'TAP::Harness' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0, 'Text::Template' => '1.44' };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ] ## Test::Harness v3.0 required (1st version that includes TAP::Harness)
+$config{'configure_requires_href'} = { 'Module::Build' => 0, 'Test::Harness'=>'3.0', 'TAP::Harness' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0, 'FindBin' => 0, 'Text::Template' => '1.44' };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ] ## Test::Harness v3.0 required (1st version that includes TAP::Harness)
 $config{'sign'} = 'true';                           # always sign the module distribution, if possible (note: this is only used when the distribution is built/tested (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
 $config{'create_readme'} = 'true';                  # create README from module pod
 #$config{'create_makefile_pl'} = 'passthrough';     # (DEPRECATED, using 'small' & configure_requires => Module::Build) passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
@@ -94,7 +94,7 @@ use File::Find;
 # Build.PL expects to be executed with CWD == the Build.PL containing directory == the main directory of the distribution
 use Cwd qw();
 use File::Spec;
-use FindBin; FindBin->again(); # FindBin paranoia
+use FindBin; eval {FindBin::again()}; # FindBin paranoia ## swallow errors for older FindBin without `FindBin::again()`
 if ( File::Spec->canonpath( $FindBin::RealBin ) ne File::Spec->canonpath( Cwd::getcwd ) ) { die "Must execute Build.PL from the base directory" }
 
 use Module::Build;
