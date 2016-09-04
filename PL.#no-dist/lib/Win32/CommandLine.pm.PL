@@ -2287,14 +2287,13 @@ To install this module, run the following commands:
 =over
 
  perl Build.PL
- ./Build
- ./Build test
- ./Build install
+ perl Build
+ perl Build test
+ perl Build install
 
 =back
 
-Or, if you're on a platform (like DOS or Windows) that doesn't require the leading 'C<./>' notation, you can
-replace 'C<./Build>' with just 'C<Build>'.
+This is minor modification of the usual perl build idiom. This version is portable across multiple platforms.
 
 Alternatively, the standard make idiom is also available (although it is deprecated):
 
