@@ -1299,8 +1299,8 @@ $code{'ACTION_distdir'} = q{
             # HACK: avoid gpg-agent leaving an open handle on a directory scheduled for cleanup :: this causes sign events & leaves gpg-agent with a handle open to the main directory (not as bad because we don't clean it up)
             # would be better to fix this in _sign_dir or in Module::Signature itself, if possible ([2013-12-29] still not possible); best repair would be a corrected gpg-agent
             if ($^O =~ /\AMSWin/i) {
-                use File::Glob qw(:glob);   # ':glob' exports bsd_glob and GLOB_X flags
-                if (not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign'); }
+                use File::Glob qw();
+                if (not File::Glob::bsd_glob('SIGNATURE',File::Glob::GLOB_NOCASE)) { $self->depends_on('sign'); }
                 }
             }
 
@@ -1315,8 +1315,8 @@ $code{'ACTION_distsign'} = q{
         # HACK: avoid gpg-agent leaving an open handle on a directory scheduled for cleanup :: this causes sign events & leaves gpg-agent with a handle open to the main directory (not as bad because we don't clean it up)
         # would be better to fix this in _sign_dir or in Module::Signature itself, if possible ([2013-12-29] still not possible); best repair would be a corrected gpg-agent
         if ($^O =~ /\AMSWin/i) {
-            use File::Glob qw(:glob);   # ':glob' exports bsd_glob and GLOB_X flags
-            if (not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign'); }
+            use File::Glob;
+            if (not File::Glob::bsd_glob('SIGNATURE',File::Glob::GLOB_NOCASE)) { $self->depends_on('sign'); }
             }
 
         $self->SUPER::ACTION_distsign( @_ );
@@ -1806,7 +1806,7 @@ $code{'ACTION_distmeta@FILES_up_to_date'} = q{
         $opt_ref = pop @_ if ( @_ && (ref($_[-1]) eq 'HASH'));  ## no critic (ProhibitPostfixControls)  ## pop last argument only if it's a HASH reference (assumed to be options for our function)
         if ($opt_ref) { for (keys %{$opt_ref}) { if (exists $opt{$_}) { $opt{$_} = $opt_ref->{$_}; } else { Carp::carp "Unknown option '$_' for function ".$me; return; } } }
 
-        #custom_code_href => { 'ACTION_test' => q[sub ACTION_test{ use File::Glob qw(:glob); my ($self) = @_; $self->depends_on('build'); if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { if (!bsd_glob('Makefile.PL',GLOB_NOCASE) or !bsd_glob('README',GLOB_NOCASE) or !bsd_glob('META.yml',GLOB_NOCASE)) {$self->depends_on('distmeta')}; if (!bsd_glob('SIGNATURE',GLOB_NOCASE)) {$self->depends_on('sign')};}; return $self->SUPER::ACTION_test;}] }
+        #custom_code_href => { 'ACTION_test' => q[sub ACTION_test{ use File::Glob qw(); my ($self) = @_; $self->depends_on('build'); if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { if (!File::Glob::bsd_glob('Makefile.PL',File::Glob::GLOB_NOCASE) or !File::Glob::bsd_glob('README',File::Glob::GLOB_NOCASE) or !File::Glob::bsd_glob('META.yml',File::Glob::GLOB_NOCASE)) {$self->depends_on('distmeta')}; if (!File::Glob::bsd_glob('SIGNATURE',File::Glob::GLOB_NOCASE)) {$self->depends_on('sign')};}; return $self->SUPER::ACTION_test;}] }
 
         my $GLOB_FLAGS = 0;
         if ($opt{ignore_case} eq 'auto') { $GLOB_FLAGS |= ( File::Spec->case_tolerant()? 0 : File::Glob::GLOB_NOCASE ); }
@@ -1963,7 +1963,7 @@ $code{'ACTION_testall'} = q{
     sub ACTION_testall {
         my ($self) = @_;
 
-        use File::Glob qw(:glob);   # ':glob' exports bsd_glob and GLOB_X flags
+        use File::Glob qw();
 
         $ENV{TEST_ALL} = 1;
 
@@ -1976,7 +1976,7 @@ $code{'ACTION_testall'} = q{
         #$self->depends_on('distmeta');
         if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { $self->depends_on('distmeta') };
 
-        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and $self->{properties}{sign} and not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign') };    # [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
+        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and $self->{properties}{sign} and not File::Glob::bsd_glob('SIGNATURE',File::Glob::GLOB_NOCASE)) { $self->depends_on('sign') };    # [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
 
         return $self->SUPER::ACTION_testall;
     }
@@ -2236,7 +2236,7 @@ $code{'ACTION_test'} = q{
     sub ACTION_test {
         my ($self) = @_;
 
-        use File::Glob qw(:glob);   # ':glob' exports bsd_glob and GLOB_X flags
+        use File::Glob qw();
 
         # build dependency (to make sure we're testing the most recent incarnation of the package)
         $self->depends_on('build');
@@ -2247,7 +2247,7 @@ $code{'ACTION_test'} = q{
         #$self->depends_on('distmeta');
         if ($ENV{TEST_AUTHOR} or $ENV{TEST_ALL}) { $self->depends_on('distmeta') };
 
-        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and $self->{properties}{sign} and not bsd_glob('SIGNATURE',GLOB_NOCASE)) { $self->depends_on('sign') };    # [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
+        if (($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL}) and $self->{properties}{sign} and not File::Glob::bsd_glob('SIGNATURE',File::Glob::GLOB_NOCASE)) { $self->depends_on('sign') };    # [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
 
         return $self->SUPER::ACTION_test;
       }
