@@ -63,6 +63,8 @@ package #{{$module_name}}#;
 
 # DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by xx.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
 
+## ToDO: cache command_line() and argv(); especially argv() which may have side-effects via subshell commands ~ parse(...) may be used to force reinterpretation if needed
+
 use strict;
 use warnings;
 #use diagnostics;   # invoke blabbermouth warning mode
@@ -96,7 +98,7 @@ BEGIN {require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter );} 
 
 # Module Interface
 
-sub command_line;   # return Win32 command line string
+sub command_line;   # return Win32 command line string (already includes prior $ENV{} variable substitutions done by the shell)
 sub parse;          # parse string as a "bash-like" command line (globbing and subshell command substitution are done, but no other substitions)
 sub argv;           # get commandline and reparse it, returning a new ARGV array
 
