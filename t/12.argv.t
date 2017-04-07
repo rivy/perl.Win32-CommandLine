@@ -16,7 +16,6 @@ if ( !$ENV{HARNESS_ACTIVE} ) {
 
 use Win32::CommandLine;
 
-use File::Glob ':glob';
 use File::Spec;
 
 sub add_test;
