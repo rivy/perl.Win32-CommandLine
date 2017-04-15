@@ -61,6 +61,10 @@ package #{{$module_name}}#;
 #       ** TCC => %x or %x% => <null> if %x doesn't exist
 #       == NORMALIZE % handling => %% always => % for both CMD and TCC (both within and outside quotes); %x% => <null> if x doesn't exist
 
+# ToDO: add caching to argv() :: add caching b/c command line parsing may have side effects ... user can use parse(...) directly to avoid the cache
+
+# TODO: add tests for 'dosquote', dosify', 'unixify', and 'prefix_dashfiles'
+
 # DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by xx.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
 
 ## ToDO: cache command_line() and argv(); especially argv() which may have side-effects via subshell commands ~ parse(...) may be used to force reinterpretation if needed
