@@ -63,7 +63,7 @@ package #{{$module_name}}#;
 
 # ToDO: add caching to argv() :: add caching b/c command line parsing may have side effects ... user can use parse(...) directly to avoid the cache
 
-# TODO: add tests for 'dosquote', dosify', 'unixify', and 'prefix_dashfiles'
+# TODO: add tests for 'dosquote', dosify', 'unixify', and 'dashprefix'
 
 # DONE[but DOCUMENT][TODO:] deal with possible reinterpretation of $() by xx.bat ... ? $(<>) vs $"$(<>)" ... THINK ABOUT IT ==>> NO interpretation => leave it to the <COMMAND> if needed so that the commands get what they expect (use xx within the <COMMAND> if needed), and DOCUMENT THIS
 
@@ -1143,7 +1143,7 @@ sub _argv_do_glob{
     ## no critic ( ProhibitUnusualDelimiters ) # ToDO: remove/revisit
 
     my %opt = (
-        prefix_dashfiles => 1,      # = 0/<true> [default = true]       # if true, prefix all globbed ARGS which = '-' with a path (eg, './-') ## '-' is a mgical argument meaning STDIN
+        dashprefix => 1,            # = 0/<true> [default = true]       # if true, for globbed ARGS which = '-', prefix with a path (eg, './-') ## note: '-' is a magical argument meaning STDIN
         dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
         dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
         unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
@@ -1249,7 +1249,7 @@ sub _argv_do_glob{
                 @g = bsd_glob( $pat, $glob_flags );
                 #print "s = $s\n";
                 if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
-                if ($opt{prefix_dashfiles}) { foreach (@g) { if ($_ eq q/-/) { $_ = './-'; }} }
+                if ($opt{dashprefix}) { foreach (@g) { if ($_ eq q/-/) { $_ = './-'; }} }
                 if ($opt{dosify}) { foreach (@g) { _dosify($_); }}
                 elsif ($opt{unixify}) { foreach (@g) { $_ =~ s:\\:\/:g; }}          ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
                 }
@@ -1378,7 +1378,7 @@ sub _argv{
     # [\%]: an optional hash_ref containing function options as named parameters
     my %opt = (
         remove_exe_prefix => 1,     # = 0/<true> [default = true]       # if true, remove all initial args up to and including the exe name from the @args array
-        prefix_dashfiles => 1,     # = 0/<true> [default = true]       # if true, prefix all _globbed_ ARGS == '-' with a path (eg, './-') ## '-' is a mgical argument meaning STDIN
+        dashprefix => 1,            # = 0/<true> [default = true]       # if true, for globbed ARGS which = '-', prefix with a path (eg, './-') ## note: '-' is a magical argument meaning STDIN
         dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
         dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
         unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
@@ -1423,7 +1423,7 @@ sub _argv{
     if ($opt{glob})
         {# do globbing
         #print 'globbing'.qq{\n};
-        @args = _argv_do_glob( @args, { prefix_dashfiles => $opt{prefix_dashfiles}, dosquote => $opt{dosquote}, dosify => $opt{dosify}, unixify => $opt{unixify}, nullglob => $opt{nullglob} } );
+        @args = _argv_do_glob( @args, { dashprefix => $opt{dashprefix}, dosquote => $opt{dosquote}, dosify => $opt{dosify}, unixify => $opt{unixify}, nullglob => $opt{nullglob} } );
         }
     else
         {# copy tokens to 'glob' position (for output later)
