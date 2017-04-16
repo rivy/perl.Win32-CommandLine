@@ -1380,8 +1380,8 @@ sub _argv{
         remove_exe_prefix => 1,     # = 0/<true> [default = true]       # if true, remove all initial args up to and including the exe name from the @args array
         dashprefix => 1,            # = 0/<true> [default = true]       # if true, for globbed ARGS which = '-', prefix with a path (eg, './-') ## note: '-' is a magical argument meaning STDIN
         dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
-        dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
-        unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all _globbed_ ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
+        dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
+        unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
         nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]  # if true, patterns which match no files are expanded to a null string (no token), rather than the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
         glob => 1,                  # = 0/<true> [default = true]       # when true, globbing is performed
         ## TODO: rework this ... need carp/croak on unbalanced quotes/subshells (? carp_ub_quotes, carp_ub_shells, carp = 0/1/warn/carp/die/croak)
