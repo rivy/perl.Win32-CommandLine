@@ -1143,7 +1143,7 @@ sub _argv_do_glob{
     ## no critic ( ProhibitUnusualDelimiters ) # ToDO: remove/revisit
 
     my %opt = (
-        dashprefix => 1,            # = 0/<true> [default = true]       # if true, for globbed ARGS which = '-', prefix with a path (eg, './-') ## note: '-' is a magical argument meaning STDIN
+        dashprefix => 1,            # = 0/<true> [default = true]       # if true, for globbed ARGS which match /^-/, prefix with a path (eg, './-') ## note: '-' is a magical argument meaning STDIN
         dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
         dosify => 0,                # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for all ARGS which are determined to be files
         unixify => 0,               # = 0/<true>/'all' [default = 0]    # if true, convert all globbed ARGS to UNIX path style; 'all' => do so for for all ARGS which are determined to be files
@@ -1249,7 +1249,7 @@ sub _argv_do_glob{
                 @g = bsd_glob( $pat, $glob_flags );
                 #print "s = $s\n";
                 if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
-                if ($opt{dashprefix}) { foreach (@g) { if ($_ eq q/-/) { $_ = './-'; }} }
+                elsif ($opt{dashprefix}) { foreach (@g) { if (m/^-/) { $_ = q{./}.$_; }} }
                 if ($opt{dosify}) { foreach (@g) { _dosify($_); }}
                 elsif ($opt{unixify}) { foreach (@g) { $_ =~ s:\\:\/:g; }}          ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
                 }
