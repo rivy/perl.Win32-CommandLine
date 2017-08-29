@@ -447,7 +447,7 @@ sub _dos_quote {
 sub _decode; # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
 my %table;
 ###
-## ANSI Escape Character Sequences (based on bash ANSI-C quoting (from C/C++); URLrefs: http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html @@ http://www.webcitation.org/66WCe6rMT; http://msdn.microsoft.com/en-us/library/6aw8xdf2.aspx @@ http://www.webcitation.org/66WCHgnjV)
+## ANSI Escape Character Sequences (based on bash ANSI-C quoting (from C/C++); URLrefs: http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html @@ http://www.webcitation.org/66WCe6rMT; http://msdn.microsoft.com/en-us/library/6aw8xdf2.aspx @@ http://www.webcitation.org/66WCHgnjV; http://ascii-table.com/control-chars.php @@ http://www.webcitation.org/6rQ9pOg3G)
 #Escape Sequences
 #\\ - 0x5c - Backslash
 #\' - 0x27 - Single Quote (not sure if it is hex 27 ???)
@@ -2209,8 +2209,15 @@ expansion to I<any> external command (by using the included B<C<xx.bat>> batch s
 
  doskey type=call xx type $*
  type [a-c]*.pl
+
  doskey perl=call xx perl $*
- perl -e 'print "test"'      [would otherwise FAIL]
+ perl -e 'print "test"'     &@:: would otherwise FAIL
+
+ @:: print all directories in current directory
+ xx echo $(" ls -ALp --quoting-style=c --color=no . | grep --color=no "[\\/]$" ")
+
+ @:: print all files (non-directories) in current directory
+ xx echo $(" ls -ALp --quoting-style=shell --color=no . | grep --color=no -v "[\\/]$" ")  [print all files in CWD]
 
 =back
 
@@ -2220,8 +2227,9 @@ expansion to I<any> external command (by using the included B<C<xx.bat>> batch s
 
  alias type=call xx type
  type [a-c]*.pl
+
  alias perl=call xx perl
- perl -e 'print "test"'      [would otherwise FAIL]
+ perl -e 'print "test"'     &@:: would otherwise FAIL
 
 =back
 
@@ -2247,15 +2255,16 @@ contain meta-notations, such as 'C<a[bc]*>' or 'C<foo.{bat,pl,exe,o}>'.
 NOTE-1: DOS character escape sequences (such as C<"\"">) are parsed prior to being put into the command
 line and, so, are valid and still (unavoidably) interpreted within double-quotes.
 
-NOTE-2: ANSI C string escapes are C<\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \[0-9]{1,3}, \x[0-9a-fA-f]{1,2}, \c[@A-Z[\\\]\^_`]>;
+NOTE-2: ANSI C string escapes are
+C<\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \", \[0-9]{1,3}, \x[0-9a-fA-F]{1,2}, \c[@A-Z[\\\]^_`?]>;
 all other escaped characters are left in place without transformation (C<< \<x> => \<x> >>).
 
 NOTE-3: Command substitution replaces the C<$(...)> argument with the standard output of that
 argument's execution. Command substitution strings are not, themselves, automatically expanded;
-use C<$(xx.bat >C<I<COMMAND>)>) to trigger expansion of the subshell command line.
+use C<$(xx I<COMMAND>)> to trigger expansion of the subshell command line.
 
-NOTE-4: C<$("...")> is present to enable delayed DOS/Windows interpretation of redirection & continuation characters. This
-allows redirection & continuation characters to be used within the subshell command string.
+NOTE-4: C<$("...")> is present to enable delayed DOS/Windows interpretation of redirection & continuation
+characters. This allows redirection & continuation characters to be used within the subshell command string.
 
 URLref: [bash ANSI-C Quoting] L<http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html> @@ L<http://www.webcitation.org/66M8skmP8>
 
