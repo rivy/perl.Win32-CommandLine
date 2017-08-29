@@ -1,5 +1,13 @@
 TODO
 
+THINK about removing 'dashprefix' or changing the default to 'off'
+ * for `sh`/`bash` compatibility, where no reciprocal mechanism currently exists
+ * BUT ... this does increase safety on win systems, with minimal impact on code
+ * use "./*" to when globbing files to avoid interpretation of leading dash files as options
+   - `shasum ./*` or `shasum {./-,[!-]}*` will work portably (no matter the state of 'dashprefix')
+
+THINK about adding in bash-like quote contexts
+
 THINK about changing the syntax to allow non-quoted balanced ()'s within shell execution blocks, "$(...)"
 * non-balanced parens must still be quote protected, as will all redirection characters "|<>" and seperators "&"
 
@@ -62,7 +70,7 @@ Notify ExtUtils::Manifest folks RE: BUGS found: (1) BUG in maniskip (as of v1.54
 
 NOTE: Csharp usability though msscript.ocx
 	* give steps to add reference and compile example code (from perl-in-cs tests)
-	
+
 NOTE: Need to occasionally check build/test/install cycle with MSVC (vcvars, ...).
 
 BUILDs
@@ -72,7 +80,7 @@ use 'b' for builds (calls build+nant) to make sure build.pl is up to date.
 SIGNING
 
 build sign
-cpansign => verifies SIGNATURE	
+cpansign => verifies SIGNATURE
 build clean		(DOESN'T remove META info or MANIFEST)
 cpansign => SUCCEEDS
 erase MANIFEST, META.yml, and/or Makefile.PL
@@ -112,7 +120,7 @@ ppm is a batch file which uses perl internally ... so an alias to 'x perl ...' w
 workaround: unalias perl
 re-run "build install" or "ppm install Win32-Command..."
 
-* ADD this notation to the suggestion to alias perl to ... 
+* ADD this notation to the suggestion to alias perl to ...
 	- maybe, in the future, perl could be compiled with this module in mind to avoid the need to alias it...
 
 4NT/TCC/TCMD
@@ -123,7 +131,7 @@ for cmd.exe: 	%<any> => %<any> if it doesn't match a variable; %% => %%
 for 4NT: 		%<any> => <null> if it doesn't match a variable; %% => %
 
 x.bat is designed not to reinterpret 4NT %'s otherwise %%%% would be required for each % in the final command line
-	
+
 
 EXAMPLES
 
@@ -170,7 +178,7 @@ x perl -e "print `x -e t/*.t`"		NOTE: x perl -e "print `x -e t\*.t`" prints "t*.
 x perl -e "use Env::Path qw(PATH); print join(qq{\n},PATH->Whence('wh*'));"
 [SHOULD FAIL <unless aliased>] 		perl -e 'print 10'
 [SUCCEEDS with X] 					x perl -e 'print 10'
-[ADD redirection character tests] 	
+[ADD redirection character tests]
 	x echo test">"this
 	x echo test ">" * 'true"test'
 x -a edit $(which which)
@@ -203,9 +211,9 @@ xx 	== eXpand command line and eXecute
 	xx -S -o ?? source/execute output of expanded command line
 xo	== eXecute Output (execute output of remaining command line as source
 	[NOT] xo -S	==> source output == non-sourcing of output is not really needed
-	
-	
-	
+
+
+
 xx TESTS
 
 NOTES
