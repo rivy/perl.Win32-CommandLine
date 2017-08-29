@@ -520,7 +520,7 @@ for my $i (0x10..0xff) { $table{'x'.sprintf('%2x',$i)} = $table{'X'.sprintf('%2x
 #control characters
 #   for (my $i = 0; $i < 0x20; $i++) { $table{"c".chr(ord('@')+$i)} = chr($i); }
 my $base_char = ord(q{@});
-for my $i (0..(0x20 - 1)) { $table{'c'.chr($base_char+$i)} = chr($i); }     ## no critic ( ProhibitMagicNumbers ) ##
+for my $i (0..0x1f) { $table{'c'.(uc chr($base_char+$i))} = $table{'c'.(lc chr($base_char+$i))} = chr($i); }           ## no critic ( ProhibitMagicNumbers ) ##
 $table{'c?'} = chr(0x7f);                                                   ## no critic ( ProhibitMagicNumbers ) ##
 
 sub _decode {
