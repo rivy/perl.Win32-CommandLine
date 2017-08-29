@@ -871,7 +871,9 @@ sub _argv_parse{
                     }
                 $block = _dequote($block);
                 #print "block = `$block`\n";
-                my $output = `$block`;
+                ##my $output = `$block`;
+                my $shell_exe = (defined($ENV{PERL5SHELL}) and ($ENV{PERL5SHELL} ne q//)) ? $ENV{PERL5SHELL} : $ENV{COMSPEC};
+                my $output = `$shell_exe /c $block`;
                 #print "output = `$output`\n";
                 if ($opt{_die_subshell_error} and $?) { Carp::croak 'error '.q{'}.(($? > 0) ? $? >> 8 : $?).q{'}.' while executing subshell block `'.$block.q{`}; }     ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
                 $output =~ s/\n$//s; # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
