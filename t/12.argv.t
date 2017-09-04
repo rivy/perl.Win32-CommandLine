@@ -52,6 +52,7 @@ add_test( [ qq{$0 }.q{$()$} ], ( q{$} ) );
 
 add_test( [ qq{$0 }.q{$""} ], ( q{} ) );
 add_test( [ qq{$0 }.q{$'\x25'} ], ( q{%} ) );
+add_test( [ qq{$0 }.q{$'\X25'} ], ( q{\\X25} ) );
 
 add_test( [ qq{$0 }.q{$""$} ], ( q{$} ) );
 
@@ -117,6 +118,14 @@ add_test( [ qq{$0 \$'test'} ], ( qq{test} ) );
 add_test( [ qq{$0 \$'\\x34\\x34'} ], ( qq{44} ) );
 
 add_test( [ qq{$0 '\\x34\\x34'} ], ( qq{\\x34\\x34} ) );
+
+add_test( [ qq{$0 \$'\\X34\\X34'} ], ( qq{\\X34\\X34} ) );
+
+add_test( [ qq{$0 '\\X34\\X34'} ], ( qq{\\X34\\X34} ) );
+
+add_test( [ qq{$0 \$'\\x34\\X34'} ], ( qq{4\\X34} ) );
+
+add_test( [ qq{$0 \$'\\X34\\x34'} ], ( qq{\\X344} ) );
 
 add_test( [ qq{$0 \*.t} ], ( q{*.t} ) );
 
