@@ -778,7 +778,7 @@ sub _argv_parse{
                 $block = _dequote($block);
                 if ($block ne q//) {
                     # only need to eval non-empty $block ; additionally, qx// of an empty variable causes TAINT, so avoid it
-                    # print "block = `$block`\n";
+                    # print STDERR "# block = '$block'\n";
                     ##my $output = `$block`;
                     my $shell_exe = (defined($ENV{PERL5SHELL}) and ($ENV{PERL5SHELL} ne q//)) ? $ENV{PERL5SHELL} : $ENV{COMSPEC};
                     my $output = `$shell_exe /c $block`;
