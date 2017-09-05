@@ -297,8 +297,8 @@ add_test( [ qq{$0 foo\\bar} ], ( q{foo\\bar} ) );
 # dosify (globbed [or all] ARGS which are files) vs dosquote (non-globbed ARGS) vs unixify (globbed [or all] ARGS which are files)
 # NOTE: These options are needed for cases of ARGS such as:
 #   perl -e "$x = split( /n/, q{Win32::CommandLine}); print $x;" (which would otherwise be translated to...) perl -e "$x = split( \n\, q{Win32::CommandLine}); print $x;"
-# dosify = 1; DOS-quote all globbed args (which are files)
-# dosify = all; DOS-quote all args (which are files)
+# dosify = 1; DOS-quote all globbed args which are files
+# dosify = all; DOS-quote all args which are files
 # dosquote = 1 = all; DOS-quote all non-globbed ARGS, files or not
 ## VERY SLIGHTLY FRAGILE (but, with the token, the names should always be unique)
 add_test( [ qq{$0 "nodrive\\not\\a file $token"} ], ( qq{nodrive\\not\\a file $token} ) );
