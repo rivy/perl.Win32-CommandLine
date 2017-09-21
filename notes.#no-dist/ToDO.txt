@@ -1,3 +1,9 @@
+## INVESTIGATE
+
+- `ls ...` executes ls.BAT, but `xx ls --version` executes ls.exe (later in the PATH) instead of ls.BAT -- why?
+
+####
+
 # evaluate finding/using ExtUtils::Manifest.maniskip()
 
 ```
