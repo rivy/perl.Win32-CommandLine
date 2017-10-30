@@ -1,7 +1,7 @@
 -b			# backup file to .bak and modify in place
 -l=0		# no max line length
 -i=4		# indent = 4
-#-ci=4		# continuation-indentation=n == Continuation indentation is extra indentation spaces applied when a long line is broken. 
+#-ci=4		# continuation-indentation=n == Continuation indentation is extra indentation spaces applied when a long line is broken.
 -bl			# opening-brace-on-new-line == Use the flag -bl to place the opening brace on a new line
 #-bli		# -bl with continuation indentation
 -et=4		# entab initial whitespace (with <tab> = 4)

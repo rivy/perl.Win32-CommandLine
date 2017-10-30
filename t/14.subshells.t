@@ -60,10 +60,15 @@ $perl = ( $perl =~ m/\A(.*)\z/msx ) ? $1 : q{};     ## no critic ( ProhibitCaptu
 
 # Subshells - argument generation via subshell execution & subsequent expansion of subshell output
 add_test( [ q{$( perl -e "print 0" )} ], ( q{0} ) );
-add_test( [ q{$( perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{set _x=$x\n};" )} ], ( q{set _x=Xbc} ) );
+add_test( [ q{$( perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{set _x=$x\\n};" )} ], ( q{set _x=Xbc} ) );
+#
+add_test( [ qq{\$(" "$perl" -e "print 0" ")} ], ( q{0} ) );
+# add_test( [ qq{\$(" "$perl" -e "\$x = q{abc}; \$x =~ s/a|b/X/; print qq{set _x=\$x\\n};" ")} ], ( q{set _x=Xbc} ) );
+#
 add_test( [ q{$( echo 0 )} ], ( q{0} ) );
 add_test( [ q{$( "echo 0 & echo 1" )} ], ( q{0 1} ) );
 add_test( [ q{$( "echo 0 && echo 1" )} ], ( q{0 1} ) );
+add_test( [ q{$( "echo 0 || echo 1" )} ], ( q{0} ) );
 #add_test( [ q{$( echo 0 & echo 1 )} ], ( q{0 1} ), { fails => 1 } );       ## FAILS, as expected; the command line is broken in two pieces by the shell @ the "&" before xx gets it; xx only sees "$( echo 0 "
 #add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ), { fails => 1 } );       ## FAILS, as expected; the subshell is executed with normal shell semantics, so perl sees two arguments "'print" and 0'" causing an exception
 
@@ -89,7 +94,7 @@ my @tests;
 sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }       ## NOTE: caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
-sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; my ($got_stdout, $got_stderr); eval { IPC::Run3::run3( "$perl $script -e @args", \undef, \$got_stdout, \$got_stderr ); chomp($got_stdout); chomp($got_stderr); if ($got_stdout ne q{}) { push @got, $got_stdout }; if ($got_stderr ne q{}) {push @got, $got_stderr}; 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
+sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; my ($got_stdout, $got_stderr); eval { IPC::Run3::run3( qq{"$perl" "$script" -e @args}, \undef, \$got_stdout, \$got_stderr ); chomp($got_stdout); chomp($got_stderr); if ($got_stdout ne q{}) { push @got, $got_stdout }; if ($got_stderr ne q{}) {push @got, $got_stderr}; 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
 
 #### SUBs
 

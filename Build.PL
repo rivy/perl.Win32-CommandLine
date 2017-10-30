@@ -30,7 +30,7 @@
 
 use strict;
 use warnings;
-use 5.006001; ## v5.6.1: earliest tested version ## v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, indirect filehandles, extended versions for 'use' [URLref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ http://www.webcitation.org/66Z1eHR17]
+use 5.006001; ## v5.6.1: earliest tested version ## v5.5: for AUTHOR and ABSTRACT in Makefile.PL; v5.6: for 'our', three-argument open, indirect filehandles, extended versions for 'use' [URLref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17]
 
 use English qw( -no_match_vars ); ##    # long Perl built-in variable names ['-no_match_vars' avoids regex performance penalty]
 
@@ -52,14 +52,29 @@ $config{'module_name'} = undef;
 $config{'dist_abstract'} = undef;
 $config{'dist_author'} = undef;
 $config{'license'} = undef;                         # must be chosen by the author of the module/distribution
+$config{'exports_aref'} = undef;                    # expected symbol table exports (no obvious default)
 $config{'requires_href'} = {};                      # module requirements (no obvious default)
 $config{'recommends_href'} = {};                    # module recommendations (no obvious default)
-$config{'build_requires_href'} = { 'perl' => '5.6.1', 'version' => 0.77, 'Cwd' => 0, 'File::Find' => 0, 'File::Glob' => 0, 'File::Path' => 0, 'File::Which' => 0, 'File::Spec::Functions' => 0, 'File::Spec' => 0, 'File::Basename' => 0, 'FindBin' => 0, 'ExtUtils::Manifest' => '1.54', 'Module::Build' => 0 };   # basic module requirements for Build.PL [version v0.77+ needed for v5.10+ extended version support & declare->(); NOTE: ExtUtils::Manifest v1.54 only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience]
-#$config{'configure_requires_href'} = { 'Module::Build' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0 };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
-$config{'configure_requires_href'} = { 'Module::Build' => 0, 'Test::Harness'=>'3.0', 'TAP::Harness' => 0, 'File::Spec::Functions' => 0, 'File::Basename' => 0, 'FindBin' => 0, 'Text::Template' => '1.44' };        # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ] ## Test::Harness v3.0 required (1st version that includes TAP::Harness)
+#
+$config{'build_requires_href'} = {                  # basic module requirements for Build.PL
+    'perl' => '5.6.1', 'version' => 0.77,               ## version v0.77+ needed for v5.10+ extended version support & declare->()
+    'Cwd' => 0, 'File::Find' => 0, 'File::Glob' => 0,
+    'File::Path' => 0, 'File::Which' => 0,
+    'File::Spec' => 0, 'File::Spec::Functions' => 0,
+    'File::Basename' => 0, 'FindBin' => 0,
+    'ExtUtils::Manifest' => '1.54',                     ## ExtUtils::Manifest v1.54+ only needed for clients with MANIFEST file names containing internal whitespace; added here for convenience
+    'Module::Build' => 0,
+    'Test::More' => 0, 'Test::Differences' => 0         ## Test::More + Test::Differences required for the, usually included, basic tests
+    };
+$config{'configure_requires_href'} = {              # module requirements for configuration [ie, requirements needed to run Build.PL]; URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
+    'File::Basename' => 0,
+    'File::Spec::Functions' => 0,
+    'FindBin' => 0, 'Module::Build' => 0,
+    'Test::Harness'=>'3.0', 'TAP::Harness' => 0,        ## Test::Harness v3.0+ required (minimum version that includes TAP::Harness)
+    'Text::Template' => '1.44'                          ## Text::Template v1.44+ required for minimally complete API
+    };
 $config{'sign'} = 'true';                           # always sign the module distribution, if possible (note: this is only used when the distribution is built/tested (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
 $config{'create_readme'} = 'true';                  # create README from module pod
-#$config{'create_makefile_pl'} = 'passthrough';     # (DEPRECATED, using 'small' & configure_requires => Module::Build) passthrough Makefile.PL (will download/install Module::Build from CPAN if missing)
 $config{'create_makefile_pl'} = 'small';            # pass all Makefile.PL functionality to Build.PL, but requires Module::Build (ERROR if Module::Build is missing; so, use 'configure_requires=>Module::Build') [see PerlDOC: module::build::compat]
 $config{'recursive_test_files'} = undef;            # scan the ./t directory recursively for *.t perl files to execute during testing (no obvious default)
 $config{'no_index_href'} = {};                      # private files/directories/packages/namespaces; will not be indexed and listed on CPAN (no obvious default)
@@ -110,6 +125,7 @@ $config{'VERSION'} = undef;                         # generated from any existin
 # pull in repo code
 my %code = rivy_builder_code_subs();
 eval $code{repo};
+eval $code{'@version_format'};
 
 $config{'repo_type'} = is_repo();
 my $repo;   # reference to hash reference to code
@@ -161,7 +177,7 @@ if ( -e $VERSION_filename )
         }
 
     # VERSION: Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
-    # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
+    # * NOTE: "boring" versions are preferred (ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17])
     # v == M.m[_a]
     if ( $v =~ /^(\d+)[._]*$/ ) { $v = $1 . '.0'; }
     #
@@ -170,10 +186,7 @@ if ( -e $VERSION_filename )
         $config{'VERSION_M'} = $1;
         $config{'VERSION_m'} = $2;
         $config{'VERSION_a'} = defined $3 ? $3 : q{};
-
-        my $v_is_alpha = ($config{'VERSION_m'} % 2);
-        $v = $config{'VERSION_M'}.q{.}.$config{'VERSION_m'};
-        $v .= (q{_}.(($config{'VERSION_a'} ne q{}) ? $config{'VERSION_a'} : '1')) if $v_is_alpha;
+        $v = version_canon( $config{'VERSION_M'}, $config{'VERSION_m'}, $config{'VERSION_a'} );
         }
       else {
         die "Can't parse version string ('$v')\n";  ## no critic ( RequireCarping )
@@ -349,6 +362,7 @@ my $build = $class->new(
     add_to_realcleanup   => [ @{$config{'add_to_realcleanup_aref'}} ],
 );
 
+$build->notes('exports_aref' => $config{'exports_aref'} );
 $build->notes('versioned_file_aref' => $config{'versioned_file_aref'} );
 ##$build->notes('versioned_file_globs_exclude_aref' => $config{'versioned_file_globs_exclude_aref'} );
 
@@ -414,7 +428,27 @@ sub rivy_builder_code
 sub rivy_builder_code_subs
 { ## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
 my %code;
-$code{'version_set'} = q{
+$code{'@version_format'} = q{
+    # ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17]
+    # NOTE: VERSION == Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
+
+    sub version_f { ## ( $:major, $:minor, $:alpha ) => $:formatted version string ("boring" style)
+        my ( $major, $minor, $alpha ) = @_;
+        my $v;
+        $v  = sprintf( '%d.%03d', $major, $minor );
+        $v .= sprintf( q/_/.(($alpha == 1) ? '%d' : '%03d'), $alpha ) if (defined $alpha && $alpha ne q//);
+        return $v;
+        }
+
+    sub version_canon { ## ( $:major, $:minor, $:alpha ) => $:formatted version string ("boring" style)
+        my ( $major, $minor, $alpha ) = @_;
+        my $v;
+        my $v_is_alpha = ( $alpha ne q// ) || ( $minor % 2 );
+        if ( $v_is_alpha && ($alpha eq q//) ) { $alpha = 1; }
+        return version_f( $major, $minor, $alpha );
+        }
+};
+$code{'ACTION_version_set'} = q{
     #[ADD] version_set( v ) - write version to $build->notes('VERSION_filename')
     sub ACTION_version_set {
         my $self = shift;
@@ -441,6 +475,7 @@ $code{'version_set'} = q{
         else {
             die "Can't parse version string ('$v')\n";  ## no critic ( RequireCarping )
             }
+        $v = version_f( $M, $m, $a );
 
         open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
         print $fh $self->notes('VERSION_prefix').$v.$self->notes('VERSION_suffix');
@@ -454,7 +489,7 @@ $code{'version_set'} = q{
         print "Version set (\$VERSION = '$v')\n";
         }
 };
-$code{'version_set_next'} = q{
+$code{'ACTION_version_set_next'} = q{
     #[ADD] version_set_next - update version in $build->notes('VERSION_filename') to next alpha build number
     # NOTE: VERSION == Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
     sub ACTION_version_set_next {
@@ -477,8 +512,7 @@ $code{'version_set_next'} = q{
             if (($m % 2) eq 0) { $m++ };
             }
 
-        $v = join( q{.}, ($M, $m) );
-        $v .= q{_}.$a if $a ne q{};
+        $v = version_f( $M, $m, $a );
 
         open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
         print $fh $self->notes('VERSION_prefix').$v.$self->notes('VERSION_suffix');
@@ -492,7 +526,7 @@ $code{'version_set_next'} = q{
         print "Version set (\$VERSION = '$v')\n";
         }
 };
-$code{'version_set_next_release'} = q{
+$code{'ACTION_version_set_next_release'} = q{
     #[ADD] version_set_next_release - update version in $build->notes('VERSION_filename') to next alpha build number
     # NOTE: VERSION == Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
     sub ACTION_version_set_next_release {
@@ -513,8 +547,7 @@ $code{'version_set_next_release'} = q{
         $m++;
         if (($m % 2) ne 0) { $m++ };
 
-        $v = join( q{.}, ($M, $m) );
-        $v .= q{_}.$a if $a ne q{};
+        $v = version_f( $M, $m, $a );
 
         open( $fh, '>', $VERSION_filename ) or die "Can't write to '$VERSION_filename': $OS_ERROR\n"; ## no critic ( RequireCarping )
         print $fh $self->notes('VERSION_prefix').$v.$self->notes('VERSION_suffix');
@@ -543,7 +576,8 @@ $code{'repo'} = q{
         $filename = rel2abs('.git', dirname(rel2abs($0)));
         if ( -d $filename )
             {
-            if ( system("git --version 2>&1 1>$null") == 0 ) { return 'git' };
+            # if ( system("git --version 1>$null 2>&1") == 0 ) { return 'git' };
+            if ( system("git --no-pager log -1 --pretty=oneline 1>$null 2>&1") == 0 ) { return 'git' };
             }
 
         # : Mercurial
@@ -644,7 +678,7 @@ $code{'repo'} = q{
         # commit_describe
         $function_name = 'commit_describe';
         $repo_function_ref->{git}{$function_name} = sub {
-            my @lines = qx{git describe --tags};
+            my @lines = qx{git describe --tags --always};
             my $RETval = $lines[0];
             chomp( $RETval );
             return $RETval;
@@ -869,21 +903,21 @@ $code{'get_template_vars'} = q{
         $vars{module_name} = $self->module_name;
         $vars{dist_abstract} = $self->dist_abstract;
         $vars{VERSION} = $self->dist_version;
-        $vars{repo_type} = $self->notes('repo_type');
-        $vars{branch} = $self->notes('repo_branch');
-        $vars{commit_author} = $self->notes('repo_commit_author');
-        $vars{commit_describe} = $self->notes('repo_describe');
-        $vars{commit_rev} = $self->notes('repo_commit_number');
-        $vars{commit_id} = $self->notes('repo_commit_id');
-        $vars{commit_id_medium} = $self->notes('repo_commit_id_medium');
-        $vars{commit_id_short} = $self->notes('repo_commit_id_short');
-        $vars{commit_id_tiny} = $self->notes('repo_commit_id_tiny');
+        $vars{repo_type} = defined $self->notes('repo_type') ? $self->notes('repo_type') : '<repo_type?>';
+        $vars{branch} = defined $self->notes('repo_branch') ? $self->notes('repo_branch') : '<branch?>';
+        $vars{commit_author} = defined $self->notes('repo_commit_author') ? $self->notes('repo_commit_author') : '<author?>';
+        $vars{commit_describe} = defined $self->notes('repo_describe') ? $self->notes('repo_describe') : q//;
+        $vars{commit_rev} = defined $self->notes('repo_commit_number') ? $self->notes('repo_commit_number') : '0';
+        $vars{commit_id} = defined $self->notes('repo_commit_id') ? $self->notes('repo_commit_id') : '<id?>';
+        $vars{commit_id_medium} = defined $self->notes('repo_commit_id_medium') ? $self->notes('repo_commit_id_medium') : '<id?>';
+        $vars{commit_id_short} = defined $self->notes('repo_commit_id_short') ? $self->notes('repo_commit_id_short') : '<id?>';
+        $vars{commit_id_tiny} = defined $self->notes('repo_commit_id_tiny') ? $self->notes('repo_commit_id_tiny') : '<id?>';
         $vars{commit_info} = "$vars{VERSION} ( [$vars{repo_type}:$vars{branch}] r$vars{commit_rev}:$vars{commit_id_medium}; $vars{commit_author} )";
 
         if (defined $output_filename) {
             # define file specific variables
             $vars{ME_filename} = $output_filename;
-            $vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename, v0.0.0.1 ( [git:master] 207:97f85f62496a; AUTHOR )
+            $vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename, v0.0.0.1 ( [git:master] r207:97f85f62496a; AUTHOR )
             }
 
         return %vars;
@@ -1743,7 +1777,8 @@ $code{'ACTION_install'} = q{
         ###[ADD] update all distmeta info when installing
         ##$self->depends_on('distmeta');    ## NOT NEEDED and causes a MANIFEST rebuild which can cause SIGNATURE issues on tests after installs ## may be fixed with sorted MANIFEST
 
-        #if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
+        if (!(eval { require ActivePerl; }) || !_has_ppm()) { return $self->SUPER::ACTION_install; }
+
         ## this is an ActivePerl installation (and ppm is available)
 
         if (!_has_ppm() || ($^O eq 'cygwin')) { return $self->SUPER::ACTION_install; }      # cygwin PPM doesn't work correctly

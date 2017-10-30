@@ -1,22 +1,18 @@
-#!perl -w  -- -*- tab-width: 4; mode: perl -*-
+#!perl -w   -- -*- tab-width: 4; mode: perl -*-
 
-# t/01.load.t - check module loading
+# t/02.exports.t - evaluate expected symbol table exports
 
 # ToDO: Modify untaint() to allow UNDEF argument(s) [needs to be changed across all tests]
 
 use strict;
 use warnings;
 
-{
-## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
-my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;  # DISABLE buffering (enable autoflush) on STDIN, STDOUT, and STDERR (keeps output in order)
-}
-
+use lib 't/lib';
 use Test::More;
+use Test::Differences;
 
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
 plan skip_all => 'TAINT mode not supported (Module::Build is eval tainted)' if in_taint_mode();
-
-plan tests => 1;
 
 use Module::Build;
 
@@ -24,20 +20,26 @@ my $mb = Module::Build->current();
 
 my $module_name = $mb->module_name;
 
+plan skip_all => 'No symbol table exports specified' if not defined $mb->notes('exports_aref');
+
+my @exports = @{$mb->notes('exports_aref')};
+
+my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
+
+plan tests => 3 + ($haveTestNoWarnings ? 1 : 0);
+
 # _or_ use $ENV variables to exchange state
 ## untaint
 #my $module_name = untaint( $ENV{_BUILD_module_name} );
 
-# SKIP: {
-    my $message = 'Missing $module_name';
-    if (!defined($module_name)) {
-        diag $message;
-        skip $message, 1;
-        }
-    use_ok( $module_name );
-#    }
+use_ok( $module_name );
 
-diag( (defined($module_name) ? qq{$module_name, }:q{}) . "$^O, perl v$], $^X");
+{; no strict 'refs'; ## no critic ( TestingAndDebugging::ProhibitNoStrict )
+
+eq_or_diff (\@{$module_name}, [ ], '@EXPORT is empty');
+eq_or_diff ([ sort (@{$module_name.'::EXPORT_OK'}) ], [ sort @exports ], '@EXPORT_OK has expected values');
+
+}
 
 
 #### SUBs ---------------------------------------------------------------------------------------##
