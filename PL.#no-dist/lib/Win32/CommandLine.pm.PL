@@ -94,10 +94,11 @@ BEGIN {require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter );} 
 {no strict 'refs'; ## no critic ( ProhibitNoStrict )
 #our @EXPORT = qw( );   # no default exported symbols
 %EXPORT_TAGS = (
-    'ALL'       => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[^_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ } keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
-#   '_INTERNAL' => [ (grep { /^(?!bootstrap|dl_load_flags|isa|qv|bsd_glob|glob)[_][a-zA-Z_]*[a-z]+[a-zA-Z_]*$/ }  keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all internal functions [Note: internal functions start with a leading '_']
+    'ALL'       => [ (grep { /^(?!bootstrap|dl_load_flags|import).*$/msx } grep { /^.*[[:lower:]].*$/msx } grep { /^([^_].*)$/msx } keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
+    '_INTERNAL' => [ (grep { /^(([_].*)|([[:upper:]_]*))$/msx } keys %{__PACKAGE__.q{::}}) ],  ## no critic ( ProhibitComplexRegexes ProhibitEnumeratedClasses ) ## all internal functions [Note: internal functions are ALL_CAPS or start with a leading '_']
     );
-@EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
+# @EXPORT_OK = ( map { @{$_} } values %EXPORT_TAGS );
+@EXPORT_OK = ( map { @{$_} } $EXPORT_TAGS{'ALL'} );
 }
 
 # Module Interface
@@ -1087,7 +1088,7 @@ sub _argv_do_glob{
     for my $k (keys %home_paths) { $home_paths{$k} =~ s/\\/\//g; }; # unixify path seperators
     my $home_path_re =  q{(?i)}.q{^~(}.join(q{|}, keys %home_paths ).q{)?(/|$)}; ## no critic (RequireInterpolationOfMetachars)
 
-    use File::Glob qw( :glob );
+    use File::Glob;
     my $s = q{};
     for (my $i=0; $i<=$#args; $i++)     ## no critic (ProhibitCStyleForLoops)
         {
@@ -1123,15 +1124,15 @@ sub _argv_do_glob{
         # DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
         # TODO: TEST 'dosify' and 'unixify'
 
-        my $glob_flags = GLOB_NOCASE | GLOB_ALPHASORT | GLOB_BRACE | GLOB_QUOTE;
+        my $glob_flags = File::Glob::GLOB_NOCASE | File::Glob::GLOB_ALPHASORT | File::Glob::GLOB_BRACE | File::Glob::GLOB_QUOTE;
 
         if ( $opt{nullglob} )
             {
-            $glob_flags |= GLOB_NOMAGIC;
+            $glob_flags |= File::Glob::GLOB_NOMAGIC;
             }
         else
             {
-            $glob_flags |= GLOB_NOCHECK;
+            $glob_flags |= File::Glob::GLOB_NOCHECK;
             }
 
         if ( $opt{glob} && $glob_this )
@@ -1157,7 +1158,7 @@ sub _argv_do_glob{
             else
                 {
                 #print "bsd_glob of `$pat`\n";
-                @g = bsd_glob( $pat, $glob_flags );
+                @g = File::Glob::bsd_glob( $pat, $glob_flags );
                 #print "s = $s\n";
                 if ((scalar(@g) == 1) && ($g[0] eq $pat)) { @g = ( $s ); }
                 elsif ($opt{dashprefix}) { foreach (@g) { if (m/^-/) { $_ = q{./}.$_; }} }
