@@ -1,0 +1,89 @@
+---
+sudo: false     # use the container-based Travis infrastructure
+
+language: perl
+
+perl:
+    - "blead"
+    - "dev"
+    - "5.26"
+    - "5.24"
+    - "5.22"
+    - "5.20"
+    - "5.18"
+    - "5.16"
+    - "5.14"
+    - "5.12"
+    - "5.10"
+    - "5.8.8"
+    - "5.8"
+
+matrix:
+    include:
+        - perl: 5.18
+          env: COVERAGE="Coveralls Codecov"
+    allow_failures:
+        - perl: "blead"
+        - perl: "dev"
+
+addons:
+  apt:
+    packages:
+    - aspell
+    - aspell-en
+
+before_install:
+    - git clone git://github.com/travis-perl/helpers ~/travis-perl-helpers
+    - source ~/travis-perl-helpers/init
+    - build-perl
+    - perl -V
+
+install:
+    - cpanm --notest JSON::PP  # most recent JSON::PP is required to avoid JSON parsing errors during tests
+    # # * `dzil` build (note: does not provide coverage info)
+    # - cd $TRAVIS_BUILD_DIR
+    # - cpanm --notest Dist::Zilla
+    # - cpanm --skip-satisfied --force --notest Dist::Zilla::App::Command::stale
+    # - "dzil authordeps | cpanm --force --notest"
+    # - "dzil listdeps --author | cpanm --force --notest"
+    # * idiomatic build
+    # - cpanm --notest --skip-installed Module::Build
+    - cd "$TRAVIS_BUILD_DIR"
+    # - cd "$BUILD_DIR"          # $BUILD_DIR is set by the build-dist command
+    - export OS_unsupported=$(test $(perl Build.PL 2>&1 | grep -c "^OS unsupported\b") -ge 1 && echo true)
+    - test -n "$OS_unsupported" || build-dist
+    # - test -n "$OS_unsupported" || cpanm --installdeps --notest .
+    - test -n "$OS_unsupported" || cpan-install --deps       # installs prereqs, including recommends
+    - test -n "$OS_unsupported" || cpan-install --coverage   # installs converage prereqs, if enabled
+
+before_script:
+    - test -n "$OS_unsupported" || coverage-setup
+    - export AUTOMATED_TESTING=1 HARNESS_OPTIONS=j10:c HARNESS_TIMER=1
+
+script:
+    # # * `dzil` build (note: does not provide coverage info)
+    # - cd "$TRAVIS_BUILD_DIR"
+    # - dzil test ## _or_ "dzil test --author --smoke"
+    # * idiomatic build (portable variant)
+    - cd "$TRAVIS_BUILD_DIR"
+    # - cd "$BUILD_DIR"
+    - test -n "$OS_unsupported" || perl Build.PL
+    - test -n "$OS_unsupported" || perl Build
+    # - prove -l -j$(test-jobs)              # tests
+    # - prove -l -j$(test-jobs) xt/author/*  # "author" tests
+    - test -n "$OS_unsupported" && printf "OS unsupported" || ./Build test
+
+after_success:
+    - test -n "$OS_unsupported" && coverage-report  # coveralls.io + codecov.io for COVERAGE="Coveralls Codecov"
+
+notifications:
+    on_success: change
+    on_failure: always
+    # irc:
+    #     channels:
+    #         - "irc.perl.org#perlcritic"
+    #     template:
+    #         - "%{branch}: %{message} %{build_url}"
+    # email: false
+    # slack:
+    #     secure: jm6FQqg+Pkly1+Jl7glx9evbyDq7WJ9ecmvYU2o+HXLlxq8A0l2BUejfJdf/3akrdQa2I+lMI92rujLAUWVu2okfD0rI3634hkpXZfKrj689OlWOMnI4da0sHYJhzmWGMLgiiqAH/QZiCBpXgNKomRHrit39wSa1v4b17l+2fVaOOGoUzpHYK5r/6CCYXjFvm0ayZ0hcw5vWMMuPOIdVcDBUHbzKri/JRA3tWUZ0uPi36g6D9r4Gn0v+hA9Qgyk8XhT7edmFPkLpANxnCyuMTPU2T+3grHsGZZj9C5euzlNmm47dXjKKSD17jH7cSa4+vRgat0ffYUHA/WRvjEVyYgDMDanp/2cRmLgU3RNNoiB8/qiFhOuoCUS6PdGnDJF+enKs7JdRiTrYfOqJulknZFH1FKrj36S8P6zbRggoyjyzZBQOO+FO2U3HvVZ99W+7nMGj58IzuFz1HljMlul1esYIgVxqVLDyu0iwM7RZsxf+1XND/J9qmbDT5GdeXc0NJm5BiLmZ2bOmmyss3nMX9pk3WyUU0dK731rmT60SzoTxT+BZoa3OkCr1bKxGGVGrltdigkCQZhwfyofvLm83GkEF3vu27fXeiyqj7O5rUku4yrae8jsVz4V4chOFIrWBunjsUFM/q4+NGBaxtl3l+kVLlggazLJgLSzmr6P7VFk=
