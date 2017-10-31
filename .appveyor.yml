@@ -1,0 +1,52 @@
+# .appveyor.yml
+
+# ref: https://www.appveyor.com/docs/appveyor-yml @@ https://archive.is/OUJHS
+# * validation tool @ https://ci.appveyor.com/tools/validate-yaml
+
+# * note: AppVeyor setup
+# 1. add an AppVeyor project observing the repository
+# 2. enable "General / Skip branches without appveyor.yml" within the project SETTINGS
+
+version: "{build} ~ {branch}"
+
+# skip_tags: true     # do not build on tags
+
+branches:
+  except:
+    - gh-pages
+
+environment:
+    matrix:
+        - Perl_VERSION: ""              # latest
+        - Perl_VERSION: "5.24.3.1"
+        - Perl_VERSION: "5.22.3.1"
+        - Perl_VERSION: "5.20.3.3"
+        # - Perl_VERSION: "5.16.3.3"
+        # - Perl_VERSION: "5.12.3.1"
+
+cache:
+    - C:\strawberry -> .appveyor.yml
+
+install:
+    - if not exist "C:\strawberry" cinst strawberryperl -y --version="%Perl_VERSION%"
+    - set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+    - cpanm --notest --skip-installed Module::Build
+    - cd "%APPVEYOR_BUILD_FOLDER%"
+    - perl Build.PL 2>&1 | findstr /b /i /r "OS unsupported\b" >NUL 2>&1 && set "OS_unsupported=true" || set "OS_unsupported="
+    - if NOT DEFINED OS_unsupported ( cpanm --installdeps --notest . )
+
+build_script:
+    - if NOT DEFINED OS_unsupported ( perl Build.PL )
+
+test_script:
+    - if NOT DEFINED OS_unsupported ( Build test ) else (echo OS unsupported)
+
+# notifications:
+# To get Github PR notifications from AppVeyor, get an auth token from Github,
+# encrypt it at https://ci.appveyor.com/tools/encrypt and put it into the
+# secure field
+#  - provider: GitHubPullRequest
+#    auth_token:
+#      secure: ...
+
+notifications:
