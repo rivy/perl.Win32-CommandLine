@@ -1124,15 +1124,15 @@ sub _argv_do_glob{
         # DONE=>TODO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
         # TODO: TEST 'dosify' and 'unixify'
 
-        my $glob_flags = File::Glob::GLOB_NOCASE | File::Glob::GLOB_ALPHASORT | File::Glob::GLOB_BRACE | File::Glob::GLOB_QUOTE;
+        my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_BRACE() | File::Glob::GLOB_QUOTE();
 
         if ( $opt{nullglob} )
             {
-            $glob_flags |= File::Glob::GLOB_NOMAGIC;
+            $glob_flags |= File::Glob::GLOB_NOMAGIC();
             }
         else
             {
-            $glob_flags |= File::Glob::GLOB_NOCHECK;
+            $glob_flags |= File::Glob::GLOB_NOCHECK();
             }
 
         if ( $opt{glob} && $glob_this )
