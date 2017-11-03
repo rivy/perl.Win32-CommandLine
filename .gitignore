@@ -29,13 +29,6 @@ CHANGES\.log\.tmp
 pod2htmd.tmp
 **\.pyc
 
-# ignore pulled/imported code (if any)
-inc/**
-t/lib/**
-
-# ignore experimental code
-t/prelim/**
-
 #### auto-generated file names
 # PL generated files
 bin/xx.bat
