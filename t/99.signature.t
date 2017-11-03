@@ -4,13 +4,15 @@ use strict;
 use warnings;
 
 {
-## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
+## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars ProhibitPunctuationVars )
 my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;  # DISABLE buffering on STDIN, STDOUT, and STDERR
 }
 
 use Test::More;     # included with perl v5.6.2+
 
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+
+## no critic ( RequireCarping )
 
 my $haveSIGNATURE = (-f 'SIGNATURE');
 my $haveNonEmptySIGNATURE = (-s 'SIGNATURE');
@@ -23,20 +25,22 @@ my $haveKeyserverConnectable = eval { require Socket; Socket::inet_aton('pgp.mit
 
 my $message = q{};
 
+unless ($message || $haveSIGNATURE) { $message = 'Missing SIGNATURE file'; }
+unless ($message || $haveNonEmptySIGNATURE) { $message = 'Empty SIGNATURE file'; }
+
+# unless ($message || ($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL})) { $message = 'Signature test [to run: set TEST_SIGNATURE]'; }
+
 unless ($message || $haveModuleSignature) { $message = 'Module::Signature required to check distribution SIGNATURE'; }
-unless ($message || $haveSHA) { $message = 'Missing any supported SHA modules (Digest::SHA, Digest::SHA1, or Digest::SHA::PurePerl)'; }
+unless ($message || $haveSHA) { $message = 'Missing all of the supported SHA modules (Digest::SHA, Digest::SHA1, or Digest::SHA::PurePerl)'; }
 unless ($message || $haveKeyserverConnectable) { $message = 'Unable to connect to keyserver (pgp.mit.edu)'; }
 
 #plan skip_all => $message if $message;
 
-unless ($message || $haveSIGNATURE) { $message = 'Missing SIGNATURE file'; }
-unless ($message || $haveNonEmptySIGNATURE) { $message = 'Empty SIGNATURE file'; }
-
-# plan skip_all => $message if $message;
-
 plan skip_all => 'TAINT mode not supported (Module::Build is eval tainted)' if in_taint_mode();
 
 plan tests => 2;
+
+local $ENV{TEST_SIGNATURE} = (defined $ENV{TEST_SIGNATURE} && $ENV{TEST_SIGNATURE}) || 1;   # Module::Signature only considers MANIFEST.SKIP when $ENV{TEST_SIGNATURE} is set (bug?)
 
 # pull module information and subroutines via Module::Build->current()
 use Module::Build;
@@ -47,8 +51,6 @@ $mb->my_maniskip_init();
 my $codeRef = $mb->can('my_maniskip');      # ref: http://www.perlmonks.org/?node_id=62737 @@ https://archive.is/pJtfr
 *ExtUtils::Manifest::maniskip = $codeRef;
 }}
-
-local $ENV{TEST_SIGNATURE} = (defined $ENV{TEST_SIGNATURE} && $ENV{TEST_SIGNATURE}) || 1;   # Module::Signature only considers MANIFEST.SKIP when $ENV{TEST_SIGNATURE} is set (bug?)
 
 # BUGFIX: ExtUtils::Manifest::manifind is File::Find::find() tainted; REPLACE with fixed version
 # URLref: [Find::File and taint mode] http://www.varioustopics.com/perl/219724-find-file-and-taint-mode.html

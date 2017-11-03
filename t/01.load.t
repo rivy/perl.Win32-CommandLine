@@ -16,18 +16,16 @@ use Test::More;
 
 plan skip_all => 'TAINT mode not supported (Module::Build is eval tainted)' if in_taint_mode();
 
-plan tests => 1;
 
 use Module::Build;
 
 my $mb = Module::Build->current();
 
-my $module_name = $mb->module_name;
+my $packages_href = $mb->find_dist_packages;
 
-# _or_ use $ENV variables to exchange state
-## untaint
-#my $module_name = untaint( $ENV{_BUILD_module_name} );
+plan tests => scalar( keys %{$packages_href} );
 
+foreach my $module_name ( sort keys %{$packages_href} ) {
 # SKIP: {
     my $message = 'Missing $module_name';
     if (!defined($module_name)) {
@@ -36,8 +34,10 @@ my $module_name = $mb->module_name;
         }
     use_ok( $module_name );
 #    }
+    diag( qq{$module_name, v}. ${$packages_href}{$module_name}{version} );
+    }
 
-diag( (defined($module_name) ? qq{$module_name, }:q{}) . "$^O, perl v$], $^X");
+diag("$^O, perl v$], $^X");
 
 
 #### SUBs ---------------------------------------------------------------------------------------##
