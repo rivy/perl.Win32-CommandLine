@@ -12,33 +12,36 @@ use warnings;
 my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;  # DISABLE buffering (enable autoflush) on STDIN, STDOUT, and STDERR (keeps output in order)
 }
 
-use Test::More;
+use Test::More;     # included with perl v5.6.2+
 
-plan skip_all => 'TAINT mode not supported (Module::Build is eval tainted)' if in_taint_mode();
+use version qw//;
+my @modules = ( 'CPAN::Meta' );  # @modules = ( '<MODULE> [<MIN_VERSION> [<MAX_VERSION>]]', ... )
+my $haveRequired = 1;
+foreach (@modules) {my ($module, $min_v, $max_v) = /\S+/gmsx; my $v = eval "require $module; $module->VERSION();"; if ( !$v || ($min_v && ($v < version->new($min_v))) || ($max_v && ($v > version->new($max_v))) ) { $haveRequired = 0; my $out = $module . ($min_v?' [v'.$min_v.($max_v?" - $max_v":'+').']':q//); diag("$out is not available"); }}  ## no critic (ProhibitStringyEval)
 
+plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if not $haveRequired;
 
-use Module::Build;
+my $metaFile = q//;
+    $metaFile = 'META.json' if (($metaFile eq q//) && (-f 'META.json'));
+    $metaFile = 'META.yaml' if (($metaFile eq q//) && (-f 'META.yaml'));
+my $haveMetaFile = ($metaFile ne q//);
+my $haveNonEmptyMetaFile = $haveMetaFile && (-s $metaFile);
+my $meta_ref = CPAN::Meta->load_file( $metaFile );
+my $packages_href = (defined $meta_ref) ? $meta_ref->{provides} : undef;
 
-my $mb = Module::Build->current();
+plan tests => scalar( defined $packages_href ? keys %{$packages_href} : 0 );
 
-my $packages_href = $mb->find_dist_packages;
-
-plan tests => scalar( keys %{$packages_href} );
+diag("$^O, perl v$], $^X");
 
 foreach my $module_name ( sort keys %{$packages_href} ) {
-# SKIP: {
     my $message = 'Missing $module_name';
     if (!defined($module_name)) {
         diag $message;
         skip $message, 1;
         }
     use_ok( $module_name );
-#    }
-    diag( qq{$module_name, v}. ${$packages_href}{$module_name}{version} );
+    diag( qq{$module_name, v${$packages_href}{$module_name}{version}} );
     }
-
-diag("$^O, perl v$], $^X");
-
 
 #### SUBs ---------------------------------------------------------------------------------------##
 

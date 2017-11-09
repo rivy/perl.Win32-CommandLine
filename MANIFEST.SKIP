@@ -28,8 +28,8 @@
 ^${dist_name}-${dist_version}-[^/]*\.par$
 ^${dist_name}-${dist_version}/
 
-# :: Avoid VERSION
-^VERSION$
+# # :: Avoid VERSION
+# ^VERSION$
 
 # :: compiler detrus in the lib directory
 ^lib/.*\.(bs|c|def|obj|o|pdb|base|exp|lds|lib|ccs)$
