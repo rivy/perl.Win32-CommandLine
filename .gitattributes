@@ -1,2 +1,2 @@
-*.bat		eol=crlf
-bin/*.bat   eol=crlf
+*.{bat,[bB][aA][tT]}    text eol=crlf
+*.{cmd,[cC][mM][dD]}    text eol=crlf
