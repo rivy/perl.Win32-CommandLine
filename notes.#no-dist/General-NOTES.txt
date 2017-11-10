@@ -69,7 +69,7 @@ Notify Module::Build folks RE: BUGS found: (1) BUGs in ACTION_realclean (as of v
 Notify ExtUtils::Manifest folks RE: BUGS found: (1) BUG in maniskip (as of v1.54)
 
 NOTE: Csharp usability though msscript.ocx
-	* give steps to add reference and compile example code (from perl-in-cs tests)
+    * give steps to add reference and compile example code (from perl-in-cs tests)
 
 NOTE: Need to occasionally check build/test/install cycle with MSVC (vcvars, ...).
 
@@ -81,7 +81,7 @@ SIGNING
 
 build sign
 cpansign => verifies SIGNATURE
-build clean		(DOESN'T remove META info or MANIFEST)
+build clean     (DOESN'T remove META info or MANIFEST)
 cpansign => SUCCEEDS
 erase MANIFEST, META.yml, and/or Makefile.PL
 cpansign => fails (missing file errors)
@@ -111,9 +111,9 @@ ADD NOTE to installation that any perl alias using x.bat must be deleted/unalias
 I don't see any way around this as x.bat will be wrapping any perl call ... would need a hand off to a non-wrapped execution with termination of the current process before the unwrapped execution gets to changing x.bat.
 
 if perl is aliased to 'x perl ...' then installs will fail with:
-	"ppm install failed: Can't rename as C:/Perl/site/bin/x.bat.ppmbak: Permission denied"	{xx.bat is in-use}
-	_or_
-	"ppm install failed: Can't save to C:/Perl/site/lib/auto/Win32/CommandLine/CommandLine.dll.ppmbak since it exists" {CommandLine.dll was in-use and not removed}
+    "ppm install failed: Can't rename as C:/Perl/site/bin/x.bat.ppmbak: Permission denied"  {xx.bat is in-use}
+    _or_
+    "ppm install failed: Can't save to C:/Perl/site/lib/auto/Win32/CommandLine/CommandLine.dll.ppmbak since it exists" {CommandLine.dll was in-use and not removed}
 because x.bat is in use and can't be renamed
 ppm is a batch file which uses perl internally ... so an alias to 'x perl ...' will keep x.bat in use while executing the install command
 
@@ -121,14 +121,14 @@ workaround: unalias perl
 re-run "build install" or "ppm install Win32-Command..."
 
 * ADD this notation to the suggestion to alias perl to ...
-	- maybe, in the future, perl could be compiled with this module in mind to avoid the need to alias it...
+    - maybe, in the future, perl could be compiled with this module in mind to avoid the need to alias it...
 
 4NT/TCC/TCMD
 
 Note % issue:
 
-for cmd.exe: 	%<any> => %<any> if it doesn't match a variable; %% => %%
-for 4NT: 		%<any> => <null> if it doesn't match a variable; %% => %
+for cmd.exe:    %<any> => %<any> if it doesn't match a variable; %% => %%
+for 4NT:        %<any> => <null> if it doesn't match a variable; %% => %
 
 x.bat is designed not to reinterpret 4NT %'s otherwise %%%% would be required for each % in the final command line
 
@@ -172,15 +172,15 @@ in order to test x.bat:
 
 x -S cd ~
 x -S cd ~1
-x perl -e "print `x -e t/*.t`"		NOTE: x perl -e "print `x -e t\*.t`" prints "t*.t" as output (because the \* => * ... need to check and fix this...
-											CHECK this WITH: x perl -e "print `x -e t\*.t`" vs x perl -e "print `x -e t/*.t`"
-											==> it's eaten by PERL not reinterpretation => so this is OK (NOT FIX NEEDED)
+x perl -e "print `x -e t/*.t`"      NOTE: x perl -e "print `x -e t\*.t`" prints "t*.t" as output (because the \* => * ... need to check and fix this...
+                                            CHECK this WITH: x perl -e "print `x -e t\*.t`" vs x perl -e "print `x -e t/*.t`"
+                                            ==> it's eaten by PERL not reinterpretation => so this is OK (NOT FIX NEEDED)
 x perl -e "use Env::Path qw(PATH); print join(qq{\n},PATH->Whence('wh*'));"
-[SHOULD FAIL <unless aliased>] 		perl -e 'print 10'
-[SUCCEEDS with X] 					x perl -e 'print 10'
+[SHOULD FAIL <unless aliased>]      perl -e 'print 10'
+[SUCCEEDS with X]                   x perl -e 'print 10'
 [ADD redirection character tests]
-	x echo test">"this
-	x echo test ">" * 'true"test'
+    x echo test">"this
+    x echo test ">" * 'true"test'
 x -a edit $(which which)
 x edit $(which which)
 x -e //sethra/c$/*
@@ -189,7 +189,7 @@ x -e \\sethra/c$\*
 x -e //sethra\c$\*
 
 $version_output = `ver`;
-x -e set os_version=$(ver)	=> expect "set os_version=".$version_output
+x -e set os_version=$(ver)  => expect "set os_version=".$version_output
 
 to ~
 to 1
@@ -206,11 +206,11 @@ ADD nant build steps for anything in extras/ with copy from original dirs and fa
 
 TESTS
 
-xx 	== eXpand command line and eXecute
-	xx -S	==>	source expanded command line (eg, as if typed in to command line directly)
-	xx -S -o ?? source/execute output of expanded command line
-xo	== eXecute Output (execute output of remaining command line as source
-	[NOT] xo -S	==> source output == non-sourcing of output is not really needed
+xx  == eXpand command line and eXecute
+    xx -S   ==> source expanded command line (eg, as if typed in to command line directly)
+    xx -S -o ?? source/execute output of expanded command line
+xo  == eXecute Output (execute output of remaining command line as source
+    [NOT] xo -S ==> source output == non-sourcing of output is not really needed
 
 
 
@@ -224,9 +224,9 @@ NOTES
 NEW UTILITIES
 
 quote
-	-auto == default ($^O = MSWin => dosify o/w unixify)
-	-dosify|dos|d
-	-unixify|unix|u|bash|b
+    -auto == default ($^O = MSWin => dosify o/w unixify)
+    -dosify|dos|d
+    -unixify|unix|u|bash|b
 
 ADD to documentation
 

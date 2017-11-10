@@ -6,7 +6,7 @@
 # URLref: http://support.microsoft.com/kb/257592 [@2011-04-15.1413@ http://www.webcitation.org/5xyByI4jS ]
 
 # Machine settings for file extensions are in [HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.EXTENSION] (which seem to be aliases of [HKEY_CLASSES_ROOT\.EXTENSION])
-# User settings for file extensions are in [HKEY_CURRENT_USER\Software\Classes\.EXTENSION], overriding the machine level settings in 
+# User settings for file extensions are in [HKEY_CURRENT_USER\Software\Classes\.EXTENSION], overriding the machine level settings in
 # Explorer settings for file extensions are in [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.EXTENSION], and override/trump both above settings/locations
 # ... it looks like the explorer settings can be removed and they will be re-created correctly, as needed
 

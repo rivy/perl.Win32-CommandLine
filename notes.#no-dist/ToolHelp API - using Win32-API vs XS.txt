@@ -3,125 +3,125 @@
 # TODO: expand and clarify HowTO and differences ...
 
 sub _getparentname {
-	## no critic ( ProhibitConstantPragma ProhibitPunctuationVars ) # ToDO: remove/revisit
-	# _getparentname( <null> ): returns $
-	# find parent process ID and return the exe name
-	# TODO?: add to .xs and remove Win32::API recommendation/dependence
-	# ToDO: look into Win32::ToolHelp (currently, doesn't compile under later ActivePerl or strawberry 5.12)
-	##my $have_Win32_API = eval { require Win32::API; 1; };
-	my $have_Win32_API = 1;
-	if ($have_Win32_API) {
-		# modified from prior anon author
-		##my $CreateToolhelp32Snapshot;		# define API calls
-		##my $Process32First;
-		##my $Process32Next;
-		##my $CloseHandle;
-		##
-		##if (not defined $CreateToolhelp32Snapshot) {
-		##	#$CreateToolhelp32Snapshot = new Win32::API ('kernel32','CreateToolhelp32Snapshot', 'II', 'N') or die "import CreateToolhelp32Snapshot: $!($^E)";
-		##	#$Process32First = new Win32::API ('kernel32', 'Process32First','IP', 'N') or die "import Process32First: $!($^E)";
-		##	#$Process32Next = new Win32::API ('kernel32', 'Process32Next', 'IP','N') or die "import Process32Next: $!($^E)";
-		##	#$CloseHandle = new Win32::API ('kernel32', 'CloseHandle', 'I', 'N') or die "import CloseHandle: $!($^E)";
-		##	{
-		##	## no critic ( ProhibitIndirectSyntax ) ## ToDO: remove/revisit
-		##	$CreateToolhelp32Snapshot = new Win32::API ('kernel32','CreateToolhelp32Snapshot', 'II', 'N') or return;
-		##	$Process32First = new Win32::API ('kernel32', 'Process32First','IP', 'N') or return;
-		##	$Process32Next = new Win32::API ('kernel32', 'Process32Next', 'IP','N') or return;
-		##	$CloseHandle = new Win32::API ('kernel32', 'CloseHandle', 'I', 'N') or return;
-		##	}
-		##}
-		##
-		use constant TH32CS_SNAPPROCESS => 0x00000002;
-		use constant INVALID_HANDLE_VALUE => -1;
-		use constant MAX_PATH => 260;
+    ## no critic ( ProhibitConstantPragma ProhibitPunctuationVars ) # ToDO: remove/revisit
+    # _getparentname( <null> ): returns $
+    # find parent process ID and return the exe name
+    # TODO?: add to .xs and remove Win32::API recommendation/dependence
+    # ToDO: look into Win32::ToolHelp (currently, doesn't compile under later ActivePerl or strawberry 5.12)
+    ##my $have_Win32_API = eval { require Win32::API; 1; };
+    my $have_Win32_API = 1;
+    if ($have_Win32_API) {
+        # modified from prior anon author
+        ##my $CreateToolhelp32Snapshot;     # define API calls
+        ##my $Process32First;
+        ##my $Process32Next;
+        ##my $CloseHandle;
+        ##
+        ##if (not defined $CreateToolhelp32Snapshot) {
+        ##  #$CreateToolhelp32Snapshot = new Win32::API ('kernel32','CreateToolhelp32Snapshot', 'II', 'N') or die "import CreateToolhelp32Snapshot: $!($^E)";
+        ##  #$Process32First = new Win32::API ('kernel32', 'Process32First','IP', 'N') or die "import Process32First: $!($^E)";
+        ##  #$Process32Next = new Win32::API ('kernel32', 'Process32Next', 'IP','N') or die "import Process32Next: $!($^E)";
+        ##  #$CloseHandle = new Win32::API ('kernel32', 'CloseHandle', 'I', 'N') or die "import CloseHandle: $!($^E)";
+        ##  {
+        ##  ## no critic ( ProhibitIndirectSyntax ) ## ToDO: remove/revisit
+        ##  $CreateToolhelp32Snapshot = new Win32::API ('kernel32','CreateToolhelp32Snapshot', 'II', 'N') or return;
+        ##  $Process32First = new Win32::API ('kernel32', 'Process32First','IP', 'N') or return;
+        ##  $Process32Next = new Win32::API ('kernel32', 'Process32Next', 'IP','N') or return;
+        ##  $CloseHandle = new Win32::API ('kernel32', 'CloseHandle', 'I', 'N') or return;
+        ##  }
+        ##}
+        ##
+        use constant TH32CS_SNAPPROCESS => 0x00000002;
+        use constant INVALID_HANDLE_VALUE => -1;
+        use constant MAX_PATH => 260;
 
-		#use constant TH32CS_SNAPPROCESS => _const_TH32CS_SNAPPROCESS();
-		#use constant INVALID_HANDLE_VALUE => _const_INVALID_HANDLE_VALUE();
-		#use constant MAX_PATH => _const_MAX_PATH();
-
-		
-		# Take a snapshot of all processes in the system.
-
-		##my $hProcessSnap = $CreateToolhelp32Snapshot-> Call(TH32CS_SNAPPROCESS, 0);
-		my $hProcessSnap = Win32::CommandLine::_wrap_CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
-		#die "CreateToolhelp32Snapshot: $!($^E)" if $hProcessSnap == INVALID_HANDLE_VALUE;
-		return (undef) if $hProcessSnap == INVALID_HANDLE_VALUE;
-
-		##my $pack_template = '@0L! @4L! @8L! @16P @24L! @28L! @32L! @36l! @40L! @44Z260';
-
-		##my $dwSize = MAX_PATH + 36;  								## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-		##my $pe32 = pack $pack_template, $dwSize, 0 x 8, '0' x MAX_PATH;  	## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-		##my $lppe32 = pack 'P', $pe32;
-
-		my @info_PROCESSENTRY32 = @{Win32::CommandLine::_info_PROCESSENTRY32()};
-		my @info_PROCESSENTRY32_struct = @info_PROCESSENTRY32[ 1 .. @info_PROCESSENTRY32-1 ];
-		my $PROCESSENTRY32_template;
-		for my $element ( @info_PROCESSENTRY32_struct )
-			{
-			$PROCESSENTRY32_template .= ( $PROCESSENTRY32_template ? q{ } : q{} );
-			$PROCESSENTRY32_template .= q{@}.join(q{}, @{$element}[ 2 .. @{$element}-1]);
-			}
-		
-		my $dwSize = length pack $PROCESSENTRY32_template;
-		my $pe32 = pack $PROCESSENTRY32_template, $dwSize, 0 x 8, '0' x MAX_PATH;  	## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-		my $lppe32 = unpack 'J', ( pack 'P', $pe32 );
+        #use constant TH32CS_SNAPPROCESS => _const_TH32CS_SNAPPROCESS();
+        #use constant INVALID_HANDLE_VALUE => _const_INVALID_HANDLE_VALUE();
+        #use constant MAX_PATH => _const_MAX_PATH();
 
 
-		# Retrieve information about the first process, and exit if unsuccessful
-		my %exes;
-		my %ppids;
-		##my $ret = $Process32First-> Call($hProcessSnap, $pe32);
-		my $ret = Win32::CommandLine::_wrap_Process32First( $hProcessSnap, $lppe32 );
-		do {
-			if (not $ret) {
-				##$CloseHandle-> Call($hProcessSnap);
-				Win32::CommandLine::_wrap_CloseHandle( $hProcessSnap );
-				Carp::carp "Process32First: ret=$ret, $!($^E)";
-				#last;
-				return;
-			}
+        # Take a snapshot of all processes in the system.
 
-			# return ppid if pid == my pid
+        ##my $hProcessSnap = $CreateToolhelp32Snapshot-> Call(TH32CS_SNAPPROCESS, 0);
+        my $hProcessSnap = Win32::CommandLine::_wrap_CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
+        #die "CreateToolhelp32Snapshot: $!($^E)" if $hProcessSnap == INVALID_HANDLE_VALUE;
+        return (undef) if $hProcessSnap == INVALID_HANDLE_VALUE;
 
-			##my $th32ProcessID = unpack 'I', substr $pe32, 8, 4;			## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-			##my $th32ParentProcessID = unpack 'I', substr $pe32, 24, 4;	## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-			##my $szEXE = q{};
-			##my $i = 36;													## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-			##my $c = unpack 'C', substr $pe32, $i, 1;
-			##while ($c) { $szEXE .= chr($c); $i++; $c = unpack 'C', substr $pe32, $i, 1; }
+        ##my $pack_template = '@0L! @4L! @8L! @16P @24L! @28L! @32L! @36l! @40L! @44Z260';
 
-			my $th32ProcessID;
-			my $th32ParentProcessID;
-			my $szEXE;
+        ##my $dwSize = MAX_PATH + 36;                               ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+        ##my $pe32 = pack $pack_template, $dwSize, 0 x 8, '0' x MAX_PATH;   ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+        ##my $lppe32 = pack 'P', $pe32;
 
-			(undef, undef, $th32ProcessID, undef, undef, undef, $th32ParentProcessID, undef, undef, $szEXE) = unpack( $PROCESSENTRY32_template, $pe32 );
+        my @info_PROCESSENTRY32 = @{Win32::CommandLine::_info_PROCESSENTRY32()};
+        my @info_PROCESSENTRY32_struct = @info_PROCESSENTRY32[ 1 .. @info_PROCESSENTRY32-1 ];
+        my $PROCESSENTRY32_template;
+        for my $element ( @info_PROCESSENTRY32_struct )
+            {
+            $PROCESSENTRY32_template .= ( $PROCESSENTRY32_template ? q{ } : q{} );
+            $PROCESSENTRY32_template .= q{@}.join(q{}, @{$element}[ 2 .. @{$element}-1]);
+            }
 
-			$ppids{$th32ProcessID} = $th32ParentProcessID;
-			$exes{$th32ProcessID} = $szEXE;
-		#	if ($$ == $th32ProcessID)
-		#		{
-		#		#print "thisEXE = $szEXE\n";
-		#		#print "parentPID = $th32ParentProcessID\n";
-		#		return $th32ParentProcessID;
-		#		}
-			#return unpack ('I', substr $pe32, 24, 4) if $$ == $th32ProcessID;
+        my $dwSize = length pack $PROCESSENTRY32_template;
+        my $pe32 = pack $PROCESSENTRY32_template, $dwSize, 0 x 8, '0' x MAX_PATH;   ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+        my $lppe32 = unpack 'J', ( pack 'P', $pe32 );
 
-		##} while ($Process32Next-> Call($hProcessSnap, $pe32));
-		} while (Win32::CommandLine::_wrap_Process32Next( $hProcessSnap, $lppe32 ));
 
-		##$CloseHandle-> Call($hProcessSnap);
-		Win32::CommandLine::_wrap_CloseHandle( $hProcessSnap );
+        # Retrieve information about the first process, and exit if unsuccessful
+        my %exes;
+        my %ppids;
+        ##my $ret = $Process32First-> Call($hProcessSnap, $pe32);
+        my $ret = Win32::CommandLine::_wrap_Process32First( $hProcessSnap, $lppe32 );
+        do {
+            if (not $ret) {
+                ##$CloseHandle-> Call($hProcessSnap);
+                Win32::CommandLine::_wrap_CloseHandle( $hProcessSnap );
+                Carp::carp "Process32First: ret=$ret, $!($^E)";
+                #last;
+                return;
+            }
 
-		if ($ppids{$$}) {
-			#print "ENV{CMDLINE} = $ENV{CMDLINE}\n";
-			#print "thisEXE = $exes{$$}\n";
-			#print "parentEXE = $exes{$ppids{$$}}\n";
-			#return $ppids{$$};
-			##$parentEXE = $exes{$ppids{$$}};
-			return $exes{$ppids{$$}};
-			}
-		#return;
-		}
-	return;
+            # return ppid if pid == my pid
+
+            ##my $th32ProcessID = unpack 'I', substr $pe32, 8, 4;           ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+            ##my $th32ParentProcessID = unpack 'I', substr $pe32, 24, 4;    ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+            ##my $szEXE = q{};
+            ##my $i = 36;                                                   ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+            ##my $c = unpack 'C', substr $pe32, $i, 1;
+            ##while ($c) { $szEXE .= chr($c); $i++; $c = unpack 'C', substr $pe32, $i, 1; }
+
+            my $th32ProcessID;
+            my $th32ParentProcessID;
+            my $szEXE;
+
+            (undef, undef, $th32ProcessID, undef, undef, undef, $th32ParentProcessID, undef, undef, $szEXE) = unpack( $PROCESSENTRY32_template, $pe32 );
+
+            $ppids{$th32ProcessID} = $th32ParentProcessID;
+            $exes{$th32ProcessID} = $szEXE;
+        #   if ($$ == $th32ProcessID)
+        #       {
+        #       #print "thisEXE = $szEXE\n";
+        #       #print "parentPID = $th32ParentProcessID\n";
+        #       return $th32ParentProcessID;
+        #       }
+            #return unpack ('I', substr $pe32, 24, 4) if $$ == $th32ProcessID;
+
+        ##} while ($Process32Next-> Call($hProcessSnap, $pe32));
+        } while (Win32::CommandLine::_wrap_Process32Next( $hProcessSnap, $lppe32 ));
+
+        ##$CloseHandle-> Call($hProcessSnap);
+        Win32::CommandLine::_wrap_CloseHandle( $hProcessSnap );
+
+        if ($ppids{$$}) {
+            #print "ENV{CMDLINE} = $ENV{CMDLINE}\n";
+            #print "thisEXE = $exes{$$}\n";
+            #print "parentEXE = $exes{$ppids{$$}}\n";
+            #return $ppids{$$};
+            ##$parentEXE = $exes{$ppids{$$}};
+            return $exes{$ppids{$$}};
+            }
+        #return;
+        }
+    return;
 }
 

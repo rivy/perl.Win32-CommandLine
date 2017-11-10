@@ -9,9 +9,9 @@ use Test::Differences;
 my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; };
 
 if ( !$ENV{HARNESS_ACTIVE} ) {
-	# not executing under Test::Harness
-	use lib qw{ lib };		# for ease of testing from command line and testing immediacy, use the 'lib' version (so 'blib/arch' version doesn't have to be updated 1st)
-	}
+    # not executing under Test::Harness
+    use lib qw{ lib };      # for ease of testing from command line and testing immediacy, use the 'lib' version (so 'blib/arch' version doesn't have to be updated 1st)
+    }
 
 use Win32::CommandLine;
 
@@ -20,7 +20,7 @@ sub test_num;
 sub do_tests;
 
 # setup a known environment
-$ENV{nullglob} = 0;  	## no critic ( RequireLocalizedPunctuationVars ) ## ToDO: remove/revisit
+$ENV{nullglob} = 0;     ## no critic ( RequireLocalizedPunctuationVars ) ## ToDO: remove/revisit
 
 # Tests
 
@@ -52,9 +52,9 @@ add_test( [ qq{$0 "a b" c"" } ], ( "a b", "c" ) );
 
 add_test( [ qq{$0 "a b" c""d } ], ( "a b", "cd" ) );
 
-add_test( [ qq{$0 'a b" c'} ], ( qq{a b" c} ) );	##"
+add_test( [ qq{$0 'a b" c'} ], ( qq{a b" c} ) );    ##"
 
-add_test( [ qq{$0 'a bb" c'} ], ( qq{a bb" c} ) );	##"
+add_test( [ qq{$0 'a bb" c'} ], ( qq{a bb" c} ) );  ##"
 
 add_test( [ qq{$0 \$'test'} ], ( qq{test} ) );
 
@@ -80,7 +80,7 @@ add_test( [ qq{$0 a b c t/\*.t} ], ( qw{a b c}, glob('t/*.t') ) );
 
 add_test( [ qq{$0 a t/\*.t b} ], ( "a", glob('t/*.t'), "b" ) );
 
-add_test( [ qq{$0 t/\"*".t} ], ( q{t/*.t} ) );	##"
+add_test( [ qq{$0 t/\"*".t} ], ( q{t/*.t} ) );  ##"
 
 add_test( [ qq{$0 t/\'*'.t} ], ( q{t/*.t} ) );
 
@@ -126,15 +126,15 @@ add_test( [ qq{$0 't\\glob-file.tests\\'*x} ], ( q{t\\glob-file.tests\\*x} ) );
 #
 
 if ($ENV{TEST_FRAGILE}) {
-	## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
-	##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
-	add_test( [ qq{$0 ~*} ], ( q{~*} ) );
-	add_test( [ qq{$0 ~} ], ( unixify($ENV{USERPROFILE}) ) );
-	add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
-	add_test( [ qq{$0 ~$ENV{USERNAME}/} ], ( unixify($ENV{USERPROFILE}.q{/}) ) );
-	add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], ( 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ) );
-	##
-	}
+    ## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
+    ##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
+    add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+    add_test( [ qq{$0 ~} ], ( unixify($ENV{USERPROFILE}) ) );
+    add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+    add_test( [ qq{$0 ~$ENV{USERNAME}/} ], ( unixify($ENV{USERPROFILE}.q{/}) ) );
+    add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], ( 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ) );
+    ##
+    }
 
 # rule tests
 # non-globbed tokens should stay the same
@@ -158,7 +158,7 @@ plan tests => test_num() + ($haveTestNoWarnings ? 1 : 0);
 do_tests(); # test re-parsing of command_line() by argv()
 ##
 my @tests;
-sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }		## NOTE: caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
+sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }       ## NOTE: caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
 sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; eval { @got = Win32::CommandLine::_argv(@args); 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
@@ -166,22 +166,22 @@ sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shi
 #### SUBs
 
 sub dosify{
-	# use Win32::CommandLine::_dosify
-	use Win32::CommandLine;
-	return Win32::CommandLine::_dosify(@_);	## no critic ( ProtectPrivateSubs )
+    # use Win32::CommandLine::_dosify
+    use Win32::CommandLine;
+    return Win32::CommandLine::_dosify(@_); ## no critic ( ProtectPrivateSubs )
 }
 
 sub unixify{
-	# _unixify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
-	# unixify string, returning a string which has unix correct slashes
-	@_ = @_ ? @_ : $_ if defined wantarray;		## no critic (ProhibitPostfixControls)	## break aliasing if non-void return context
+    # _unixify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+    # unixify string, returning a string which has unix correct slashes
+    @_ = @_ ? @_ : $_ if defined wantarray;     ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
-	## no critic ( ProhibitUnusualDelimiters )
+    ## no critic ( ProhibitUnusualDelimiters )
 
-	for (@_ ? @_ : $_)
-		{
-		s:\\:\/:g;
-		}
+    for (@_ ? @_ : $_)
+        {
+        s:\\:\/:g;
+        }
 
-	return wantarray ? @_ : "@_";
+    return wantarray ? @_ : "@_";
 }

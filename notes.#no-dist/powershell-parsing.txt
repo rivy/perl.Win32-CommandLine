@@ -1,12 +1,12 @@
 Powershell parses the command line prior to handing off to CMD for commands and this can cause abnormal parsing behavior:
 
-	"mycmd.pl '..\X'*" is parsed as "mycmd.pl '..\X' *" seperating the wildcard into a seperate argument.
-	This is caused by pre-parsing in powershell... 
-		? change powershell handling? is there a way to detect this within the command?
-		
-	* strangely, this happens only for perl files x.pl whether executed as perl x.pl or just x.pl (eg, "x.bat -a '..\X'*" works just fine)
-	
-	
+    "mycmd.pl '..\X'*" is parsed as "mycmd.pl '..\X' *" seperating the wildcard into a seperate argument.
+    This is caused by pre-parsing in powershell...
+        ? change powershell handling? is there a way to detect this within the command?
+
+    * strangely, this happens only for perl files x.pl whether executed as perl x.pl or just x.pl (eg, "x.bat -a '..\X'*" works just fine)
+
+
 NOTES/TESTs
 
 [THIS WORKS...]
@@ -96,20 +96,20 @@ $ARGV[3] = 't-echo.pl'
 POWERSHELL PROBLEMS
 
 Has it's own quirky parser
-	eg:
-		"c:\"* => "c\:" *
-		c:\D` &` S\* => "C:\D & S\*" 
-		"" => <nothing>
-		$'test\t' => $test\t
-		
+    eg:
+        "c:\"* => "c\:" *
+        c:\D` &` S\* => "C:\D & S\*"
+        "" => <nothing>
+        $'test\t' => $test\t
+
 [???]
 Use _CMDLINE if parent is not command.com, cmd.com, tcc.exe, 4nt.exe (? command, cmd, tcc, 4nt == no extensions)
-	- consume it? -- can't consume parent version
-	- there's a problem if not set by that command processor (? use a config argument to shut it down?)
-		- sanity checking to make sure command is the current one executing
-		- any sanity checking on args?
-		
-		
+    - consume it? -- can't consume parent version
+    - there's a problem if not set by that command processor (? use a config argument to shut it down?)
+        - sanity checking to make sure command is the current one executing
+        - any sanity checking on args?
+
+
 REBUILD commandline ...
 
 
@@ -117,5 +117,5 @@ POWERSHELL Workaround
 
 Use ImprovedTab TabExpansion to automatically prefix launcher for "legacy" applications
 launcher = x
-	REBUILD commandline & launch it
-	
+    REBUILD commandline & launch it
+

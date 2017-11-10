@@ -39,29 +39,29 @@ CHANGED: comment and documentation improvements
 
 
 * [2012-03-18]
-	* wait for CPAN indexing and testing of 0.5.5_N
-	* if all goes well, update documentation
-	* upgrade version to 0.6.0 and distribute
-	* update Changelog
-		* example, see URLref: https://metacpan.org/diff/release/AZAWAWI/Wx-Scintilla-0.17/AZAWAWI/Wx-Scintilla-0.19 @@ http://www.webcitation.org/66LVcM5mo
+    * wait for CPAN indexing and testing of 0.5.5_N
+    * if all goes well, update documentation
+    * upgrade version to 0.6.0 and distribute
+    * update Changelog
+        * example, see URLref: https://metacpan.org/diff/release/AZAWAWI/Wx-Scintilla-0.17/AZAWAWI/Wx-Scintilla-0.19 @@ http://www.webcitation.org/66LVcM5mo
 
 * change to new HG EOL strategy; needs some thought
-	* .bat all need CRLF upon checkout (probably should by in repo with same) because of the goto LABEL bug for non-CRLF EOL bat files; in general, all others should be LF, checked in and changed to LF, checked out as LF
-	* hgeol seems kludgy, look at it, and see of it can be made to default to such a plan
+    * .bat all need CRLF upon checkout (probably should by in repo with same) because of the goto LABEL bug for non-CRLF EOL bat files; in general, all others should be LF, checked in and changed to LF, checked out as LF
+    * hgeol seems kludgy, look at it, and see of it can be made to default to such a plan
 
 for t\98.version.t and t\98.version-defaults.t
-	# ToDO: discuss the method of avoiding MM->parse_version() taint on PerlMonks (is there a better, less kludgy way?)
-	      * same for signature (overriding ExtUtils::Manifest::manifind() (better way?)
+    # ToDO: discuss the method of avoiding MM->parse_version() taint on PerlMonks (is there a better, less kludgy way?)
+          * same for signature (overriding ExtUtils::Manifest::manifind() (better way?)
 
 :: TAINT
 * DONE (as initial step) :: current thought => remove -T from shebang for ALL tests and run seperate full taint tests using 'build taint_test' and 'build taint_testall'
 * think about running all tests under taint for TEST_AUTHOR ( TEST_ALL would still test all but not add taint checking, or maybe set TEST_TAINT ... this can break installs and may be set inadvertantly or for another cause, maybe a longer name, less likely to conflict with other uses)
 * URLref: [Why a taint flag on test files?] http://www.perlmonks.org/?node_id=499986
 * discuss taint ramifications on PerlMonks and/or StackOverflow especially under Win32
-	* $ENV{PERL5SHELL} (is it tainted, why/why not, how do you correct it if user is running an alternate shell, doesn that matter ... can we just use CMD)
-	* $ENV{PATH} ( this is important and VERY user dependent, can't just lop off the entire PATH, things like strawberry Perl, etc need to be on the PATH to run... )
-	* temporary files? where to put them... can we easily get a current user name / directory that's not tainted (eg, from %ENV)
-	* $ENV{SystemRoot} ... windows can be installed in multiple locations (at least x:\windows and x:\winnt), how do we find it taint-free to be able to use needed standard executables?
+    * $ENV{PERL5SHELL} (is it tainted, why/why not, how do you correct it if user is running an alternate shell, doesn that matter ... can we just use CMD)
+    * $ENV{PATH} ( this is important and VERY user dependent, can't just lop off the entire PATH, things like strawberry Perl, etc need to be on the PATH to run... )
+    * temporary files? where to put them... can we easily get a current user name / directory that's not tainted (eg, from %ENV)
+    * $ENV{SystemRoot} ... windows can be installed in multiple locations (at least x:\windows and x:\winnt), how do we find it taint-free to be able to use needed standard executables?
 
 DONE :: ? get rid of the passthrough warning (skip passthrough?) => very annoying, so removed by using simple PASSTHROUGH option (without download) and continuing to specify Module::Build as required to build in META.yml
 
@@ -73,7 +73,7 @@ build testall
 FIXED :: (was a GnuPG error with the gpg-agent holding open files; upgraded to newest GnuPG and error went away (or it's at least occurring only rarely now) :: causes a hang at the 1st test signature; retesting with 'build testall' works just fine
 
 track this down
-	* doesn't look like the test is ever executed... look in Build.PL
+    * doesn't look like the test is ever executed... look in Build.PL
 
 ---<output>
 c:\@local\@projects\perl\Win32-CommandLine>build
@@ -181,21 +181,21 @@ Failed 1/22 test programs. 1/225 subtests failed.
 ---<output>
 
 FOR:
-	build realclean & perl Build.PL & build testall
+    build realclean & perl Build.PL & build testall
 
 HANGS @ TAP::Parser::Iterator::Process.pm, line #292
 
 "my $line = <$out>;" is the problem
 
 ----<sub>
-	            return sub {
-	                if ( defined( my $line = <$out> ) ) {
-	                    chomp $line;
-	                    return $line;
-	                }
-	                $self->_finish;
-	                return;
-	            };
+                return sub {
+                    if ( defined( my $line = <$out> ) ) {
+                        chomp $line;
+                        return $line;
+                    }
+                    $self->_finish;
+                    return;
+                };
 ----<sub>
 
 looks like $out (an IO::Handle) hangs here when read with <$out> or $out->getline, although $out->opened => 1 and $out->error => 0
@@ -213,28 +213,28 @@ might not be fixable... run3 also fails
 *** The error is caused by the QUIET manifest I/O redirection here:
 
 ----<code>
-		# URLref: [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136
-		my ($OUT, $o, $ERR, $e);
-## =>	$quiet=0;
-		if ( $quiet ) {
-	        print "REDIRECTING\n";
-			# redirect STDOUT/STDERR and suppress ACTION_manifest output
-			open($OUT,'>&STDOUT');
-			close STDOUT;
-			open STDOUT, '>', \$o or die "Unable to redirect STDOUT: $!";
-			open($ERR,'>&STDERR');
-			close STDERR;
-			open STDERR, '>', \$e or die "Unable to redirect STDERR: $!";
-			}
+        # URLref: [Close + Re-opening STDOUT] http://www.perlmonks.org/?node_id=617136
+        my ($OUT, $o, $ERR, $e);
+## =>   $quiet=0;
+        if ( $quiet ) {
+            print "REDIRECTING\n";
+            # redirect STDOUT/STDERR and suppress ACTION_manifest output
+            open($OUT,'>&STDOUT');
+            close STDOUT;
+            open STDOUT, '>', \$o or die "Unable to redirect STDOUT: $!";
+            open($ERR,'>&STDERR');
+            close STDERR;
+            open STDERR, '>', \$e or die "Unable to redirect STDERR: $!";
+            }
 
         $self->SUPER::ACTION_manifest;
 
-		if ( $quiet ) {
-			# re-open STDOUT/STDERR for normal output
-	        open STDOUT, ">&", $OUT or die "can't reopen STDOUT: $!";
-	        open STDERR, ">&", $ERR or die "can't reopen STDERR: $!";
-	        print "REOPENED\n";
-			}
+        if ( $quiet ) {
+            # re-open STDOUT/STDERR for normal output
+            open STDOUT, ">&", $OUT or die "can't reopen STDOUT: $!";
+            open STDERR, ">&", $ERR or die "can't reopen STDERR: $!";
+            print "REOPENED\n";
+            }
 ----<code>
 
 . $quiet=0 fixes it ... how to correctly suppress ACTION_manifest output when needed then?

@@ -24,27 +24,27 @@ typedef struct tagXPROCESSENTRY32 {
 void main()
 {
 
-	printf("MAX_PATH = %i\n", MAX_PATH);
-	printf("sizeof  PROCESSENTRY32 = %i\n", sizeof( PROCESSENTRY32 ));
-	printf("sizeof XPROCESSENTRY32 = %i\n", sizeof( XPROCESSENTRY32 ));
+    printf("MAX_PATH = %i\n", MAX_PATH);
+    printf("sizeof  PROCESSENTRY32 = %i\n", sizeof( PROCESSENTRY32 ));
+    printf("sizeof XPROCESSENTRY32 = %i\n", sizeof( XPROCESSENTRY32 ));
 
-	Pt( XPROCESSENTRY32, dwSize, L! );
-	Pt( XPROCESSENTRY32, cntUsage, L! );
-	Pt( XPROCESSENTRY32, th32ProcessID, L! );
-	Pt( XPROCESSENTRY32, th32DefaultHeapID, P );
-	Pt( XPROCESSENTRY32, th32ModuleID, L! );
-	Pt( XPROCESSENTRY32, cntThreads, L! );
-	Pt( XPROCESSENTRY32, th32ParentProcessID, L! );
-	Pt( XPROCESSENTRY32, pcPriClassBase, l! );
-	Pt( XPROCESSENTRY32, dwFlags, L! );
-	Pt( XPROCESSENTRY32, szExeFile, Z260 );
+    Pt( XPROCESSENTRY32, dwSize, L! );
+    Pt( XPROCESSENTRY32, cntUsage, L! );
+    Pt( XPROCESSENTRY32, th32ProcessID, L! );
+    Pt( XPROCESSENTRY32, th32DefaultHeapID, P );
+    Pt( XPROCESSENTRY32, th32ModuleID, L! );
+    Pt( XPROCESSENTRY32, cntThreads, L! );
+    Pt( XPROCESSENTRY32, th32ParentProcessID, L! );
+    Pt( XPROCESSENTRY32, pcPriClassBase, l! );
+    Pt( XPROCESSENTRY32, dwFlags, L! );
+    Pt( XPROCESSENTRY32, szExeFile, Z260 );
 
 /*
-	Pt( gappy_t, fc1, c );
-	Pt( gappy_t, fs, s! );
-	Pt( gappy_t, fc2, c );
-	Pt( gappy_t, fl, l! );
+    Pt( gappy_t, fc1, c );
+    Pt( gappy_t, fs, s! );
+    Pt( gappy_t, fc2, c );
+    Pt( gappy_t, fl, l! );
 */
 
-	printf( "\n" );
+    printf( "\n" );
 }

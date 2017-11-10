@@ -7,12 +7,12 @@ use warnings;
 
 {
 ## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
-my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;	# DISABLE buffering (enable autoflush) on STDIN, STDOUT, and STDERR (keeps output in order)
+my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;  # DISABLE buffering (enable autoflush) on STDIN, STDOUT, and STDERR (keeps output in order)
 }
 
 use Test::More tests => 1;
 
-use lib qw{ blib\arch };		# use build directory XS module { NOTE: must rebuild new .DLL before testing }
+use lib qw{ blib\arch };        # use build directory XS module { NOTE: must rebuild new .DLL before testing }
 
 use_ok( $ENV{_BUILD_module_name} );
 
@@ -35,17 +35,17 @@ is( $hProcessSnap != INVALID_HANDLE_VALUE, "Snapshot handle not invalid" );
 
 return (undef) if $hProcessSnap == INVALID_HANDLE_VALUE;
 
-#	Struct PROCESSENTRY32:
-# 	DWORD dwSize;			#  0 for 4
-# 	DWORD cntUsage;			#  4 for 4
-# 	DWORD th32ProcessID;		#  8 for 4
-# 	DWORD th32DefaultHeapID;	# 12 for 4
-# 	DWORD th32ModuleID;		# 16 for 4
-# 	DWORD cntThreads;		# 20 for 4
-# 	DWORD th32ParentProcessID;	# 24 for 4
-# 	LONG  pcPriClassBase;		# 28 for 4
-# 	DWORD dwFlags;			# 32 for 4
-# 	char szExeFile[MAX_PATH];	# 36 for 260
+#   Struct PROCESSENTRY32:
+#   DWORD dwSize;           #  0 for 4
+#   DWORD cntUsage;         #  4 for 4
+#   DWORD th32ProcessID;        #  8 for 4
+#   DWORD th32DefaultHeapID;    # 12 for 4
+#   DWORD th32ModuleID;     # 16 for 4
+#   DWORD cntThreads;       # 20 for 4
+#   DWORD th32ParentProcessID;  # 24 for 4
+#   LONG  pcPriClassBase;       # 28 for 4
+#   DWORD dwFlags;          # 32 for 4
+#   char szExeFile[MAX_PATH];   # 36 for 260
 
 #  typedef struct tagPROCESSENTRY32 {
 #    DWORD dwSize;
@@ -65,11 +65,11 @@ return (undef) if $hProcessSnap == INVALID_HANDLE_VALUE;
 #my $pack_signature = 'I3PI3LIC260';
 my $pack_signature = '@0I @4I @8I @16Q @24I @28I @32I @36l @40I @44C260';
 
-my $dwSize = length pack $pack_signature;  								## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+my $dwSize = length pack $pack_signature;                               ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
 
 diag ("pack_signature = $pack_signature [length = $dwSize]");
 
-#my $dwSize = MAX_PATH + 36;  								## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-#my $pe32 = pack 'I9C260', $dwSize, 0 x 8, '0' x MAX_PATH;  	## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-my $pe32 = pack $pack_signature, $dwSize, 0 x 2, 0, 0 x 3, 0, 0, '0' x MAX_PATH;  	## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+#my $dwSize = MAX_PATH + 36;                                ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+#my $pe32 = pack 'I9C260', $dwSize, 0 x 8, '0' x MAX_PATH;      ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+my $pe32 = pack $pack_signature, $dwSize, 0 x 2, 0, 0 x 3, 0, 0, '0' x MAX_PATH;    ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
 my $lppe32 = pack 'P', $pe32;

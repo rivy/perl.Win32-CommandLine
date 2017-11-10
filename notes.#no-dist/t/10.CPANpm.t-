@@ -10,12 +10,12 @@ use Test::CPANpm;
 use Test::More qw(no_plan);
 
 cpan_depends_ok(
-	['CGI', 'Module::Build', 'Acme::Wabbit'],
-	'got the right dependancies'
-	);
+    ['CGI', 'Module::Build', 'Acme::Wabbit'],
+    'got the right dependancies'
+    );
 
 cpan_depends_ok_force_missing(
-	['Some::Module::Build::Subclass', 'CGI', 'Module::Build', 'Acme::Wabbit'],
-	['Some::Module::Build::Subclass'],
-	'got dependancies even though our Module::Build subclass is missing'
-	);
+    ['Some::Module::Build::Subclass', 'CGI', 'Module::Build', 'Acme::Wabbit'],
+    ['Some::Module::Build::Subclass'],
+    'got dependancies even though our Module::Build subclass is missing'
+    );
