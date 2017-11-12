@@ -1,16 +1,24 @@
-#(emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
+#!perl -w -- ## no critic ( RequireEndWithOne RequireExplicitPackage RequireTidyCode RequireVersionVar )
+#(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
+
 use strict;
 use warnings;
+use utf8;
+
+require SelfLoader if 0; ## no critic (ProhibitPostfixControls) ## purely a signal compelling `perltidy` to reformat code post-"__DATA__"
 
 my $output_filename = shift;
+
 use Module::Build;
 
-my $mb = Module::Build->current()->expand_template( $output_filename, [ <DATA> ] );
+binmode DATA, ':raw:utf8'; ## no critic ( RequireEncodingWithUTF8Layer ) ## utf8 + avoid EOL translations
 
-__END__
+() = Module::Build->current()->expand_template( $output_filename, [<DATA>] );
+
+__DATA__
 @rem = q{--* Perl *--
 @::# (emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
-@::# #{{$ME_ID}}#
+@::# ":{{$ME_ID}}:"
 @echo off
 :: eXpand and eXecute command line
 :: similar to linux xargs
@@ -146,7 +154,7 @@ xx - eXpand (reparse) and eXecute the command line
 
 =head1 VERSION
 
-This document describes C<xx>, v #{{$VERSION}}#.
+This document describes C<xx>, v ":{{$VERSION}}:".
 
 =head1 SYNOPSIS
 
@@ -222,22 +230,22 @@ Here are some examples of what's possible in the standard cmd and tcc shells:
     xx $( perl -MConfig -e "print $Config{ld}" ) $("perl -MExtUtils::Embed -e ldopts 2>nul") bar.o
 
 =cut
-
 use strict;
 use warnings;
 
 # VERSION: Major.minor[_alpha]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
 # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
-{;## no critic ( RequireConstantVersion )
-our $VERSION = '#{{$VERSION}}#';    # VERSION definition
-$VERSION =~ s/_//g;     # numify VERSION (needed for alpha versions)
+{
+    ; ## no critic ( RequireConstantVersion )
+    our $VERSION = '":{{$VERSION}}:"';    # VERSION definition
+    $VERSION =~ s/_//g;                   # numify VERSION (needed for alpha versions)
 }
 
 use Pod::Usage;
 
 use Carp::Assert;
 
-use FindBin; # NOTE: BEGIN is used in FindBin; this can incompatible with any other modules using FindBin; so, DON'T use with any *module* submitted to CPAN; ## URLref: [perldoc::FindBin - Known Issues] http://perldoc.perl.org/FindBin.html#KNOWN-ISSUES
+use FindBin;                              # NOTE: BEGIN is used in FindBin; this can incompatible with any other modules using FindBin; so, DON'T use with any *module* submitted to CPAN; ## URLref: [perldoc::FindBin - Known Issues] http://perldoc.perl.org/FindBin.html#KNOWN-ISSUES
 
 use ExtUtils::MakeMaker;
 
@@ -248,33 +256,32 @@ use ExtUtils::MakeMaker;
 use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ## # no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
 # PRE-parse for nullglob option before initial expansion of command line (to avoid double expansion of the command line and possible subshell side-effects)
 my %ARGV = ();
-GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'nullglob=s', 'help|h|?|usage', 'man', 'version|ver|v');
+GetOptions( \%ARGV, 'echo|e|s', 'so', 'args|a', 'nullglob=s', 'help|h|?|usage', 'man', 'version|ver|v' );
 if ( exists $ARGV{'nullglob'} ) { $ENV{'nullglob'} = $ARGV{'nullglob'}; }
 
-my $showUsage = ( @ARGV < 1 );  # show usage only if no arguments (check _before_ a possible nullglob replacement of any/all globs by NULL)
+my $showUsage = ( @ARGV < 1 );    # show usage only if no arguments (check _before_ a possible nullglob replacement of any/all globs by NULL)
 
 use Win32::CommandLine;
 
-@ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );   # if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine (and installed with it) so we want the error if its missing or unable to load
+@ARGV = Win32::CommandLine::argv( { dosify => 'true', dosquote => 'true' } );    # if eval { require Win32::CommandLine; }; ## depends on Win32::CommandLine (and installed with it) so we want the error if its missing or unable to load
 
 #-- do main getopt
 ##use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ##   # no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
 %ARGV = ();
 # NOTE: the 'source' option '-s' is bundled into the 'echo' option since 'source' is exactly the same as 'echo' to the internal perl script. Sourcing is done by wrapping the BAT script by executing the output of the perl script.
-GetOptions (\%ARGV, 'echo|e|s', 'so', 'args|a', 'nullglob=s', 'help|h|?|usage', 'man', 'version|ver|v');
+GetOptions( \%ARGV, 'echo|e|s', 'so', 'args|a', 'nullglob=s', 'help|h|?|usage', 'man', 'version|ver|v' );
 #Getopt::Long::VersionMessage() if $ARGV{'version'};
-do {print q{}.(File::Spec->splitpath($0))[2].qq{ v$::VERSION}.qq{\n}; exit(0);} if $ARGV{'version'};
+do { print q{} . ( File::Spec->splitpath($0) )[2] . qq{ v$::VERSION} . qq{\n}; exit(0); } if $ARGV{'version'};
 pod2usage(1) if $ARGV{'help'};
-pod2usage({-verbose => 2}) if $ARGV{'man'};
+pod2usage( { -verbose => 2 } ) if $ARGV{'man'};
 
 pod2usage(1) if $showUsage;
 
-if ( $ARGV{args} )
-    {
+if ( $ARGV{args} ) {
     my $cl = Win32::CommandLine::command_line();
-    print ' $ENV{CMDLINE}'." = `".($ENV{CMDLINE}?$ENV{CMDLINE}:'<null>')."`\n";
-    print 'command_line()'." = `$cl`\n";
-    }
+    print ' $ENV{CMDLINE}' . " = `" . ( $ENV{CMDLINE} ? $ENV{CMDLINE} : '<null>' ) . "`\n";
+    print 'command_line()' . " = `$cl`\n";
+}
 
 ## unfortunately the args (which are correct at this point) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
 ## so, we must protect the ARGs from CreateProcess() reparsing destruction
@@ -292,20 +299,22 @@ if ( $ARGV{args} )
 # TODO: check echo %% "%%" => echo % % => % % [doesn't work for TCC or CMD]
 
 # untaint
-$ENV{PATH} =~ /\A(.*)\z/mxs; $ENV{PATH} = ( defined $1 ? $1 : undef );
+$ENV{PATH} =~ /\A(.*)\z/mxs;
+$ENV{PATH} = ( defined $1 ? $1 : undef );
 
-
-if ( $ARGV{args} )
-    {
-    for (my $i = 0; $i < @ARGV; $i++) { print '$ARGV'."[$i] = `$ARGV[$i]`\n"; }
-    }
+if ( $ARGV{args} ) {
+    for ( my $i = 0 ; $i < @ARGV ; $i++ ) { print '$ARGV' . "[$i] = `$ARGV[$i]`\n"; }
+}
 
 #system { $ARGV[0] } @ARGV;     # doesn't see "echo" as a command (?? might be a problem for all CMD built-ins)
-if ( not $ARGV{args} )
-    {
+if ( not $ARGV{args} ) {
     ## TODO: REDO this comment -- unfortunately the args (which are correct at this point) are reparsed while going to the target command through CreateProcess() (PERL BUG: despite explicit documentation in PERL that system bypasses the shell and goes directly to execvp() for scalar(@ARGV) > 1 although there is no obvious work around since execvp() doesn't really exist in Win32 and must be emulated through CreateProcess())
-    if ($ARGV{echo} ) { print join(" ",@ARGV); } else { if ($ARGV{so}) { my $x = join(" ",@ARGV); print `$x`; exit($? >> 8);} else { exit((system @ARGV) >> 8); }}
+    if ( $ARGV{echo} ) { print join( " ", @ARGV ); }
+    else {
+        if ( $ARGV{so} ) { my $x = join( " ", @ARGV ); print `$x`; exit( $? >> 8 ); }
+        else             { exit( ( system @ARGV ) >> 8 ); }
     }
+}
 
 __END__
 :endofperl
