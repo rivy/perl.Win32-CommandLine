@@ -24,21 +24,12 @@ SIGNATURE
 pod2htmd.tmp
 **\.pyc
 vc[1-9][0-9]+.pdb
+
 ##
+
 Win32-CommandLine*
 
-# # ignore pulled/imported code (if any)
-# inc/**
-# t/lib/**
-
-# # ignore experimental code
-# t/prelim/**
-
-#### auto-generated * below
-# PL generated files
-bin/xx.bat
-lib/Win32/CommandLine_def.old
 lib/Win32/CommandLine.c
 lib/Win32/CommandLine.o
 lib/Win32/CommandLine.obj
-lib/Win32/CommandLine.pm
+lib/Win32/CommandLine_def.old
