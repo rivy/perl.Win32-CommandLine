@@ -4,6 +4,10 @@
 
 ####
 
+# use unicode for template markers?
+
+eg, "«»‹›¶§⚒😎"
+
 # evaluate finding/using ExtUtils::Manifest.maniskip()
 
 ```
