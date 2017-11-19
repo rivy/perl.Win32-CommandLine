@@ -17,29 +17,68 @@ branches:
 
 environment:
     matrix:
-        - Perl_VERSION: ""              # latest
+        - Perl_VERSION: ""                # latest
         - Perl_VERSION: "5.24.3.1"
         - Perl_VERSION: "5.22.3.1"
         - Perl_VERSION: "5.20.3.3"
+        - Perl_VERSION: "5.20.3.3"
+          COVERAGE: "Codecov Coveralls" ## note: case sensitive!
         # - Perl_VERSION: "5.16.3.3"
         # - Perl_VERSION: "5.12.3.1"
 
-cache:
-    - C:\strawberry -> .appveyor.yml
+# cache:
+#     - C:\strawberry -> .appveyor.yml
 
 install:
+    # install correct perl version
     - if not exist "C:\strawberry" cinst strawberryperl -y --version="%Perl_VERSION%"
     - set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
-    - cpanm --notest --skip-installed Module::Build
+    # change CWD to project main directory
     - cd "%APPVEYOR_BUILD_FOLDER%"
+    - ps: |
+        [System.Environment]::CurrentDirectory = (Get-Location).Path
+    # install baseline dependencies + check OS_unsupported
+    - cpanm --notest --skip-installed Module::Build
     - perl Build.PL 2>&1 | findstr /b /i /r "OS unsupported\b" >NUL 2>&1 && set "OS_unsupported=true" || set "OS_unsupported="
+    # install dependencies + setup coverage
     - if NOT DEFINED OS_unsupported ( cpanm --installdeps --notest . )
+    - ps: |
+        if (-not $env:OS_unsupported -and $env:COVERALLS_TOKEN) { [System.IO.File]::WriteAllText( ".coveralls.yml", "`nrepo_token: $env:COVERALLS_TOKEN`n" ) }
+    - ps: |
+        if (-not $env:OS_unsupported -and $env:COVERAGE) {
+            # determine coverage support (signalled by <COVERAGE_TYPE>_TOKEN environment vars)
+            $s = $env:COVERAGE
+            $coverage = @()
+            $s.split() | foreach {
+                $name = "env:\"+$_.ToUpper()+"_TOKEN"
+                $val = (get-item $("env:\"+$_.ToUpper()+"_TOKEN") -ea ignore).value
+                # write-host "$name = '$val'"
+                # write-host "`$val.length = $($val.length)"
+                if ($val.length -gt 0) { $coverage += $_ } else { write-host -f yellow "Missing token for '$_'" }
+                }
+            $env:COVERAGE = $coverage -join " "
+            # write-host "env:COVERAGE = $env:COVERAGE"
+            }
+    - ps: |
+        if (-not $env:OS_unsupported -and $env:COVERAGE) {
+            # preload JSON:PP to avoid JSON::PP::Boolean redefine warnings
+            $env:PERL5OPT="-MJSON::PP"
+            # install coverage support
+            cpanm --notest --skip-installed Devel::Cover
+            ($env:COVERAGE).split() | foreach {
+                # echo "cpanm --notest --skip-installed Devel::Cover::Report::$_"
+                cpanm --notest --skip-installed Devel::Cover::Report::$_
+                }
+            }
 
 build_script:
     - if NOT DEFINED OS_unsupported ( perl Build.PL )
 
 test_script:
-    - if NOT DEFINED OS_unsupported ( Build test ) else (echo OS unsupported)
+    - if DEFINED OS_unsupported (echo OS unsupported) else if DEFINED COVERAGE ( Build testcover ) else ( Build test )
+
+after_test:
+    - ps: if (-not $env:OS_unsupported -and $env:COVERAGE) { $env:COVERAGE.split() | foreach { cover -report $_ } }
 
 # notifications:
 # To get Github PR notifications from AppVeyor, get an auth token from Github,
