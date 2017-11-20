@@ -66,13 +66,16 @@ $config{'license'} = undef;
 $config{'module_name'} = undef;                     # "primary" module (for construction of README, .packlist, etc); will be calculated/constructed if not defined
 $config{'dist_version'} = undef;                    # will be constructed if not defined
 #
-$config{'exports_aref'} = undef;                    # expected symbol table exports (no obvious default)
-$config{'recommends_href'} = {};                    # module recommendations (no obvious default)
-$config{'requires_href'} = {};                      # module requirements (no obvious default)
+$config{'exports_ref'} = undef;                     # expected symbol table exports (no obvious default; single ARRAY ref for 'default' module, or HASH of ARRAYs to specify multiple modules)
+$config{'recommends_href'} = {};                    # distribution recommendations (no obvious default)
+$config{'requires_href'} = {};                      # distribution requirements (no obvious default)
 #
-$config{'dynamic_config'} = 1;                      # module 'build/test/install' requires execution of Build.PL (metadata only is not enough)
+$config{'meta_add_href'} = {};                      # key/value pairs to "add" to META files (no obvious default); note: completely overwrites META ARRAY or HASH values
+$config{'meta_merge_href'} = {};                    # key/value pairs to "merge" into META files (no obvious default); note: merges values into META ARRAY or HASH values
 #
-$config{'configure_requires_href'} = {              # basic module requirements for configuration (ie, requirements needed to run `perl Build.PL`); URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
+$config{'dynamic_config'} = 1;                      # distribution 'build/test/install' requires execution of Build.PL (metadata only is not enough)
+#
+$config{'configure_requires_href'} = {              # basic distribution requirements for configuration (ie, requirements needed to run `perl Build.PL`); URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
     'perl' => '5.6.1',
     'Module::Build' => '0',
     'version' => '0.77',                                    ## version v0.77+ needed for v5.10+ extended version support & declare->()
@@ -96,10 +99,10 @@ $config{'configure_requires_href'} = {              # basic module requirements 
     # * TAP::Harness hack/manipulation
     'TAP::Harness' => '0', 'TAP::Formatter::Console' => '0', 'TAP::Formatter::Color' => '0',
     };
-$config{'build_requires_href'} = {                  # module requirements to build / install (eg, `build` and `build install`)
+$config{'build_requires_href'} = {                  # distribution requirements to build / install (eg, `build` and `build install`)
     %{$config{'configure_requires_href'}},
     };
-$config{'test_requires_href'} = {                   # module requirements to test (eg, `build test`)
+$config{'test_requires_href'} = {                   # distribution requirements to test (eg, `build test`)
     %{$config{'build_requires_href'}},
     # module requirements for the usual basic tests
     'Carp' => '0',
@@ -113,7 +116,7 @@ $config{'test_requires_href'} = {                   # module requirements to tes
     'Test::Differences' => '0', 'Test::More' => '0',        ## Test::More + Test::Differences
     'version' => '0.77',                                    ## version v0.77+ needed for v5.10+ extended version support & declare->()
     };
-$config{'sign'} = 'true';                           # always sign the module distribution, if possible (note: this is only used when the distribution is built/tested (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
+$config{'sign'} = 'true';                           # always sign the distribution, if possible (note: this is only used when the distribution is built/tested (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
 $config{'create_readme'} = 'true';                  # create README from module pod
 $config{'create_metafile_pl'} = 'small';            # pass all Makefile.PL functionality to Build.PL, but requires Module::Build (ERROR if Module::Build is missing; so, use 'configure_requires=>Module::Build') [see PerlDOC: module::build::compat]
 $config{'recursive_test_files'} = undef;            # scan the ./t directory recursively for *.t perl files to execute during testing (no obvious default)
@@ -128,11 +131,11 @@ $config{'c_source'} = undef;                        # c source files to compile
 $config{'config_href'} = {};                        # modify Config.pm values for the build
 # clean == all files which should not be distributed and are not comitted to repo
 # realclean == all build constructed files that are not committed to repo
-# totalclean == ALL build constructed files
+# ultraclean == ALL build constructed files
 # ToDO: use repo functions to automatically construct the defaults; add a built_files hash
 $config{'add_to_cleanup_aref'} = [ 'MANIFEST.bak', 'Makefile', 'Makefile.old', 'pm_to_blib', 'MYMETA.json', 'MYMETA.yml', 'SIGNATURE' ];    # globs matching extra files to clean up during "build clean"
 $config{'add_to_realcleanup_aref'} = [ 'MANIFEST' ];    # globs matching extra files to clean up during "build realclean" (note: MANIFEST is always automatically generated from MANIFEST.SKIP)
-$config{'add_to_totalcleanup_aref'} = [ 'META.json', 'META.yml' ];    # globs matching extra files to clean up during "build totalclean"
+$config{'add_to_ultracleanup_aref'} = [ 'META.json', 'META.yml' ];    # globs matching extra files to clean up during "build ultraclean"
 $config{'assert_os_aref'} = [];                     # limit build to specific OS types (default = [] => any OS) [NOTE: entries are used as REGEXs for comparison VS $^O]
 #
 $config{'add_to_versioned_aref'} = [ 'bin/*' ]; # globs matching extra files which should have the distribution version number upon a successful build (these are added to the list of all files containing "provides" modules)
@@ -314,9 +317,9 @@ if ($config{'create_metafile_pl'}) { $config{'add_to_realcleanup_aref'} = [ 'Mak
 # * automatically add README to cleanup if $config{'create_readme'} == 'true'
 if ($config{'create_readme'}) { $config{'add_to_realcleanup_aref'} = [ 'README', @{$config{'add_to_realcleanup_aref'}} ]; }
 
-# UPDATE files for 'totalclean'
+# UPDATE files for 'ultraclean'
 # * automatically add PL_target_files
-$config{'add_to_totalcleanup_aref'} = [ sort keys %{$config{'PL_target_files_href'}}, @{$config{'add_to_totalcleanup_aref'}} ];
+$config{'add_to_ultracleanup_aref'} = [ sort keys %{$config{'PL_target_files_href'}}, @{$config{'add_to_ultracleanup_aref'}} ];
 
 ##
 
@@ -341,6 +344,8 @@ if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $fo
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my %optional_args = ();     # Module::Build::new() optional args (only included if they are non-empty; otherwise, if included as empty list(s)/hash(es) in new(), Module::Build carps that the specified [and needed] files are missing)
+if ( keys %{$config{'meta_add_href'}} )             { %optional_args = ( %optional_args, meta_add =>  { %{$config{'meta_add_href'}} }); }
+if ( keys %{$config{'meta_merge_href'}} )           { %optional_args = ( %optional_args, meta_merge =>  { %{$config{'meta_merge_href'}} }); }
 if ( keys %{$config{'configure_requires_href'}} )   { %optional_args = ( %optional_args, configure_requires =>  { %{$config{'configure_requires_href'}} }); }
 if ( keys %{$config{'test_requires_href'}} )        { %optional_args = ( %optional_args, test_requires =>  { %{$config{'test_requires_href'}} }); }
 if ( keys %{$config{'no_index_href'}} )             { %optional_args = ( %optional_args, no_index =>  { %{$config{'no_index_href'}} }); }
@@ -384,12 +389,12 @@ my $build = $class->new(
 
     add_to_realcleanup   => [ @{$config{'add_to_realcleanup_aref'}} ],
 
-    add_to_totalcleanup  => [ @{$config{'add_to_totalcleanup_aref'}} ],
+    add_to_ultracleanup  => [ @{$config{'add_to_ultracleanup_aref'}} ],
 );
 
 $build->notes('dist_path' => $config{'dist_path'} );
 $build->notes('dist_repo_URL' => $config{'dist_repo_URL'} );
-$build->notes('exports_aref' => $config{'exports_aref'} );
+$build->notes('exports_ref' => $config{'exports_ref'} );
 $build->notes('add_to_versioned_aref' => $config{'add_to_versioned_aref'} );
 ##$build->notes('versioned_file_globs_exclude_aref' => $config{'versioned_file_globs_exclude_aref'} );
 
@@ -425,66 +430,6 @@ foreach ( keys %config ) {
 $build->create_build_script;
 
 ####
-
-sub version_f { ## ( $:major, $:minor, $:alpha ) => $:formatted version string ("boring" style)
-    my ( $major, $minor, $alpha ) = @_;
-    $major = '1' if not defined $major;
-    $minor = '0' if not defined $minor || $minor eq q//;
-    $alpha = q// if not defined $alpha;
-    if (( $minor % 2 ) && ($alpha eq q//) ) { $alpha = 1; }
-    my $v;
-    $v  = sprintf( '%d', $major );
-    $v .= sprintf( q/./.((($major == 0) && ($alpha eq q//)) ? '%d' : '%03d'), $minor );
-    $v .= sprintf( q/_/.(($alpha == 1) ? '%d' : '%03d'), $alpha ) if $alpha ne q//;
-    return $v;
-    }
-
-sub VERSION_from_vfile # $:file
-{
-# determine VERSION from file, if present
-
-# VERSION: Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
-# * NOTE: "boring" versions are preferred (ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17])
-
-# my $VERSION_filename = rel2abs($config{'VERSION_filename'}, dirname(rel2abs($0)));
-my $VERSION_filename = rel2abs( shift, rel2abs($0) );
-my %RETval = ();
-$RETval{'VERSION'} = undef;
-if ( -e $VERSION_filename )
-{
-    my $fh;
-    open( $fh, '<', $VERSION_filename ) or die qq{Can't open "$VERSION_filename": $OS_ERROR\n}; ## no critic ( RequireCarping )
-    my $file_contents;
-    {# slurp entire file
-        local $/ = undef;
-        $file_contents = <$fh>;
-    }
-    close $fh or die qq{Can't close "$VERSION_filename" after reading: $OS_ERROR\n}; ## no critic ( RequireCarping )
-    $file_contents = q// if not defined $file_contents;
-
-    # remove and save any leading whitespace and/or trailing non-version text (comments, etc)
-    if ( $file_contents =~ /^([\s\n]*)((?:\d|[._])+)((?:.|\s)*?)$/msx )
-        {
-        $RETval{'VERSION_prefix'} = $1;
-        $RETval{'VERSION'} = $2;
-        $RETval{'VERSION_suffix'} = $3;
-        $RETval{'VERSION'} =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
-        # print qq{Found version ('$RETval{VERSION}') in "$VERSION_filename"\n};
-        }
-    else
-        {
-        $RETval{'VERSION'} = '0.001';
-        warn qq{build: warning, using default version ('$RETval{VERSION}'); no version found in "$VERSION_filename"\n};
-        }
-
-    ( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} ) = ( $RETval{'VERSION'} =~ /\d+/msxg );
-    $RETval{'VERSION'} = version_f( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} );
-    # print "\$VERSION = '$RETval{VERSION}'\n";
-}
-
-##print STDERR '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
-return %RETval;
-}
 
 sub _is_const { return !eval { ($_[0]) = $_[0]; 1; }; }
 sub _encodeQQ
@@ -543,24 +488,92 @@ $code{q/@/} = q{
     use Text::Template;
     use URI::URL;
 };
-$code{'@version_format'} = q{
+$code{'@qprinf'} = q{
+    {
+    my @encoding;
+    my @printf_encoding;
+    for (my $n = 0; $n <= 0xff; $n++) {
+        $encoding[$n] = sprintf "\\%02x", $n;
+        $printf_encoding[$n] = $encoding[$n];
+        }
+    for (my $n = 0; $n <= 0x7f; $n++) {
+        my $c = chr($n);
+        next if $c =~ /[%"'\\*\\?\\[\\]\\{\\}[:^graph:]]/;  # escape character, quotes, printf format specifier, special glob characters
+        $printf_encoding[$n] = $c;
+        }
+    sub qprintf ## ( @:strings ) => @:printf encoded strings
+        {
+        my @in = @_;
+        # encode input as equivalent printf compatible strings (also, portable)
+        my $IFS = $ENV{IFS};
+        if ( not defined $IFS || $IFS eq q// ) { $IFS = " \n\t" }
+        ## replace IFS characters in @printf_encoding with encoded equivalents
+        foreach ( split q//, $IFS ) { $printf_encoding[ord($_)] = $encoding[ord($_)] }
+        ## foreach @_ { replace each character with its equivalent encoding }
+        foreach ( @in ) { $_ =~ s/(.)/$printf_encoding[ord($_)]/egmsx }
+        return @in;
+        }
+    }
+};
+$code{'@version'} = q{
     # ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17]
     # NOTE: VERSION == Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
 
     sub version_f { ## ( $:major, $:minor, $:alpha ) => $:formatted version string ("boring" style)
         my ( $major, $minor, $alpha ) = @_;
+        $major = '1' if not defined $major;
+        $minor = '0' if not defined $minor || $minor eq q//;
+        $alpha = q// if not defined $alpha;
+        if (( $minor % 2 ) && ($alpha eq q//) ) { $alpha = 1; }
         my $v;
-        $v  = sprintf( '%d.%03d', $major, $minor );
-        $v .= sprintf( q/_/.(($alpha == 1) ? '%d' : '%03d'), $alpha ) if (defined $alpha && $alpha ne q//);
+        $v  = sprintf( '%d', $major );
+        $v .= sprintf( q/./.((($major == 0) && ($alpha eq q//)) ? '%d' : '%03d'), $minor );
+        $v .= sprintf( q/_/.(($alpha == 1) ? '%d' : '%03d'), $alpha ) if $alpha ne q//;
         return $v;
         }
 
-    sub version_canon { ## ( $:major, $:minor, $:alpha ) => $:formatted version string ("boring" style)
-        my ( $major, $minor, $alpha ) = @_;
-        my $v;
-        my $v_is_alpha = ( $alpha ne q// ) || ( $minor % 2 );
-        if ( $v_is_alpha && ($alpha eq q//) ) { $alpha = 1; }
-        return version_f( $major, $minor, $alpha );
+    sub version_from_vfile { ## ( $:file ) => %:version_info
+        # determine VERSION from file, if present
+
+        # VERSION: Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
+        # * NOTE: "boring" versions are preferred (ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17])
+
+        # my $VERSION_filename = rel2abs($config{'VERSION_filename'}, dirname(rel2abs($0)));
+        my $VERSION_filename = rel2abs( shift, rel2abs($0) );
+        my %RETval = ();
+        $RETval{'VERSION'} = undef;
+        if ( -e $VERSION_filename ) {
+            my $fh;
+            open( $fh, '<', $VERSION_filename ) or die qq{Can't open "$VERSION_filename": $OS_ERROR\n}; ## no critic ( RequireCarping )
+            my $file_contents;
+            {# slurp entire file
+                local $/ = undef;
+                $file_contents = <$fh>;
+            }
+            close $fh or die qq{Can't close "$VERSION_filename" after reading: $OS_ERROR\n}; ## no critic ( RequireCarping )
+            $file_contents = q// if not defined $file_contents;
+
+            # remove and save any leading whitespace and/or trailing non-version text (comments, etc)
+            if ( $file_contents =~ /^([\s\n]*)((?:\d|[._])+)((?:.|\s)*?)$/msx ) {
+                $RETval{'VERSION_prefix'} = $1;
+                $RETval{'VERSION'} = $2;
+                $RETval{'VERSION_suffix'} = $3;
+                $RETval{'VERSION'} =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
+                # print qq{Found version ('$RETval{VERSION}') in "$VERSION_filename"\n};
+                }
+            else
+                {
+                $RETval{'VERSION'} = '0.001';
+                warn qq{build: warning, using default version ('$RETval{VERSION}'); no version found in "$VERSION_filename"\n};
+                }
+
+            ( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} ) = ( $RETval{'VERSION'} =~ /\d+/msxg );
+            $RETval{'VERSION'} = version_f( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} );
+            # print "\$VERSION = '$RETval{VERSION}'\n";
+        }
+
+        ##print STDERR '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
+        return %RETval;
         }
 };
 $code{'repo'} = q{
@@ -934,14 +947,34 @@ $code{'get_template_vars'} = q{
         if (defined $output_filename) {
             # define file specific variables
             $vars{ME_filename} = $output_filename;
-            $vars{ME_filename} =~ s|\\\\|/|msxg;      # to *nix style
+            $vars{ME_filename} =~ s|\\\\|/|gmsx;      # to *nix style
             $vars{module_name} = q//;
             if ($vars{ME_filename} =~ m{^lib/(.*)[.](?i:pm)$}) { $vars{module_name} = defined $1 ? $1 : q//; $vars{module_name} =~ s|/|::|msxg; }
             $vars{module_name_dashed} = $vars{module_name}; $vars{module_name_dashed} =~ s/::/-/msxg;
-            # $vars{ME_ID} = "$output_filename, ".$vars{commit_info};    # eg: filename, v0.0.0.1 ( [git:master] r207:97f85f62496a; AUTHOR )
-            $vars{ME_ID} = ($vars{module_name} ne q// ? "$vars{module_name} ($vars{ME_filename})" : "$vars{ME_filename}").", $vars{VERSION}";   # eg: MODULE (filename), v0.0.0.1
-            }
+            $vars{module_bootstrap} = qq{$vars{module_name} '$vars{VERSION}'};
+            $vars{ME_source_filename} = undef;
 
+            my $sourcefile_map_href = $self->find_PL_files;
+            if ( $sourcefile_map_href ) {
+                my $filename = $vars{ME_filename};
+                my %file_map = %{$sourcefile_map_href};
+                foreach my $src_file ( keys %file_map ) {
+                    if ( grep { $filename eq $_ } map { s:\\\\:/:gmsx; $_ } @{$file_map{$src_file}} ) {
+                        $vars{ME_source_filename} = $src_file;
+                        $vars{ME_source_filename} =~ s:\\\\:/:gmsx;
+                        last;
+                        }
+                    }
+                }
+
+            if ( $vars{module_name} ne q// ) {
+                # eg, `Module::Name 0.945_1 ("lib/Module/Name.pm" from "PL.#no-dist/lib/Module/Name.pm.PL")`
+                $vars{ME_ID} = qq{$vars{module_name} $vars{VERSION} ("$vars{ME_filename}"}.($vars{ME_source_filename} ? qq{ from "$vars{ME_source_filename}"} : q//).")";
+                } else {
+                # eg, `"lib/Module/Name.pod" 0.945_1 ("lib/Module/Name.pod" from "PL.#no-dist/lib/Module/Name.pod.PL")`
+                $vars{ME_ID} = qq{"$vars{ME_filename}" $vars{VERSION}}.($vars{ME_source_filename} ? qq{ (from "$vars{ME_source_filename}")} : q//);
+                }
+            }
         return %vars;
         }
 };
@@ -954,14 +987,14 @@ $code{'expand_template'} = q{
 
         # my $delim_start = '#{{';
         # my $delim_stop  = '}}#';
-        my $delim_start = '":{{';
-        my $delim_stop  = '}}:"';
+        my $delim_start = q/":{{/;
+        my $delim_stop  = q/}}:"/;
 
         my %vars = $self->get_template_vars( $output_filename );
 
         use English qw( -no_match_vars ); ## enable long-form built-in variable names; '-no_match_vars' avoids regex performance penalty for perl versions <= 5.16
 
-        print("Building $output_filename (from $0) ... ");
+        $self->log_info("Building $output_filename (from $0) ... ");
 
         my $template = Text::Template->new(TYPE => 'ARRAY', SOURCE => $template_aref, DELIMITERS => [ $delim_start, $delim_stop ]) or die $Text::Template::ERROR;
 
@@ -1616,16 +1649,57 @@ $code{'ACTION_show_PL_targets'} = q{
     sub ACTION_show_PL_targets {
         my ($self) = @_;
 
-        my $files_href = $self->find_PL_files;
+        my $file_map_href = $self->find_PL_files;
+
+        return () if not $file_map_href;
+
+        my %file_map = %{$file_map_href};
+
         my @files;
 
-        while (my ($file, $to) = each %$files_href) {
-            push @files, @$to;
+        foreach my $src_file ( keys %file_map ) {
+            push @files, @{$file_map{$src_file}};
             }
 
         print join(qq{\n}, @files);
 
         return @files;
+      }
+};
+$code{'ACTION_show_PL'} = q{
+    #[ADD] NEW action = show_PL - show all PL script target files within the module
+    sub ACTION_show_PL {
+        my ($self) = @_;
+
+        my $file_map_href = $self->find_PL_files;
+
+        return () if not $file_map_href;
+
+        my %file_map = %{$file_map_href};
+
+        foreach my $from ( keys %file_map ) {
+            print qq{[ @{$file_map{$from}} ]}, qq{ (from $from)}, "\n";
+            }
+
+        return %file_map;
+      }
+};
+$code{'ACTION_show_XS'} = q{
+    #[ADD] NEW action = show_XS - print all XS files within module
+    sub ACTION_show_XS {
+        my ($self) = @_;
+
+        my $file_map_href = $self->find_xs_files;
+
+        return () if not $file_map_href;
+
+        my %file_map = %{$file_map_href};
+
+        foreach my $from ( keys %file_map ) {
+            print qq{$file_map{$from}}, ($from ne $file_map{$from}) ? qq{ (from $from)} : q//, "\n";
+            }
+
+        return %file_map;
       }
 };
 $code{'ACTION_realclean'} = q{
@@ -1699,11 +1773,11 @@ $code{'ACTION_realclean'} = q{
             }
         }
 };
-$code{'ACTION_totalclean'} = q{
-    sub ACTION_totalclean {
+$code{'ACTION_ultraclean'} = q{
+    sub ACTION_ultraclean {
         ## clean out ALL build generated files
         my ($self) = @_;
-        $self->add_to_cleanup(@{$self->{properties}{add_to_totalcleanup}});
+        $self->add_to_cleanup(@{$self->{properties}{add_to_ultracleanup}});
         $self->ACTION_realclean();
         }
 };
