@@ -38,7 +38,12 @@ before_install:
     - build-perl
     - perl -V
     - |
-      function unsupported { test -n "$OS_unsupported" && printf "\e[33minfo: $OS_unsupported\e[0m\n"; }
+      function truthy { X=$(echo "$1" | tr '[:upper:]' '[:lower:]'); if test -n "$X" -a "$X" != "0" -a "$X" != "false" -a "$X" != "off"; then return 0; else return 1; fi; }
+      function falsey { if truthy "$1"; then return 1; else return 0; fi; }
+      function unsupported { truthy "$OS_unsupported"; }
+      function unsupported_msg { printf "\e[35mWARN: $OS_unsupported\e[m\n"; }
+      function warn_if_unsupported { if unsupported; then unsupported_msg >&2 ; fi; }
+      function warn_and_fail_if_unsupported { if unsupported; then unsupported_msg >&2 ; return 1; fi; }
 
 install:
     # - cpanm --notest JSON::PP  # most recent JSON::PP is required to avoid JSON parsing errors during coverage testing
@@ -49,36 +54,55 @@ install:
     # - "dzil authordeps | cpanm --force --notest"
     # - "dzil listdeps --author | cpanm --force --notest"
     # * idiomatic build
-    # - cpanm --notest --skip-installed Module::Build
+    # ensure CWD is project main directory
     - cd "$TRAVIS_BUILD_DIR"
-    # - cd "$BUILD_DIR"          # $BUILD_DIR is set by the build-dist command
+    # install baseline dependencies + check OS_unsupported
     - export OS_unsupported=""
-    - cpan-install --deps || true   # attempt install of prereqs, ignoring errors; for "OS unsupported" check
+    # * attempt install of prereqs, ignoring errors; for "OS unsupported" check
+    # - cpan-install --deps || true
+    # - cpanm --notest --skip-installed Module::Build || true
+    - cpanm --no-interactive --no-man-pages --notest --skip-satisfied --installdeps . || true
     - OS_unsupported=$(test $(perl Build.PL 2>&1 | grep -c "^OS unsupported\b") -ge 1 && echo "OS unsupported" || echo "$OS_unsupported")
-    - unsupported || cpan-install --deps       # installs prereqs, including recommends
-    - unsupported || cpan-install --coverage   # installs coverage prereqs, if enabled
+    # - echo "OS_unsupported=$OS_unsupported"
+    # install dependencies
+    - unsupported || cpan-install --deps                # installs prereqs, including recommends
+    - unsupported || cpan-install --coverage            # installs coverage prereqs, if enabled
     # - unsupported || build-dist
 
 before_script:
+    # setup coverage
     - unsupported || coverage-setup
-    - export AUTOMATED_TESTING=1 HARNESS_OPTIONS=j10:c HARNESS_TIMER=1
+    # setup environment options
+    - export AUTOMATED_TESTING=1
     - export DEVEL_COVER_OPTIONS=-ignore,^_build/
+    - export HARNESS_OPTIONS=j:c                        # enable parallel processing and color
+    - falsey "$COVERAGE" || export HARNESS_OPTIONS=c    # for COVERAGE builds, disable parallel processing to show correctly interleaved output
+    - export HARNESS_TIMER=1
+    # * preload JSON:PP to avoid JSON::PP::Boolean redefine warning (see <https://github.com/rurban/Cpanel-JSON-XS/issues/65#issuecomment-219352754>)
+    - falsey "$COVERAGE" || export PERL5OPT=-MJSON::PP $PERL5OPT
+    # ensure CWD is project main directory
+    - cd "$TRAVIS_BUILD_DIR"
+    # display environment
+    - echo "COVERAGE=$COVERAGE"
+    - echo "HARNESS_OPTIONS=$HARNESS_OPTIONS"
+    - echo "OS_unsupported=$OS_unsupported"
+    - echo "PERL5OPT=$PERL5OPT"
 
 script:
     # # * `dzil` build (note: does not provide coverage info)
-    # - cd "$TRAVIS_BUILD_DIR"
     # - dzil test ## _or_ "dzil test --author --smoke"
     # * idiomatic build (portable variant)
-    - cd "$TRAVIS_BUILD_DIR"
-    # - cd "$BUILD_DIR"
-    - unsupported || perl Build.PL
-    - unsupported || perl Build
-    - unsupported || ./Build test
-    # - unsupported || prove -l -j$(test-jobs)  # tests
-    # - prove -l -j$(test-jobs) xt/author/*     # "author" tests
+    - unsupported || ( perl Build.PL && perl Build )
+    - unsupported || perl Build test
+    # - unsupported || prove -l -j$(test-jobs)              # tests
+    # - unsupported || prove -l -j$(test-jobs) xt/author/*  # "author" tests
+    - warn_if_unsupported                           # show warning if OS is unsupported ## HACK: additional display here until "after_script" version stops being folded
 
 after_success:
-    - unsupported || coverage-report  # coveralls.io + codecov.io for COVERAGE="Coveralls Codecov"
+    - unsupported || coverage-report                # coveralls.io + codecov.io for `COVERAGE="Coveralls Codecov"`
+
+after_script:
+    - warn_and_fail_if_unsupported                  # show warning if OS is unsupported; failing here forces unfolding and display of the warning ## NOT WORKING
 
 notifications:
     on_success: change

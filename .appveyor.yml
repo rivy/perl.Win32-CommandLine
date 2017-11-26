@@ -17,12 +17,12 @@ branches:
 
 environment:
     matrix:
+        - Perl_VERSION: "5.20.3.3"
+          COVERAGE: "Codecov Coveralls" ## note: case sensitive!
         - Perl_VERSION: ""                # latest
         - Perl_VERSION: "5.24.3.1"
         - Perl_VERSION: "5.22.3.1"
         - Perl_VERSION: "5.20.3.3"
-        - Perl_VERSION: "5.20.3.3"
-          COVERAGE: "Codecov Coveralls" ## note: case sensitive!
         # - Perl_VERSION: "5.16.3.3"
         # - Perl_VERSION: "5.12.3.1"
 
@@ -33,19 +33,18 @@ install:
     # install correct perl version
     - if not exist "C:\strawberry" cinst strawberryperl -y --version="%Perl_VERSION%"
     - set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
-    # change CWD to project main directory
+    # ensure CWD is project main directory
     - cd "%APPVEYOR_BUILD_FOLDER%"
     - ps: |
         [System.Environment]::CurrentDirectory = (Get-Location).Path
     # install baseline dependencies + check OS_unsupported
-    - cpanm --notest --skip-installed Module::Build
-    - perl Build.PL 2>&1 | findstr /b /i /r "OS unsupported\b" >NUL 2>&1 && set "OS_unsupported=true" || set "OS_unsupported="
-    # install dependencies + setup coverage
-    - if NOT DEFINED OS_unsupported ( cpanm --installdeps --notest . )
+    # - cpanm --no-interactive --no-man-pages --notest --skip-satisfied Module::Build
+    - cpanm --no-interactive --no-man-pages --notest --skip-satisfied --installdeps .
+    - perl Build.PL 2>&1 | findstr /b /i /r "OS unsupported\b" >NUL 2>&1 && set "OS_unsupported=OS unsupported" || set "OS_unsupported="
+    # - echo OS_unsupported=%OS_unsupported%
+    # check coverage prereqs
     - ps: |
-        if (-not $env:OS_unsupported -and $env:COVERALLS_TOKEN) { [System.IO.File]::WriteAllText( ".coveralls.yml", "`nrepo_token: $env:COVERALLS_TOKEN`n" ) }
-    - ps: |
-        if (-not $env:OS_unsupported -and $env:COVERAGE) {
+        if ($env:COVERAGE) {
             # determine coverage support (signalled by <COVERAGE_TYPE>_TOKEN environment vars)
             $s = $env:COVERAGE
             $coverage = @()
@@ -54,31 +53,56 @@ install:
                 $val = (get-item $("env:\"+$_.ToUpper()+"_TOKEN") -ea ignore).value
                 # write-host "$name = '$val'"
                 # write-host "`$val.length = $($val.length)"
-                if ($val.length -gt 0) { $coverage += $_ } else { write-host -f yellow "Missing token for '$_'" }
+                if ($val.length -gt 0) { $coverage += $_ } else { write-host -f yellow "info: skipping '$_' coverage (missing '$($_.ToUpper() + '_TOKEN')')" }
                 }
             $env:COVERAGE = $coverage -join " "
             # write-host "env:COVERAGE = $env:COVERAGE"
             }
+    # install dependencies
+    - if NOT DEFINED OS_unsupported ( cpanm --no-interactive --no-man-pages --notest --skip-satisfied --with-recommends --installdeps . )
     - ps: |
         if (-not $env:OS_unsupported -and $env:COVERAGE) {
-            # preload JSON:PP to avoid JSON::PP::Boolean redefine warnings
-            $env:PERL5OPT="-MJSON::PP"
             # install coverage support
             cpanm --notest --skip-installed Devel::Cover
             ($env:COVERAGE).split() | foreach {
-                # echo "cpanm --notest --skip-installed Devel::Cover::Report::$_"
-                cpanm --notest --skip-installed Devel::Cover::Report::$_
+                # echo "cpanm --no-interactive --no-man-pages --notest --skip-satisfied Devel::Cover::Report::$_"
+                cpanm --no-interactive --no-man-pages --notest --skip-satisfied Devel::Cover::Report::$_
                 }
             }
 
+before_build:
+    # setup coverage
+    - ps: |
+        if (-not $env:OS_unsupported -and $env:COVERALLS_TOKEN) { [System.IO.File]::WriteAllText( ".coveralls.yml", "`nrepo_token: $env:COVERALLS_TOKEN`n" ) }
+    # setup environment options
+    - set AUTOMATED_TESTING=1
+    - set DEVEL_COVER_OPTIONS=-ignore,^_build/
+    - set HARNESS_OPTIONS=j:c                       # enable parallel processing and color
+    - if DEFINED COVERAGE (set HARNESS_OPTIONS=c)   # for COVERAGE builds, disable parallel processing to show correctly interleaved output
+    - set HARNESS_TIMER=1
+    # * for COVERAGE builds, preload JSON:PP to avoid JSON::PP::Boolean redefine warning (see <https://github.com/rurban/Cpanel-JSON-XS/issues/65#issuecomment-219352754>)
+    - if DEFINED COVERAGE (set PERL5OPT=-MJSON::PP %PERL5OPT%)
+    # ensure CWD is project main directory
+    - cd "%APPVEYOR_BUILD_FOLDER%"
+    - ps: |
+        [System.Environment]::CurrentDirectory = (Get-Location).Path
+    # display environment
+    - echo COVERAGE=%COVERAGE%
+    - echo HARNESS_OPTIONS=%HARNESS_OPTIONS%
+    - echo OS_unsupported=%OS_unsupported%
+    - echo PERL5OPT=%PERL5OPT%
+
 build_script:
-    - if NOT DEFINED OS_unsupported ( perl Build.PL )
+    - if NOT DEFINED OS_unsupported ( perl Build.PL && perl Build )
 
 test_script:
-    - if DEFINED OS_unsupported (echo OS unsupported) else if DEFINED COVERAGE ( Build testcover ) else ( Build test )
+    # - if DEFINED OS_unsupported (echo OS unsupported) else if DEFINED COVERAGE ( Build testcover ) else ( Build test )
+    - if NOT DEFINED OS_unsupported if DEFINED COVERAGE ( perl Build testcover ) else ( perl Build test )
 
 after_test:
-    - ps: if (-not $env:OS_unsupported -and $env:COVERAGE) { $env:COVERAGE.split() | foreach { cover -report $_ } }
+    - ps: if (-not $env:OS_unsupported -and $env:COVERAGE) { $env:COVERAGE.split() | foreach { cover -report $_ 2>&1 } }
+    - ps: |
+        if ($env:OS_unsupported) { write-host -f magenta "WARN: OS unsupported" }
 
 # notifications:
 # To get Github PR notifications from AppVeyor, get an auth token from Github,
