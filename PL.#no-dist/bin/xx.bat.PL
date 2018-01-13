@@ -26,6 +26,7 @@ __DATA__
 
 :: ToDO: perl must be referenced here as 'perl.exe' to avoid infinite recursion if this is called via a 'perl.BAT' batch script as "xx perl.exe $*"; using shell aliasing will avoid this complication, but is there another way to keep the script here clean of expectation of perl as PERL.EXE?
 :: ToDO: clean up documentation/comments
+:: ToDO: remove TCC/4NT compatiblity code
 
 :: parent environment is kept untouched except as modified by "sourcing" of target command line text or executable output
 :: contains batch file techniques to allow "sourcing" of target command line text or executable output
@@ -116,7 +117,7 @@ goto :EOF
 goto :endofperl
 @rem };
 #!perl -w --
-#NOTE: use '#line NN' (where NN = actual_line_number + 1) to set perl line # for errors/warnings
+#NOTE: use '#line NN' (where NN = actual_line_number + 1) to set perl line # for errors/warnings; NOTE: 'actual_line_number' is from the *output* file not the template
 #line 104
 
 ## TODO: add normal .pl utility documentation/POD, etc [IN PROCESS]
