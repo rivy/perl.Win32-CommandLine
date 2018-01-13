@@ -19,6 +19,7 @@ __DATA__
 @rem = q{--* Perl *--
 @::# (emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
 @::# ":{{$ME_ID}}:"
+@setlocal &:: localize ENV changes until sourcing is pending
 @echo off
 :: eXpand and eXecute command line
 :: similar to linux xargs
@@ -32,8 +33,7 @@ __DATA__
 
 :: NOTE: TCC/4NT quirk => use %% for %, whereas CMD.exe % => as long as it does not introduce a known variable (eg, for CMD, %not_a_var => %not_a_var although %windir => C:\WINDOWS)
 
-:: localize ENV changes until sourcing is pending
-setlocal
+set "ERRORLEVEL=" &:: defensively reset ERRORLEVEL (avoiding any prior pinned value)
 
 set _xx_bat=nul
 
@@ -61,14 +61,14 @@ if NOT [%_xx_bat%]==[nul] ( goto :source_expansion )
 ::echo "perl output - no -s/-so"
 ::perl.exe -x -S %0 %*      &:: if needed to avoid infinite recursion while using a PERL.BAT script
 perl -x -S %0 %*
-set _ERROR=%errorlevel%
+set "_ERROR=%ERRORLEVEL%" &:: save ERRORLEVEL into _ERROR for later processing
 if "%_ERROR%" == "0" ( goto :NO_EXIT_ERROR )
 perl -e "exit 0"
-if NOT "%errorlevel%" == "0" (
+if NOT "%ERRORLEVEL%" == "0" (
     echo "ERROR: perl is required, but it is not executable; please install Perl and/or add perl to the PATH [see http://strawberryperl.com]"
     )
-::  propagate %errorlevel%
-exit /B %_ERROR%
+:: propagate ERRORLEVEL (via %_ERROR%)
+goto #_undefined_label_# 2>nul || "%COMSPEC%" /d /c exit %_ERROR%
 :NO_EXIT_ERROR
 endlocal
 goto :_DONE
@@ -83,35 +83,34 @@ echo @echo OFF >> %_xx_bat%
 ::echo perl output [source expansion { perl -x -S %0 %* }]
 ::perl.exe -x -S %0 %* >> %_xx_bat%     &:: if needed to avoid infinite recursion while using a PERL.BAT script
 perl -x -S %0 %* >> %_xx_bat%
-set _ERROR=%errorlevel%
+set _ERROR=%ERRORLEVEL%
 ::echo "sourcing - BAT created"
 if NOT "%_ERROR%" == "0" (
 ::  echo _ERROR=%ERROR%
     erase %_xx_bat% 1>nul 2>nul
     perl -e 0
-    if "%errorlevel%" == "0" (
+    if "%ERRORLEVEL%" == "0" (
         echo "ERROR: perl is required, but it is not executable; please install and/or add perl to the PATH"
         )
-    exit /B %_ERROR%
+    goto #_undefined_label_# 2>nul || "%COMSPEC%" /d /c exit %_ERROR%
     )
 ::echo "sourcing & cleanup..."
 :: propagate exit code from _xx_bat after it is sourced
-:: NOTES: :: erase RESETS %errorlevel% depending on outcome (overriding any %_xx_bat% errors
-::        :: if ERRORLEVEL N doesn't check for negative ERRORLEVELs
-:: use subroutines to preserve ENVIRONMENT variables and %ERRORLEVEL% (can use %N instead of polluting ENVIRONMENT to save %ERRORLEVEL%)
-endlocal & call :source_expansion_FINAL %_xx_bat%
+endlocal & call :source_and_erase %_xx_bat%
+if NOT "%ERRORLEVEL" == "0" ( set "ERRORLEVEL=" & goto #_undefined_label_# 2>nul || "%COMSPEC%" /d /c exit %_ERROR% )
+set "ERRORLEVEL=" &:: un-pin ERRORLEVEL
 goto :_DONE
+
 ::
-:source_expansion_FINAL
-::echo in FINAL [exec "%1%"]
+:source_and_erase &:: ( SOURCE_FILE ) ## SOURCE_FILE is already quoted, if needed
+:: NOTE: returns with ERRORLEVEL *pinned* to the value obtained while sourcing SOURCE_FILE
+::echo [exec "%1%"]
 call %1
-call :source_expansion_CLEANUP %1 %errorlevel%
-goto :EOF
-:source_expansion_CLEANUP
-::echo FINAL [erase TEMP (file=%1), ERRORLEVEL=%2]
+set "ERRORLEVEL=%ERRORLEVEL%" &:: pin ERRORLEVEL prior to erase (which resets it based on outcome)
+::echo FINAL [erase TEMP (file=%1)]
 erase %1 1>nul 2>nul
-exit /B %2
 goto :EOF
+::
 
 :_DONE
 goto :endofperl
