@@ -9,27 +9,36 @@ Build
 Build.bat
 _build/**
 blib/**
+CHANGES\.log\.tmp
+Makefile.PL
+Makefile
+MANIFEST
+MANIFEST.bak
+# META.json
+# META.yml
+MYMETA.json
+MYMETA.yml
+README
+SIGNATURE
+##
+pod2htmd.tmp
+**\.pyc
+vc[1-9][0-9]+.pdb
+##
+Win32-CommandLine*
+
+# # ignore pulled/imported code (if any)
+# inc/**
+# t/lib/**
+
+# # ignore experimental code
+# t/prelim/**
+
+#### auto-generated * below
+# PL generated files
+bin/xx.bat
+lib/Win32/CommandLine_def.old
 lib/Win32/CommandLine.c
 lib/Win32/CommandLine.o
 lib/Win32/CommandLine.obj
-lib/Win32/CommandLine_def.old
-Win32-CommandLine*
-vc[1-9][0-9]+.pdb
-MANIFEST
-MANIFEST.bak
-Makefile.PL
-Makefile
-README
-META.yml
-MYMETA.yml
-META.json
-MYMETA.json
-SIGNATURE
-CHANGES\.log\.tmp
-pod2htmd.tmp
-**\.pyc
-
-#### auto-generated file names
-# PL generated files
-bin/xx.bat
 lib/Win32/CommandLine.pm
