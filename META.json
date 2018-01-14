@@ -123,7 +123,7 @@
    "provides" : {
       "Win32::CommandLine" : {
          "file" : "lib/Win32/CommandLine.pm",
-         "version" : "0.947_1"
+         "version" : "0.949_1"
       }
    },
    "release_status" : "testing",
@@ -132,7 +132,7 @@
          "http://www.perlfoundation.org/artistic_license_2_0"
       ]
    },
-   "version" : "0.947_1",
+   "version" : "0.949_1",
    "x_authority" : "cpan:RIVY",
    "x_serialization_backend" : "JSON::PP version 2.94"
 }

@@ -1,7 +1,7 @@
 ## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd ProhibitUselessNoCritic )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
-# Win32::CommandLine 0.947_1 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
+# Win32::CommandLine 0.949_1 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
 package Win32::CommandLine;
 
 # Module Summary
@@ -14,7 +14,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =over
 
- $Win32::CommandLine::VERSION = "0.947_1";
+ $Win32::CommandLine::VERSION = "0.949_1";
 
 =back
 
@@ -69,7 +69,7 @@ use 5.008008;    # earliest tested perl version (v5.8.8); v5.6.1 is no longer te
 # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
 {
     ; ## no critic ( RequireConstantVersion )
-    our $VERSION = '0.947_1';    # VERSION definition
+    our $VERSION = '0.949_1';    # VERSION definition
     $VERSION =~ s/_//g;                   # numify VERSION (needed for alpha versions)
 }
 
@@ -104,7 +104,7 @@ sub argv;                                                                       
 
 ##bootstrap Win32::CommandLine (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
 
-bootstrap Win32::CommandLine '0.947_1';
+bootstrap Win32::CommandLine '0.949_1';
 
 sub command_line ## ( ) => $
 {

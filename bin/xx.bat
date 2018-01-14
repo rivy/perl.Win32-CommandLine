@@ -1,6 +1,6 @@
 @rem = q{--* Perl *--
 @::# (emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
-@::# "bin/xx.bat" 0.947_1 (from "PL.#no-dist/bin/xx.bat.PL")
+@::# "bin/xx.bat" 0.949_1 (from "PL.#no-dist/bin/xx.bat.PL")
 @setlocal &:: localize ENV changes until sourcing is pending
 @echo off
 :: eXpand and eXecute command line
@@ -136,7 +136,7 @@ xx - eXpand (reparse) and eXecute the command line
 
 =head1 VERSION
 
-This document describes C<xx>, v 0.947_1.
+This document describes C<xx>, v 0.949_1.
 
 =head1 SYNOPSIS
 
@@ -219,7 +219,7 @@ use warnings;
 # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
 {
     ; ## no critic ( RequireConstantVersion )
-    our $VERSION = '0.947_1';    # VERSION definition
+    our $VERSION = '0.949_1';    # VERSION definition
     $VERSION =~ s/_//g;                   # numify VERSION (needed for alpha versions)
 }
 
