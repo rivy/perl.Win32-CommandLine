@@ -6,14 +6,14 @@ language: perl
 perl:
     - "blead"
     - "dev"
-    - "5.26"
-    - "5.24"
-    - "5.22"
-    - "5.20"
+    # - "5.26"
+    # - "5.24"
+    # - "5.22"
+    # - "5.20"
     - "5.18"
-    - "5.16"
-    - "5.14"
-    - "5.12"
+    # - "5.16"
+    # - "5.14"
+    # - "5.12"
     - "5.10"
     - "5.8.8"
     - "5.8"
@@ -26,20 +26,22 @@ matrix:
         - perl: "blead"
         - perl: "dev"
 
-addons:
-  apt:
-    packages:
-    - aspell
-    - aspell-en
+# addons:
+#   apt:
+#     packages:
+#     - aspell
+#     - aspell-en
 
 before_install:
     - git clone git://github.com/travis-perl/helpers ~/travis-perl-helpers
     - source ~/travis-perl-helpers/init
     - build-perl
     - perl -V
+    - |
+      function unsupported { test -n "$OS_unsupported" && printf "\e[33minfo: $OS_unsupported\e[0m\n"; }
 
 install:
-    - cpanm --notest JSON::PP  # most recent JSON::PP is required to avoid JSON parsing errors during tests
+    # - cpanm --notest JSON::PP  # most recent JSON::PP is required to avoid JSON parsing errors during coverage testing
     # # * `dzil` build (note: does not provide coverage info)
     # - cd $TRAVIS_BUILD_DIR
     # - cpanm --notest Dist::Zilla
@@ -50,15 +52,17 @@ install:
     # - cpanm --notest --skip-installed Module::Build
     - cd "$TRAVIS_BUILD_DIR"
     # - cd "$BUILD_DIR"          # $BUILD_DIR is set by the build-dist command
-    - export OS_unsupported=$(test $(perl Build.PL 2>&1 | grep -c "^OS unsupported\b") -ge 1 && echo true)
-    - test -n "$OS_unsupported" || build-dist
-    # - test -n "$OS_unsupported" || cpanm --installdeps --notest .
-    - test -n "$OS_unsupported" || cpan-install --deps       # installs prereqs, including recommends
-    - test -n "$OS_unsupported" || cpan-install --coverage   # installs converage prereqs, if enabled
+    - export OS_unsupported=""
+    - cpan-install --deps || true   # attempt install of prereqs, ignoring errors; for "OS unsupported" check
+    - OS_unsupported=$(test $(perl Build.PL 2>&1 | grep -c "^OS unsupported\b") -ge 1 && echo "OS unsupported" || echo "$OS_unsupported")
+    - unsupported || cpan-install --deps       # installs prereqs, including recommends
+    - unsupported || cpan-install --coverage   # installs coverage prereqs, if enabled
+    # - unsupported || build-dist
 
 before_script:
-    - test -n "$OS_unsupported" || coverage-setup
+    - unsupported || coverage-setup
     - export AUTOMATED_TESTING=1 HARNESS_OPTIONS=j10:c HARNESS_TIMER=1
+    - export DEVEL_COVER_OPTIONS=-ignore,^_build/
 
 script:
     # # * `dzil` build (note: does not provide coverage info)
@@ -67,14 +71,14 @@ script:
     # * idiomatic build (portable variant)
     - cd "$TRAVIS_BUILD_DIR"
     # - cd "$BUILD_DIR"
-    - test -n "$OS_unsupported" || perl Build.PL
-    - test -n "$OS_unsupported" || perl Build
-    # - prove -l -j$(test-jobs)              # tests
-    # - prove -l -j$(test-jobs) xt/author/*  # "author" tests
-    - test -n "$OS_unsupported" && printf "OS unsupported" || ./Build test
+    - unsupported || perl Build.PL
+    - unsupported || perl Build
+    - unsupported || ./Build test
+    # - unsupported || prove -l -j$(test-jobs)  # tests
+    # - prove -l -j$(test-jobs) xt/author/*     # "author" tests
 
 after_success:
-    - test -n "$OS_unsupported" && coverage-report  # coveralls.io + codecov.io for COVERAGE="Coveralls Codecov"
+    - unsupported || coverage-report  # coveralls.io + codecov.io for COVERAGE="Coveralls Codecov"
 
 notifications:
     on_success: change
