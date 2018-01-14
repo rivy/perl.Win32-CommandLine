@@ -1,0 +1,138 @@
+{
+   "abstract" : "Retrieve and reparse the Win32 command line",
+   "author" : [
+      "Roy Ivy III <rivy[at]cpan[dot]org>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "Module::Build version 0.4224",
+   "license" : [
+      "artistic_2"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Win32-CommandLine",
+   "no_index" : {
+      "directory" : [
+         "eg",
+         "extras",
+         "notes",
+         "inc",
+         "t",
+         "xt"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Config" : "0",
+            "Cwd" : "0",
+            "ExtUtils::CBuilder" : "0",
+            "ExtUtils::Manifest" : "1.54",
+            "File::Basename" : "0",
+            "File::Find" : "0",
+            "File::Glob" : "0",
+            "File::Path" : "0",
+            "File::Spec" : "0",
+            "File::Spec::Functions" : "0",
+            "File::Which" : "0",
+            "FindBin" : "0",
+            "IO::File" : "0",
+            "Module::Build" : "0",
+            "TAP::Formatter::Color" : "0",
+            "TAP::Formatter::Console" : "0",
+            "TAP::Harness" : "0",
+            "Text::Template" : "1.44",
+            "URI::URL" : "0",
+            "perl" : "v5.6.1",
+            "version" : "0.77"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Config" : "0",
+            "Cwd" : "0",
+            "ExtUtils::Manifest" : "1.54",
+            "File::Basename" : "0",
+            "File::Find" : "0",
+            "File::Glob" : "0",
+            "File::Path" : "0",
+            "File::Spec" : "0",
+            "File::Spec::Functions" : "0",
+            "File::Which" : "0",
+            "FindBin" : "0",
+            "IO::File" : "0",
+            "Module::Build" : "0",
+            "TAP::Formatter::Color" : "0",
+            "TAP::Formatter::Console" : "0",
+            "TAP::Harness" : "0",
+            "Text::Template" : "1.44",
+            "URI::URL" : "0",
+            "perl" : "v5.6.1",
+            "version" : "0.77"
+         }
+      },
+      "runtime" : {
+         "recommends" : {
+            "Win32" : "0",
+            "Win32::Security::SID" : "0",
+            "Win32::TieRegistry" : "0"
+         },
+         "requires" : {
+            "Carp::Assert" : "0",
+            "File::Which" : "0",
+            "Pod::Usage" : "1.30",
+            "perl" : "v5.8.8",
+            "version" : "0.74"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "CPAN::Meta" : "0",
+            "Carp" : "0",
+            "Config" : "0",
+            "Cwd" : "0",
+            "ExtUtils::Manifest" : "1.54",
+            "File::Basename" : "0",
+            "File::Find" : "0",
+            "File::Glob" : "0",
+            "File::Path" : "0",
+            "File::Spec" : "0",
+            "File::Spec::Functions" : "0",
+            "File::Which" : "0",
+            "FindBin" : "0",
+            "IO::File" : "0",
+            "IPC::Run3" : "0",
+            "Module::Build" : "0",
+            "Probe::Perl" : "0",
+            "TAP::Formatter::Color" : "0",
+            "TAP::Formatter::Console" : "0",
+            "TAP::Harness" : "0",
+            "Test::CPAN::Meta" : "0",
+            "Test::CPAN::Meta::JSON" : "0",
+            "Test::Differences" : "0",
+            "Test::More" : "0",
+            "Text::Template" : "1.44",
+            "URI::URL" : "0",
+            "perl" : "v5.6.1",
+            "version" : "0.77"
+         }
+      }
+   },
+   "provides" : {
+      "Win32::CommandLine" : {
+         "file" : "lib/Win32/CommandLine.pm",
+         "version" : "0.947_1"
+      }
+   },
+   "release_status" : "testing",
+   "resources" : {
+      "license" : [
+         "http://www.perlfoundation.org/artistic_license_2_0"
+      ]
+   },
+   "version" : "0.947_1",
+   "x_authority" : "cpan:RIVY",
+   "x_serialization_backend" : "JSON::PP version 2.94"
+}
