@@ -30,6 +30,10 @@ environment:
 #     - C:\strawberry -> .appveyor.yml
 
 install:
+    # force branch checkout (if knowable), then reset to the specific commit
+    # * this allows later apps to see the branch name using standard `git branch` operations, yet always builds the correct specific commit
+    # * ref: <https://github.com/appveyor/ci/issues/1606>[`@`](https://archive.is/RVpnF)
+    - if DEFINED APPVEYOR_REPO_BRANCH ( git checkout "%APPVEYOR_REPO_BRANCH%" & git reset "%APPVEYOR_REPO_COMMIT%" --hard )
     # install correct perl version
     - if not exist "C:\strawberry" cinst strawberryperl -y --version="%Perl_VERSION%"
     - set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
