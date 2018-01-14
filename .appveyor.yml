@@ -66,7 +66,13 @@ install:
             cpanm --notest --skip-installed Devel::Cover
             ($env:COVERAGE).split() | foreach {
                 # echo "cpanm --no-interactive --no-man-pages --notest --skip-satisfied Devel::Cover::Report::$_"
-                cpanm --no-interactive --no-man-pages --notest --skip-satisfied Devel::Cover::Report::$_
+                if ( $_ -ieq "Coveralls" ) {
+                    ## override for bugged default "Coveralls"; use patched version from personal github repo
+                    cpanm --no-interactive --no-man-pages --notest --skip-satisfied https://github.com/rivy/perl.Devel-Cover-Report-Coveralls.git
+                    }
+                else {
+                    cpanm --no-interactive --no-man-pages --notest --skip-satisfied Devel::Cover::Report::$_
+                    }
                 }
             }
 
