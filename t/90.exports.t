@@ -16,13 +16,6 @@ use lib 't/lib';
 use Test::More;
 use Test::Differences;
 
-# configure 'lib' for command line testing, when needed
-if ( !$ENV{HARNESS_ACTIVE} ) {
-    # not executing under Test::Harness (eg, executing directly from command line)
-    use lib qw{ blib/arch };   # only needed for dynamic module loads (eg, compiled XS) [ removable if no XS ]
-    use lib qw{ lib };         # use 'lib' content (so 'blib/arch' version doesn't always have to be built/updated 1st)
-    }
-
 #
 
 plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};

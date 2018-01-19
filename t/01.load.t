@@ -26,12 +26,12 @@ my $metaFile = q//;
     $metaFile = 'META.yaml' if (($metaFile eq q//) && (-f 'META.yaml'));
 my $haveMetaFile = ($metaFile ne q//);
 my $haveNonEmptyMetaFile = $haveMetaFile && (-s $metaFile);
-my $meta_ref = CPAN::Meta->load_file( $metaFile );
+my $meta_ref = $metaFile ? CPAN::Meta->load_file( $metaFile ) : undef;
 my $packages_href = (defined $meta_ref) ? $meta_ref->{provides} : undef;
 
-plan tests => scalar( defined $packages_href ? keys %{$packages_href} : 0 );
-
 diag("$^O, perl v$], $^X");
+
+plan tests => scalar( defined $packages_href ? keys %{$packages_href} : 0 );
 
 foreach my $module_name ( sort keys %{$packages_href} ) {
     my $message = 'Missing $module_name';
