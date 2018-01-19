@@ -13,10 +13,10 @@ use Test::Differences;
 
 my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; }; # runs the Test::NoWarnings test (must be AFTER any plan skip_all ...)
 
-if ( !$ENV{HARNESS_ACTIVE} ) {
-    # not executing under Test::Harness
-    use lib qw{ lib };      # for ease of testing from command line and testing immediacy, use the 'lib' version (so 'blib/arch' version doesn't have to be updated 1st)
-    }
+# if ( !$ENV{HARNESS_ACTIVE} ) {
+#     # not executing under Test::Harness
+#     use lib qw{ lib };      # for ease of testing from command line and testing immediacy, use the 'lib' version (so 'blib/arch' version doesn't have to be updated 1st)
+#     }
 
 use Win32::CommandLine;
 
