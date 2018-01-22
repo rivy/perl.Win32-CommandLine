@@ -21,9 +21,9 @@ __DATA__
 
 <!-- ":{{$ME_ID}}:" -->
 
-[![[AppVeyor ~ build status]](https://ci.appveyor.com/api/projects/status/":{{$user_ci_appveyor_key}}:"/branch/":{{$branch}}:"?svg=true)](https://ci.appveyor.com/":{{$user_ci_appveyor_path}}:")
-[![[Travis CI ~ build status]](https://travis-ci.org":{{$repo_URL_path}}:".svg?branch=":{{$branch}}:")](https://travis-ci.org":{{$repo_URL_path}}:")
-[![[Codecov ~ status]](https://codecov.io/gh":{{$repo_URL_path}}:"/branch/":{{$branch}}:"/graph/badge.svg)](https://codecov.io/gh":{{$repo_URL_path}}:")
-[![[Coveralls ~ status]](https://coveralls.io/repos/github/":{{$repo_URL_path}}:"/badge.svg?branch=":{{$branch}}:")](https://coveralls.io/github":{{$repo_URL_path}}:"?branch=":{{$branch}}:")
+[![[AppVeyor ~ build status]](https://ci.appveyor.com/api/projects/status/":{{$user_ci_appveyor_key}}:"/branch/":{{$repo_branch}}:"?svg=true)](https://ci.appveyor.com":{{$user_ci_appveyor_path}}:")
+[![[Travis CI ~ build status]](https://travis-ci.org":{{$dist_repo_web_path}}:".svg?branch=":{{$repo_branch}}:")](https://travis-ci.org":{{$dist_repo_web_path}}:")
+[![[Codecov ~ status]](https://codecov.io/gh":{{$dist_repo_web_path}}:"/branch/":{{$repo_branch}}:"/graph/badge.svg)](https://codecov.io/gh":{{$dist_repo_web_path}}:")
+[![[Coveralls ~ status]](https://coveralls.io/repos/github/":{{$dist_repo_web_path}}:"/badge.svg?branch=":{{$repo_branch}}:")](https://coveralls.io/github":{{$dist_repo_web_path}}:"?branch=":{{$repo_branch}}:")
 
 # ":{{$dist_name}}:"-":{{$VERSION}}:"

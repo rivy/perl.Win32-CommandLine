@@ -122,7 +122,7 @@ sub argv;                                                                       
 
 ##bootstrap ":{{$module_name}}:" (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
 
-bootstrap ":{{$module_bootstrap}}:";
+bootstrap ":{{$module_name . qq{ '$VERSION'}}}:";
 
 sub command_line ## ( ) => $
 {
@@ -1982,7 +1982,7 @@ None reported.
     limitations on the size of data sets, special cases that are not
     (yet) handled, etc.
 
-Please report any bugs or feature requests to C<bug-":{{$module_name_dashed}}:"@rt.cpan.org>, or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=":{{$module_name_dashed}}:">. The developers will be notified, and you'll automatically be notified of progress on your bug as any changes are made.
+Please report any bugs or feature requests to C<bug-":{{$dist_name}}:"@rt.cpan.org>, or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=":{{$dist_name}}:">. The developers will be notified, and you'll automatically be notified of progress on your bug as any changes are made.
 
 =head2 Operational Notes
 
@@ -2039,11 +2039,11 @@ You can also look for further information at:
 
 =over
 
-L<https://metacpan.org/search?q=":{{$module_name_dashed}}:">
+L<https://metacpan.org/search?q=":{{$dist_name}}:">
 
-L<http://search.cpan.org/dist/":{{$module_name_dashed}}:">
+L<http://search.cpan.org/dist/":{{$dist_name}}:">
 
-L<http://kobesearch.cpan.org/dist/":{{$module_name_dashed}}:">
+L<http://kobesearch.cpan.org/dist/":{{$dist_name}}:">
 
 =back
 
@@ -2051,7 +2051,7 @@ L<http://kobesearch.cpan.org/dist/":{{$module_name_dashed}}:">
 
 =over
 
-L<http://cpanratings.perl.org/dist/":{{$module_name_dashed}}:">
+L<http://cpanratings.perl.org/dist/":{{$dist_name}}:">
 
 =back
 
@@ -2059,7 +2059,7 @@ L<http://cpanratings.perl.org/dist/":{{$module_name_dashed}}:">
 
 =over
 
-L<http://rt.cpan.org/Public/Dist/Display.html?Name=":{{$module_name_dashed}}:">
+L<http://rt.cpan.org/Public/Dist/Display.html?Name=":{{$dist_name}}:">
 
 =back
 
@@ -2067,7 +2067,7 @@ L<http://rt.cpan.org/Public/Dist/Display.html?Name=":{{$module_name_dashed}}:">
 
 =over
 
-L<http://www.cpantesters.org/show/":{{$module_name_dashed}}:".html>
+L<http://www.cpantesters.org/show/":{{$dist_name}}:".html>
 
 =back
 
@@ -2075,9 +2075,9 @@ L<http://www.cpantesters.org/show/":{{$module_name_dashed}}:".html>
 
 =over
 
-C<[kwalitee]> L<http://cpants.perl.org/dist/kwalitee/":{{$module_name_dashed}}:">
+C<[kwalitee]> L<http://cpants.perl.org/dist/kwalitee/":{{$dist_name}}:">
 
-C<[ used by]> L<http://cpants.perl.org/dist/used_by/":{{$module_name_dashed}}:">
+C<[ used by]> L<http://cpants.perl.org/dist/used_by/":{{$dist_name}}:">
 
 =back
 
@@ -2085,9 +2085,9 @@ C<[ used by]> L<http://cpants.perl.org/dist/used_by/":{{$module_name_dashed}}:">
 
 =for possible_future
     * AnnoCPAN: Annotated CPAN documentation
-      http://annocpan.org/dist/":{{$module_name_dashed}}:"
+      http://annocpan.org/dist/":{{$dist_name}}:"
     * CPANFORUM: Forum discussing ":{{$module_name}}:"
-      http://www.cpanforum.com/dist/":{{$module_name_dashed}}:"
+      http://www.cpanforum.com/dist/":{{$dist_name}}:"
 
 =head1 TODO
 

@@ -25,10 +25,10 @@ use Module::Build;
 
 my $mb = Module::Build->current();
 
-plan skip_all => 'No symbol table exports specified' if not defined $mb->notes('exports_ref');
+plan skip_all => 'No symbol table exports specified' if not defined $mb->notes('config/exports_aref');
 
 my %export_map = ();
-my $ref = $mb->notes('exports_ref');
+my $ref = $mb->notes('config/exports_aref');
 if ( ref $ref eq 'ARRAY' ) { $export_map{$mb->module_name} = [ @{$ref} ] };
 if ( ref $ref eq 'HASH' )  { %export_map = %{$ref} };
 
