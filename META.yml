@@ -1,7 +1,7 @@
 ---
 abstract: 'Retrieve and reparse the Win32 command line'
 author:
-  - 'Roy Ivy III <rivy[at]cpan[dot]org>'
+  - 'Roy Ivy III <rivy@cpan.org>'
 build_requires:
   CPAN::Meta: '0'
   Carp: '0'
@@ -29,7 +29,7 @@ build_requires:
   Test::Differences: '0'
   Test::More: '0'
   Text::Template: '1.44'
-  URI::URL: '0'
+  URI: '0'
   perl: v5.6.1
   version: '0.77'
 configure_requires:
@@ -50,7 +50,7 @@ configure_requires:
   TAP::Formatter::Console: '0'
   TAP::Harness: '0'
   Text::Template: '1.44'
-  URI::URL: '0'
+  URI: '0'
   perl: v5.6.1
   version: '0.77'
 dynamic_config: 1
@@ -83,7 +83,10 @@ requires:
   perl: v5.8.8
   version: '0.74'
 resources:
+  bugtracker: https://github.com/rivy/perl.Win32-CommandLine/issues
+  homepage: https://github.com/rivy/perl.Win32-CommandLine
   license: http://www.perlfoundation.org/artistic_license_2_0
+  repository: https://github.com/rivy/perl.Win32-CommandLine.git
 version: 0.949_1
 x_authority: cpan:RIVY
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

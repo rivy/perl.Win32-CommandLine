@@ -1,4 +1,4 @@
-## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd ProhibitUselessNoCritic )
+## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
 # Win32::CommandLine 0.949_1 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
@@ -101,8 +101,6 @@ sub argv;                                                                       
 ####
 
 # Module Implementation
-
-##bootstrap Win32::CommandLine (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
 
 bootstrap Win32::CommandLine '0.949_1';
 
@@ -1562,8 +1560,9 @@ sub _home_paths
 
 B<E<nbsp>E<nbsp>E<nbsp>E<nbsp>_or_>
 
- use Win32::CommandLine qw( command_line );
+ use Win32::CommandLine qw( command_line parse );
  my $commandline = command_line();
+ my $args = parse( $commandline );
  ...
 
 =back
@@ -1964,7 +1963,7 @@ None reported.
     limitations on the size of data sets, special cases that are not
     (yet) handled, etc.
 
-Please report any bugs or feature requests to C<bug-Win32-CommandLine@rt.cpan.org>, or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-CommandLine>. The developers will be notified, and you'll automatically be notified of progress on your bug as any changes are made.
+Please report any issues (bugs or feature requests) through the issue tracker at L<https://github.com/rivy/perl.Win32-CommandLine/issues>. The developers will be notified, and you'll automatically be notified of progress on your issue.
 
 =head2 Operational Notes
 
@@ -2017,15 +2016,21 @@ You can also look for further information at:
 
 =over
 
-=item * CPAN
+=item * MetaCPAN / CPAN module documentation
 
 =over
 
-L<https://metacpan.org/search?q=Win32-CommandLine>
+L<https://metacpan.org/pod/Win32::CommandLine>
 
-L<http://search.cpan.org/dist/Win32-CommandLine>
+L<http://search.cpan.org/~rivy/Win32-CommandLine>
 
-L<http://kobesearch.cpan.org/dist/Win32-CommandLine>
+=back
+
+=item * Issue tracker
+
+=over
+
+L<https://github.com/rivy/perl.Win32-CommandLine/issues>
 
 =back
 
@@ -2033,15 +2038,7 @@ L<http://kobesearch.cpan.org/dist/Win32-CommandLine>
 
 =over
 
-L<http://cpanratings.perl.org/dist/Win32-CommandLine>
-
-=back
-
-=item * RT: CPAN's request tracker (aka buglist)
-
-=over
-
-L<http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine>
+L<https://cpanratings.perl.org/dist/Win32-CommandLine>
 
 =back
 
@@ -2049,17 +2046,19 @@ L<http://rt.cpan.org/Public/Dist/Display.html?Name=Win32-CommandLine>
 
 =over
 
-L<http://www.cpantesters.org/show/Win32-CommandLine.html>
+L<https://www.cpantesters.org/distro/W/Win32-CommandLine.html>
+
+L<http://matrix.cpantesters.org/?dist=Win32-CommandLine+0.949_1>
+
+L<http://fast-matrix.cpantesters.org/?dist=Win32-CommandLine+0.949_1>
 
 =back
 
-=item * CPANTS: CPAN Testing Service
+=item * CPANTS: CPAN Testing Service module summary
 
 =over
 
-C<[kwalitee]> L<http://cpants.perl.org/dist/kwalitee/Win32-CommandLine>
-
-C<[ used by]> L<http://cpants.perl.org/dist/used_by/Win32-CommandLine>
+L<https://cpants.cpanauthors.org/dist/Win32-CommandLine>
 
 =back
 
@@ -2081,7 +2080,7 @@ Expand and polish the documentation. Add argument/option explanations and exampl
 
 =for REFERENCE [info re end-user/install vs automated vs release/author testing :: URLref: http://search.cpan.org/~adamk/Test-XT-0.02/lib/Test/XT.pm ]
 
-For additional testing, set the following environment variables to a true value ("true" in the perl sense, meaning non-NULL, non-ZERO value):
+For additional testing, set the following environment variables to a true value ("true" in the perl sense, meaning a defined, non-NULL, non-ZERO value):
 
 =over
 
@@ -2113,25 +2112,6 @@ of the build, followed by a 'build test'.
 
 =for readme continue
 
-=head1 LICENSE AND COPYRIGHT
-
- Copyright (c) 2007-2013, Roy Ivy III <rivy[at]cpan[dot]org>. All rights reserved.
-
-This module is free software; you can redistribute it and/or modify it under the
-Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
-
-=head1 DISCLAIMER OF WARRANTY
-
- THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
- AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
- ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
- BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
- THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
- [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
-
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas (including an initial XS starting
@@ -2149,7 +2129,33 @@ point for the module) during a discussion on PerlMonks (see L<http://www.perlmon
 
 =head1 AUTHOR
 
-Roy Ivy III <rivy[at]cpan[dot]org>
+Roy Ivy III <rivy@cpan.org>
+
+=for TODO
+    =head1 CONTRIBUTORS (auto-generate from .mailmap)
+
+=for readme continue
+
+=head1 COPYRIGHT AND LICENSE
+
+ Copyright (c) 2007-2018, Roy Ivy III <rivy@cpan.org>. All rights reserved.
+
+Z<>
+
+ This module is free software; you can redistribute it and/or modify it under the
+ Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
+
+=head1 DISCLAIMER OF WARRANTY
+
+ THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
+ AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
+ ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
+ BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
+ THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
 
 =for readme stop
 
