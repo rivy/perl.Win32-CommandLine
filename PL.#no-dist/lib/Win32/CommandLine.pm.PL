@@ -1,4 +1,4 @@
-#!perl -w -- ## no critic ( RequireEndWithOne RequireExplicitPackage RequireTidyCode RequireVersionVar )
+#!perl -w -- ## no critic ( RequireEndWithOne RequireExplicitPackage RequireVersionVar )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
 use strict;
@@ -16,7 +16,7 @@ binmode DATA, ':raw:utf8'; ## no critic ( RequireEncodingWithUTF8Layer ) ## utf8
 () = Module::Build->current()->expand_template( $output_filename, [<DATA>] );
 
 __DATA__
-## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd ProhibitUselessNoCritic )
+## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
 # ":{{$ME_ID}}:"
@@ -119,8 +119,6 @@ sub argv;                                                                       
 ####
 
 # Module Implementation
-
-##bootstrap ":{{$module_name}}:" (($^V lt v5.8.9) ? $VERSION : $VERSION->normal);       ## no critic ( ProhibitPunctuationVars ProhibitMagicNumbers ProhibitMismatchedOperators )   ## ? ProhibitMismatchedOperators -- CHECK the comparison for correctness
 
 bootstrap ":{{$module_name . qq{ '$VERSION'}}}:";
 

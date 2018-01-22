@@ -1,4 +1,4 @@
-#!perl -w -- ## no critic ( RequireEndWithOne RequireExplicitPackage RequireTidyCode RequireVersionVar )
+#!perl -w -- ## no critic ( RequireEndWithOne RequireExplicitPackage RequireVersionVar )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
 use strict;
