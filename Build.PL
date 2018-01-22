@@ -46,7 +46,7 @@ use English qw( -no_match_vars ); # enable long-form built-in variable names; '-
 # $defaultVERSION   :: used to make the VERSION code resilient vs missing keyword expansion
 # $generate_alphas  :: 0 => generate normal versions; true/non-0 => generate alpha version strings for ODD numbered minor versions
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
-use version qw(); our $VERSION; { my $defaultVERSION = '0.4'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.4.1.340 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers)
+use version qw(); our $VERSION; { my $defaultVERSION = '0.4'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.4.1.340 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/msx) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/msx; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers Capitalization RequireConstantVersion ProhibitEscapedMEtaCharacters )
 
 ##- config
 my %config;
@@ -73,7 +73,7 @@ $config{'requires_href'} = {};                      # distribution requirements 
 $config{'meta_add_href'} = {'meta-spec'=>{version=>'2'}};   # key/value pairs to "add" to META files (no obvious default except default to meta-spec v2); note: completely overwrites META ARRAY or HASH values
 $config{'meta_merge_href'} = {'meta-spec'=>{version=>'2'}}; # key/value pairs to "merge" into META files (no obvious default except default to meta-spec v2); note: merges values into META ARRAY or HASH values
 #
-$config{'dynamic_config'} = 1;                      # distribution 'build/test/install' requires execution of Build.PL (metadata only is not enough)
+$config{'dynamic_config'} = 0;                      # Build.PL must be executed in order to determine prereqs (metadata only is not enough) [ref: <https://metacpan.org/pod/CPAN::Meta::Spec#dynamic_config>]
 #
 $config{'configure_requires_href'} = {              # basic distribution requirements for configuration (ie, requirements needed to run `perl Build.PL`); URLref: https://www.socialtext.net/perl5/configure_requires [@2011.04.15.2129@ http://www.webcitation.org/5xydysS2l ]
     'perl' => '5.6.1',
@@ -140,9 +140,9 @@ $config{'assert_os_aref'} = [];                     # limit build to specific OS
 #
 $config{'add_to_versioned_aref'} = [ 'bin/*' ]; # globs matching extra files which should have the distribution version number upon a successful build (these are added to the list of all files containing "provides" modules)
 #
-$config{'repo_commit_id_length_medium'} = 12;       # length of 'medium' commit ID ('excellent' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):100,000,000,000,000)
-$config{'repo_commit_id_length_short'} = 6;         # length of 'short' commit ID ('good' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):10,000,000)
-$config{'repo_commit_id_length_tiny'} = 4;          # length of 'tiny' commit ID ('likely' chance of uniqueness vs other commits within the repo; conflict chance ~(repo size):50,000)
+$config{'repo_commit_id_length_medium'} = 12;       # length of 'medium' commit ID ('excellent' chance of uniqueness vs other commits within the repo; conflict chance ~(# repo commits):100,000,000,000,000)
+$config{'repo_commit_id_length_short'} = 6;         # length of 'short' commit ID ('good' chance of uniqueness vs other commits within the repo; conflict chance ~(# repo commits):10,000,000)
+$config{'repo_commit_id_length_tiny'} = 4;          # length of 'tiny' commit ID ('likely' chance of uniqueness vs other commits within the repo; conflict chance ~(# repo commits):50,000)
 #
 $config{'custom_code_href'} = {};                   # custom code overrides from config
 # $config{'custom_ENV_href'} = {};                    # custom environment overrides (set before each dispatch) for state transfer to subordinate executables [default $ENV{_BUILD_dist_name} == $config{'dist_name'} [SET after Build.PL.config is read, unless set within config]]

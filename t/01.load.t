@@ -1,46 +1,67 @@
-#!perl -w  -- -*- tab-width: 4; mode: perl -*-
+#!perl -w  -- -*- tab-width: 4; mode: perl -*- ## no critic ( CodeLayout::RequireTidyCode Modules::RequireVersionVar )
 
 # t/01.load.t - check module loading
 
 # ToDO: Modify untaint() to allow UNDEF argument(s) [needs to be changed across all tests]
 
+## no critic ( ControlStructures::ProhibitPostfixControls NamingConventions::Capitalization Subroutines::RequireArgUnpacking )
+## no critic ( ProhibitStringyEval )
+
 use strict;
 use warnings;
 
-{
-## no critic ( ProhibitOneArgSelect RequireLocalizedPunctuationVars )
+{; ## no critic ( ProhibitOneArgSelect ProhibitPunctuationVars RequireLocalizedPunctuationVars )
 my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;  # DISABLE buffering (enable autoflush) on STDIN, STDOUT, and STDERR (keeps output in order)
 }
 
 use Test::More;     # included with perl v5.6.2+
 
 use version qw//;
-my @modules = ( 'CPAN::Meta' );  # @modules = ( '<MODULE> [<MIN_VERSION> [<MAX_VERSION>]]', ... )
-my $haveRequired = 1;
-foreach (@modules) {my ($module, $min_v, $max_v) = /\S+/gmsx; my $v = eval "require $module; $module->VERSION();"; if ( !$v || ($min_v && ($v < version->new($min_v))) || ($max_v && ($v > version->new($max_v))) ) { $haveRequired = 0; my $out = $module . ($min_v?' [v'.$min_v.($max_v?" - $max_v":'+').']':q//); diag("$out is not available"); }}  ## no critic (ProhibitStringyEval)
+my @required_modules = ( 'CPAN::Meta' );  # @required_modules = ( '<MODULE> [<MIN_VERSION> [<MAX_VERSION>]]', ... )
+my $have_required = 1;
+foreach (@required_modules) { my ($module, $min_v, $max_v) = /\S+/gmsx;
+    my $v = eval "require $module; $module->VERSION();";
+    if ( !$v || ($min_v && ($v < version->new($min_v))) || ($max_v && ($v > version->new($max_v))) ) {
+        $have_required = 0; my $out = $module . ($min_v?' [v'.$min_v.($max_v?" - $max_v":q/+/).q/]/:q//);
+        diag("$out is not available");
+        }
+    }
 
-plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if not $haveRequired;
+plan skip_all => '[ '.join(', ',@required_modules).' ] required for testing' if not $have_required;
 
-my $metaFile = q//;
-    $metaFile = 'META.json' if (($metaFile eq q//) && (-f 'META.json'));
-    $metaFile = 'META.yaml' if (($metaFile eq q//) && (-f 'META.yaml'));
-my $haveMetaFile = ($metaFile ne q//);
-my $haveNonEmptyMetaFile = $haveMetaFile && (-s $metaFile);
-my $meta_ref = $metaFile ? CPAN::Meta->load_file( $metaFile ) : undef;
-my $packages_href = (defined $meta_ref) ? $meta_ref->{provides} : undef;
+my $metafile = q//;
+    $metafile = 'META.json' if (($metafile eq q//) && (-f 'META.json'));
+    $metafile = 'META.yml' if (($metafile eq q//) && (-f 'META.yml'));
+my $have_metafile = ($metafile ne q//);
+my $have_metafile_content = $have_metafile && (-s $metafile);
+my $meta_href = $have_metafile_content ? CPAN::Meta->load_file( $metafile ) : undef;
+my $packages_href = (defined $meta_href) ? $meta_href->{provides} : undef;
 
-diag("$^O, perl v$], $^X");
+diag("$^O, perl v$], $^X"); ## no critic ( ProhibitPunctuationVars )
 
-plan tests => scalar( defined $packages_href ? keys %{$packages_href} : 0 );
+plan tests => scalar( defined $packages_href ? keys %{$packages_href} : 0 ) * 2;
 
 foreach my $module_name ( sort keys %{$packages_href} ) {
-    my $message = 'Missing $module_name';
-    if (!defined($module_name)) {
+    my $message = "Missing $module_name";
+    if (not defined $module_name) {
         diag $message;
         skip $message, 1;
         }
-    use_ok( $module_name );
-    diag( qq{$module_name, v${$packages_href}{$module_name}{version}} );
+
+    # loadable?
+    require_ok( $module_name );
+
+    # loaded expected version?
+    my $module_version = $module_name->VERSION();
+    my $provides_version = ${$packages_href}{$module_name}{version};
+    my (  $module_version_n, $provides_version_n );
+    { no warnings 'numeric'; ## no critic ( ProhibitNoWarnings ) ## suppress any 'alpha_version->numify() is lossy' warning(s)
+    $module_version_n  = version->parse($module_version)->numify;
+    $provides_version_n = version->parse($provides_version)->numify;
+    }
+    is( $module_version_n, $provides_version_n, q/loaded version matches metafile 'provides' information/ );
+
+    diag( qq{$module_name $provides_version, \$$module_name->VERSION()=$module_version} );
     }
 
 #### SUBs ---------------------------------------------------------------------------------------##
@@ -66,7 +87,7 @@ sub untaint {
     $arg_ref = [ @_ ] if defined wantarray;     ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     for my $arg ( @{$arg_ref} ) {
-        if (defined($arg)) {
+        if (defined $arg) {
             if (_is_const($arg)) { Carp::carp 'Attempt to modify readonly scalar'; return; }
             $arg = ( $arg =~ m/\A(.*)\z/msx ) ? $1 : undef;
             }
@@ -76,13 +97,13 @@ sub untaint {
     }
 
 sub is_tainted {
-    ## no critic ( ProhibitStringyEval RequireCheckingReturnValueOfEval ) # ToDO: remove/revisit
+    ## no critic ( ProhibitStringyEval RequireCheckingReturnValueOfEval ProhibitParensWithBuiltins ) # ToDO: remove/revisit
     # URLref: [perlsec - Laundering and Detecting Tainted Data] http://perldoc.perl.org/perlsec.html#Laundering-and-Detecting-Tainted-Data
-    return ! eval { eval(q{#} . substr(join(q{}, @_), 0, 0)); 1 };
+    return ! eval { eval(q{#} . substr(join(q{}, @_), 0, 0) ); 1 };
     }
 
 sub in_taint_mode {
-    ## no critic ( RequireBriefOpen RequireInitializationForLocalVars ProhibitStringyEval RequireCheckingReturnValueOfEval ProhibitBarewordFileHandles ProhibitTwoArgOpen ) # ToDO: remove/revisit
+    ## no critic ( RequireBriefOpen RequireInitializationForLocalVars ProhibitStringyEval RequireCheckingReturnValueOfEval ProhibitBarewordFileHandles ProhibitTwoArgOpen ProhibitParensWithBuiltins ProhibitPunctuationVars ) # ToDO: remove/revisit
     # modified from Taint source @ URLref: http://cpansearch.perl.org/src/PHOENIX/Taint-0.09/Taint.pm
     my $taint = q{};
 
@@ -91,11 +112,11 @@ sub in_taint_mode {
         }
 
     if (not is_tainted( $taint )) {
-        $taint = substr(join("", @ARGV, %ENV), 0, 0);
+        $taint = substr(join(q//, @ARGV, %ENV), 0, 0);
         }
 
     if (not is_tainted( $taint )) {
-        local(*FILE);
+        local(*FILE); ## no critic ( ProhibitLocalVars )
         my $data = q{};
         for (qw(/dev/null nul / . ..), values %INC, $0, $^X) {
             # Why so many? Maybe a file was just deleted or moved;
@@ -107,7 +128,7 @@ sub in_taint_mode {
             last if open FILE, $_
             and defined sysread FILE, $data, 1
             }
-        close( FILE );
+        () = close( FILE );
         $taint = substr($data, 0, 0);
         }
 
