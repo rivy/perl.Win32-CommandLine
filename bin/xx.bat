@@ -1,6 +1,6 @@
 @rem = q{--* Perl *--
 @::# (emacs/sublime) -*- mode: perl; tab-width: 4; coding: dos; -*-
-@::# "bin/xx.bat" 0.949_1 (from "PL.#no-dist/bin/xx.bat.PL")
+@::# "bin/xx.bat" 0.951_1 (from "PL.#no-dist/bin/xx.bat.PL")
 @setlocal &:: localize ENV changes until sourcing is pending
 @echo off
 :: eXpand and eXecute command line
@@ -130,13 +130,15 @@ goto :endofperl
 
 # Script Summary
 
+=for stopwords CMD eXpand eXecute pl2bat
+
 =head1 NAME
 
 xx - eXpand (reparse) and eXecute the command line
 
 =head1 VERSION
 
-This document describes C<xx>, v 0.949_1.
+This document describes C<xx>, v 0.951_1.
 
 =head1 SYNOPSIS
 
@@ -197,12 +199,12 @@ COMMAND...
 
 B<xx> will read expand the command line and execute the COMMAND.
 
-NOTE: B<xx> is designed for use with legacy commands to graft on better command line interpretation behaviors. It shouldn't generally be necessary to use B<xx> on commands which already use Win32::CommandLine::argv() internally as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
-??? what about pl2bat'ed perl scripts? Since the command line is used within the wrapping batch file, is it clean for the .pl file or does it need xx wrapping as well?
+NOTE: B<xx> is designed for use with legacy commands to graft on better command line interpretation behaviors. Generally, it's not necessary to use B<xx> on commands which already use Win32::CommandLine::argv(), as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
+??? what about pl2bat-wrapped perl scripts? Since the command line is used within the wrapping batch file, is it clean for the .pl file or does it need xx wrapping as well?
 
 =head1 EXAMPLES
 
-Here are some examples of what's possible in the standard cmd and tcc shells:
+Here are some examples of what's possible in the standard CMD shell:
 
     xx $( perl -MConfig -e "print $Config{cc}" ) $(perl -MExtUtils::Embed -e ccopts) foo.c -o foo
 
@@ -219,7 +221,7 @@ use warnings;
 # * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
 {
     ; ## no critic ( RequireConstantVersion )
-    our $VERSION = '0.949_1';    # VERSION definition
+    our $VERSION = '0.951_1';    # VERSION definition
     $VERSION =~ s/_//g;                   # numify VERSION (needed for alpha versions)
 }
 

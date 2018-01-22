@@ -3,7 +3,7 @@
    "author" : [
       "Roy Ivy III <rivy@cpan.org>"
    ],
-   "dynamic_config" : 1,
+   "dynamic_config" : 0,
    "generated_by" : "Module::Build version 0.4224",
    "license" : [
       "artistic_2"
@@ -21,6 +21,9 @@
          "inc",
          "t",
          "xt"
+      ],
+      "file" : [
+         "README.mkd"
       ]
    },
    "prereqs" : {
@@ -123,7 +126,7 @@
    "provides" : {
       "Win32::CommandLine" : {
          "file" : "lib/Win32/CommandLine.pm",
-         "version" : "0.949_1"
+         "version" : "0.951_1"
       }
    },
    "release_status" : "testing",
@@ -141,7 +144,7 @@
          "web" : "https://github.com/rivy/perl.Win32-CommandLine"
       }
    },
-   "version" : "0.949_1",
+   "version" : "0.951_1",
    "x_authority" : "cpan:RIVY",
    "x_serialization_backend" : "JSON::PP version 2.94"
 }
