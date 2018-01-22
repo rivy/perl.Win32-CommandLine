@@ -4,6 +4,28 @@
 
 ####
 
+# add meta-build "#dbin" directory to repo
+
+use to create a meta-build system which depends on the parent directory "#dbin" allowing implementation changes independent of the repo
+
+repo #dbin should be spare and only have shell script files calling out to implementation in parent directories
+
+use a node/js implementation (in the parent directory) ?
+
+# add style testing
+
+similar to `test-repo-whitespace`
+
+# improve documentation
+
+see <http://search.cpan.org/~dagolden/Path-Tiny-0.104/lib/Path/Tiny.pm> for a good documentation example
+
+## add CONTRIBUTING section in POD
+
+# add "CONTRIBUTING.mkd"
+
+see <https://github.com/dagolden/Path-Tiny/blob/26f287e227b43586f7d9d45cbddb203a32f7f758/CONTRIBUTING.mkdn> for example using `dzil`
+
 # use unicode for template markers?
 
 eg, "«»‹›¶§⚒😎"
