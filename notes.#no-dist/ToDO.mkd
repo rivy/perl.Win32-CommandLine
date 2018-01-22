@@ -2,9 +2,9 @@
 
 - `ls ...` executes ls.BAT, but `xx ls --version` executes ls.exe (later in the PATH) instead of ls.BAT -- why?
 
-####
+----
 
-# add meta-build "#dbin" directory to repo
+## add meta-build "#dbin" directory to repo
 
 use to create a meta-build system which depends on the parent directory "#dbin" allowing implementation changes independent of the repo
 
@@ -12,25 +12,40 @@ repo #dbin should be spare and only have shell script files calling out to imple
 
 use a node/js implementation (in the parent directory) ?
 
-# add style testing
+## add style testing
 
 similar to `test-repo-whitespace`
 
-# improve documentation
+## add spell checking
+
+Currently, may install hunspell:
+
+``` batch
+# ref: [SCOWL](http://wordlist.aspell.net)
+# en_US dictionary available @ <http://downloads.sourceforge.net/wordlist/hunspell-en_US-2017.01.22.zip>
+# additional dictionaries from <https://sourceforge.net/projects/wordlist/files/speller/2017.01.22>
+set DICPATH=%HOME%\.sh\.dictionaries
+set-x -u DICPATH
+scoop install rivy/hunspell
+build & podspell lib\Win32\CommandLine.pm | hunspell | grep "&"
+build & podspell lib\Win32\CommandLine.pm | hunspell -d en_US-large | grep "&"
+```
+
+## improve documentation
 
 see <http://search.cpan.org/~dagolden/Path-Tiny-0.104/lib/Path/Tiny.pm> for a good documentation example
 
-## add CONTRIBUTING section in POD
+### add CONTRIBUTING section in POD
 
-# add "CONTRIBUTING.mkd"
+### add "CONTRIBUTING.mkd"
 
 see <https://github.com/dagolden/Path-Tiny/blob/26f287e227b43586f7d9d45cbddb203a32f7f758/CONTRIBUTING.mkdn> for example using `dzil`
 
-# use unicode for template markers?
+## use unicode for template markers?
 
 eg, "«»‹›¶§⚒😎"
 
-# evaluate finding/using ExtUtils::Manifest.maniskip()
+## evaluate finding/using ExtUtils::Manifest.maniskip()
 
 ```
 sub _check_mymeta_skip {
@@ -56,7 +71,7 @@ sub _check_mymeta_skip {
 }
 ```
 
-####
+----
 
 Update version requirements & documentation improvements
 

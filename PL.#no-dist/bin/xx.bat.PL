@@ -148,6 +148,8 @@ goto :endofperl
 
 # Script Summary
 
+=for stopwords CMD eXpand eXecute pl2bat
+
 =head1 NAME
 
 xx - eXpand (reparse) and eXecute the command line
@@ -215,12 +217,12 @@ COMMAND...
 
 B<xx> will read expand the command line and execute the COMMAND.
 
-NOTE: B<xx> is designed for use with legacy commands to graft on better command line interpretation behaviors. It shouldn't generally be necessary to use B<xx> on commands which already use Win32::CommandLine::argv() internally as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
-??? what about pl2bat'ed perl scripts? Since the command line is used within the wrapping batch file, is it clean for the .pl file or does it need xx wrapping as well?
+NOTE: B<xx> is designed for use with legacy commands to graft on better command line interpretation behaviors. Generally, it's not necessary to use B<xx> on commands which already use Win32::CommandLine::argv(), as the command line will be re-interpreted. If that's the behavior desired, that's fine; but think about it.
+??? what about pl2bat-wrapped perl scripts? Since the command line is used within the wrapping batch file, is it clean for the .pl file or does it need xx wrapping as well?
 
 =head1 EXAMPLES
 
-Here are some examples of what's possible in the standard cmd and tcc shells:
+Here are some examples of what's possible in the standard CMD shell:
 
     xx $( perl -MConfig -e "print $Config{cc}" ) $(perl -MExtUtils::Embed -e ccopts) foo.c -o foo
 
