@@ -126,7 +126,7 @@
    "provides" : {
       "Win32::CommandLine" : {
          "file" : "lib/Win32/CommandLine.pm",
-         "version" : "0.951_1"
+         "version" : "0.953_1"
       }
    },
    "release_status" : "testing",
@@ -144,7 +144,7 @@
          "web" : "https://github.com/rivy/perl.Win32-CommandLine"
       }
    },
-   "version" : "0.951_1",
+   "version" : "0.953_1",
    "x_authority" : "cpan:RIVY",
    "x_serialization_backend" : "JSON::PP version 2.94"
 }
