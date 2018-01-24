@@ -105,13 +105,11 @@ install:
 before_build:
     # ensure CWD is project main directory
     - cd "%APPVEYOR_BUILD_FOLDER%"
-    - ps: |
-        [System.Environment]::CurrentDirectory = (Get-Location).Path
     # setup environment options
     - set AUTOMATED_TESTING=1
     - set DEVEL_COVER_OPTIONS=-ignore,^_build/
-    - set HARNESS_OPTIONS=j                         # enable parallel processing and color
-    - if DEFINED COVERAGE (set HARNESS_OPTIONS=)    # for COVERAGE builds, avoid parallel processing to show correctly interleaved output
+    # * for non-COVERAGE builds, enable parallel processing (COVERAGE builds need sequential, correctly interleaved, output to avoid warnings)
+    - if NOT DEFINED COVERAGE (set "HARNESS_OPTIONS=j")
     - set HARNESS_TIMER=1
     # * for COVERAGE builds, preload JSON:PP to avoid JSON::PP::Boolean redefine warning (see <https://github.com/rurban/Cpanel-JSON-XS/issues/65#issuecomment-219352754>)
     - if DEFINED COVERAGE (set HARNESS_PERL_SWITCHES=-MJSON::PP %HARNESS_PERL_SWITCHES%)
