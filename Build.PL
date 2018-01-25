@@ -260,12 +260,12 @@ if ( -e $config_filename )
                 #     }
                 if ($key eq 'dist_repo') {
                     my $url = URI->new( $config{'dist_repo'} );
-                    $config{'dist_repo_host'} = $url->host if not defined $config{'dist_repo_host'};
+                    $config{'dist_repo_host'} = $url->authority if not defined $config{'dist_repo_host'};
                     $config{'dist_repo_path'} = $url->path if not defined $config{'dist_repo_path'};
                     }
                 if ($key eq 'dist_repo_web') {
                     my $url = URI->new( $config{'dist_repo_web'} );
-                    $config{'dist_repo_web_host'} = $url->host if not defined $config{'dist_repo_web_host'};
+                    $config{'dist_repo_web_host'} = $url->authority if not defined $config{'dist_repo_web_host'};
                     $config{'dist_repo_web_path'} = $url->path if not defined $config{'dist_repo_web_path'};
                     }
                 if ($key eq 'VERSION_filename') {
