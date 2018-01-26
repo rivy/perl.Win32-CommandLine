@@ -86,7 +86,8 @@ use warnings;
 use 5.008008;    # earliest tested perl version (v5.8.8); v5.6.1 is no longer testable/reportable
 
 # VERSION: Major.minor[_alpha]  { minor is ODD => alpha/beta/experimental; minor is EVEN => stable/release }
-# * NOTE: "boring" versions are preferred (see: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL)
+# * NOTE: simple decimal ("boring") versions are preferred (see: <http://www.dagolden.com/index.php/369/version-numbers-should-be-boring>[`@`](https://archive.is/7PZQL))
+# * NOTE: *two-line* version definition is intentional so that Module::Build / CPAN get a correct alpha version, but users receive a simple decimal version
 {
     ; ## no critic ( RequireConstantVersion )
     our $VERSION = '":{{$VERSION}}:"';    # VERSION definition
@@ -1719,7 +1720,7 @@ Alternatively, the standard make idiom is also available (although it is depreca
 
 =back
 
-(On Windows platforms, you should use B<C<nmake>>or B<C<dmake>>, instead of B<C<make>>.)
+(On Windows platforms, you should replace B<"C<make>""> with either B<C<dmake>>, B<C<gmake>>, or B<C<nmake>> [from `perl -MConfig -e "print $Config{make}"`].)
 
 Note that the Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
 Makefile.PL will throw an exception if Module::Build is missing from your current installation. C<cpan> will

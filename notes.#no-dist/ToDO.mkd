@@ -4,6 +4,10 @@
 
 ----
 
+## enforce decimal versions
+
+* no dotted-decimal, no v-strings, no leading 'v'
+
 ## add meta-build "#dbin" directory to repo
 
 use to create a meta-build system which depends on the parent directory "#dbin" allowing implementation changes independent of the repo
