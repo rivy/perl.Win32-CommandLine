@@ -34,7 +34,7 @@ package ":{{$module_name}}:";
 
 =over
 
- $":{{$module_name}}:"::VERSION = "":{{$VERSION}}:"";
+ $":{{$module_name}}:"::VERSION = '":{{$VERSION_numeric}}:"';  # ( ":{{$dist_name}}:"-":{{$dist_version}}:" )
 
 =back
 
@@ -1579,12 +1579,11 @@ sub _home_paths
 
  @ARGV = ":{{$module_name}}:"::argv() if eval { require ":{{$module_name}}:"; };
 
-B<E<nbsp>E<nbsp>E<nbsp>E<nbsp>_or_>
+B<or>
 
  use ":{{$module_name}}:" qw( command_line parse );
  my $commandline = command_line();
  my @args = parse( $commandline );
- ...
 
 =back
 
@@ -1594,50 +1593,18 @@ B<E<nbsp>E<nbsp>E<nbsp>E<nbsp>_or_>
     Write a full description of the module and its features here.
     Use subsections (=head2, =head3) as appropriate.
 
-This module is used to reparse the Win32 command line, automating better quoting, command substitution, and globbing of the command line.
-Globbing is full bash POSIX compatible globbing. With the use of the companion script (B<C<xx.bat>>), and B<C<doskey>> for macro aliasing,
-you can add fully implemented, bash compatible, string quoting/expansion and file globbing to I<any> Win32 executable.
+This module provides a simple way for any perl script to reread and reparse the windows
+command line, adding improved parsing and more robust quote mechanics, augmented with
+powerful bash-like shell enhancements (including brace and tilde expansion, extended file
+glob expansion, and subshell command substitution).
 
-This module is compatible with both B<C<cmd.exe>> and C<4nt/tcc/tcmd> shells, and can be used to add better parsing and bash glob
-expansion to I<any> external command (by using the included B<C<xx.bat>> batch script).
-
-=head2 B<C<CMD.EXE>>
-
-=over
-
- doskey type=call xx type $*
- type [a-c]*.pl
-
- doskey perl=call xx perl $*
- perl -e 'print "test"'     &@:: would otherwise FAIL
-
- @:: print all directories in current directory
- xx echo $(" ls -ALp --quoting-style=c --color=no . | grep --color=no "[\\/]$" ")
-
- @:: print all files (non-directories) in current directory
- xx echo $(" ls -ALp --quoting-style=shell --color=no . | grep --color=no -v "[\\/]$" ")
-
-=back
-
-=head2 C<4NT/TCC/TCMD>
-
-=over
-
- alias type=call xx type
- type [a-c]*.pl
-
- alias perl=call xx perl
- perl -e 'print "test"'     &@:: would otherwise FAIL
-
-=back
+Use of the companion script, B<C<xx.bat>> (along with B<C<doskey>>), can, transparently,
+grant those same features to the command line interface of I<any> windows executable.
 
 Note that bash-compatible globbing and argument expansion are supplied, including command substitution. Glob patterns may also
 contain meta-notations, such as 'C<a[bc]*>' or 'C<foo.{bat,pl,exe,o}>'.
 
-=for another_example
-    cpan $(dzil listdeps)   :: with a CPAN wrapper program
-
-=head2 Command line string/character expansion
+=head2 Quote mechanics/expansion and subshell command substitution
 
 =over
 
@@ -1654,22 +1621,24 @@ NOTE-1: DOS character escape sequences (such as C<"\"">) are parsed prior to bei
 line and, so, are valid and still (unavoidably) interpreted within double-quotes.
 
 NOTE-2: ANSI C string escapes are
-C<\a, \b, \e, \f, \n, \r, \t, \v, \\, \', \", \[0-9]{1,3}, \x[0-9a-fA-F]{1,2}, \c[@A-Z[\\\]^_`?]>;
-all other escaped characters are left in place without transformation (C<< \<x> => \<x> >>).
+C<\a>, C<\b>, C<\e>, C<\f>, C<\n>, C<\r>, C<\t>, C<\v>, C<\\>, C<\'>, C<\">,
+C<\[0-9]{1,3}>, C<\x[0-9a-fA-F]{1,2}>, C<\c[@A-Z[\\\]^_`?>
+;
+all other escaped characters are left in place without transformation (C<< \<x> >> => C<< \<x> >>).
 
 NOTE-3: Command substitution replaces the C<$(...)> argument with the standard output of that
 argument's execution. Command substitution strings are not, themselves, automatically expanded;
-use C<$(xx I<COMMAND>)> to trigger expansion of the subshell command line.
+use 'C<$(xx *COMMAND*)>' to trigger expansion of the subshell command line.
 
 NOTE-4: C<$("...")> is present to enable delayed DOS/Windows interpretation of redirection & continuation
 characters. This allows redirection & continuation characters to be used within the subshell command string.
 
-ref: [bash ANSI-C Quoting] L<http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html> @@ L<http://www.webcitation.org/66M8skmP8>
+ref: L<bash ANSI-C Quoting|http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html>L<C<@>|http://www.webcitation.org/66M8skmP8>
 
 =for ToDO
     NOTE: \XHH also currently works (although capitalized versions of the other escape sequences DO NOT cause a transformation)... ? remove \XHH ## needs research
 
-=head2 GLOB META CHARACTERS
+=head2 Expansion and C<glob> meta-characters
 
 =over
 
@@ -1693,6 +1662,34 @@ right order is preserved, with results of matches being sorted separately at a l
 
 =for CHECK-THIS
      verify and document ~<text> overrides ~<name> ## TRUE, except $ENV{~} which has no effect ## verify and document which has priority
+
+=head2 C<xx.bat> USAGE
+
+=over
+
+ doskey type=call xx type $*
+ type [a-c]*.pl
+
+ doskey perl=call xx perl $*
+ perl -e 'print "test"'     &@:: would otherwise FAIL
+
+ doskey cpan=call xx cpan $*
+ cpan $(dzil listdeps)      &@:: with a CPAN wrapper program
+
+ @:: print all files in current directory [appropriately quoted for the CMD shell]
+ xx -e *
+
+ @:: * assumes `ls` is installed
+ @:: print all directories in current directory
+ xx echo $(" ls -ALp --quoting-style=c --color=no . | grep --color=no "[\\/]$" ")
+
+ @:: print all files (non-directories) in current directory
+ xx echo $(" ls -ALp --quoting-style=shell --color=no . | grep --color=no -v "[\\/]$" ")
+
+=back
+
+=for ToDO
+    add a reference to github.com/rivy/scoop ( which should include `ls`/`msls` in the baseline buckets )
 
 =head1 INSTALLATION
 
@@ -1720,18 +1717,19 @@ Alternatively, the standard make idiom is also available (although it is depreca
 
 =back
 
-(On Windows platforms, you should replace B<"C<make>""> with either B<C<dmake>>, B<C<gmake>>, or B<C<nmake>> [from `perl -MConfig -e "print $Config{make}"`].)
+On Windows platforms, when using this make idiom, replace B<"C<make>"> with the result of 'C<perl -MConfig -e "print $Config{make}">'
+(usually, either B<C<dmake>>, B<C<gmake>>, or B<C<nmake>>).
 
 Note that the Makefile.PL script is just a pass-through, and Module::Build is still ultimately required for installation.
 Makefile.PL will throw an exception if Module::Build is missing from your current installation. C<cpan> will
 notify the user of the build prerequisites (and install them for the build, if it is setup to do so [see the cpan
-configuration option C<build_requires_install_policy>]).
+configuration option L<C<build_requires_install_policy>|https://metacpan.org/pod/CPAN#Config-Variables>]).
 
-PPM installation bundles should also be available in the standard PPM repositories (i.e. ActiveState, trouchelle.com [L<http://trouchelle.com/ppm/package.xml>]).
+PPM installation bundles should also be available in the standard PPM repositories (eg, L<ActiveState|http://code.activestate.com/ppm>, etc.).
 
-Note: On ActivePerl installations, 'C<./Build install>' will do a full installation using B<C<ppm>> (see ppm).
+Note: for ActivePerl installations, 'C<perl ./Build install>' will do a full installation using L<B<C<ppm>>|https://metacpan.org/pod/PPM>.
 During the installation, a PPM package is constructed locally and then subsequently used for the final module install.
-This allows for uninstalls (using 'C<ppm uninstall >C<I<MODULE>>' and also keeps local HTML documentation current.
+This allows for uninstalls (by using 'C<ppm uninstall ":{{$module_name}}:">') and also keeps local HTML documentation current.
 
 =for future_possibles
     Check into using the PPM perl module, if installed, for installation of this module (removes the ActiveState requirement).
@@ -1746,37 +1744,45 @@ This allows for uninstalls (using 'C<ppm uninstall >C<I<MODULE>>' and also keeps
     exported, or methods that may be called on objects belonging to the
     classes provided by the module.
 
-=head2 C<command_line( ) =E<gt> $>
+=head2 C<< command_line( ) => $ >>
 
 =over
 
-=item * [out] : the original command line for the process, as a string
+=item * C<$> : [return] the original command line for the process (as a string)
 
 =back
 
- my $commandline = command_line();
-
 Use the Win32 API to recapture the original command line for the current process.
 
-=head2 C<argv( [\%options] ) =E<gt> @ARGS>
+=over
+
+ my $commandline = command_line();
+
+=back
+
+=head2 C<< argv( [\%options] ) => @ARGS >>
 
 =over
 
 =item * C<\%options> : (optional) reference to hash containing function options
 
-=item * C<@ARGS> : [return] a new argument array (which can replace @ARGV)
+=item * C<@ARGS> : [return] revised argument array (may replace @ARGV)
 
 =back
 
- @ARGV = argv();
-
-Reparse & glob-expand the original command line, returning a new argument array (which is a drop-in replacement for @ARGV).
-
-=head2 C<parse( $s [,\%options ] ) =E<gt> @ARGS>
+Reparse & glob-expand the original command line, returning a new, revised argument array (which is a drop-in replacement for @ARGV).
 
 =over
 
-=item * C<$s> : string argument to parse (including glob-expansion)
+ @ARGV = argv();
+
+=back
+
+=head2 C<< parse( $s [,\%options ] ) => @ARGS >>
+
+=over
+
+=item * C<$s> : string argument to parse/expand
 
 =item * C<\%options> : (optional) reference to hash containing function options
 
@@ -1784,9 +1790,13 @@ Reparse & glob-expand the original command line, returning a new argument array 
 
 =back
 
+Parse & glob-expand a string argument; returns the results of parsed/expanded argument as an array.
+
+=over
+
  my @argv_new = parse( command_line() );
 
-Parse & glob-expand a string argument; returns the results of parsed/expanded argument as an array.
+=back
 
 =head2 Function Options ( C<\%options> )
 
@@ -1815,12 +1825,13 @@ Parse & glob-expand a string argument; returns the results of parsed/expanded ar
 
 =head1 RATIONALE
 
-This began as a simple need to work-around the less-than-stellar C<COMMAND.COM>/C<CMD.EXE> command line parser, just to accomplish more `correct` quotation interpretation.
+This began as a simple need to work-around the less-than-stellar C<COMMAND.COM>/C<CMD.EXE> command line parser, just to accomplish more "correct" quotation interpretation.
 It then grew into a small odyssey: learning XS and how to create a perl module, learning the perl build process and creating a customized build script/environment,
 researching tools and developing methods for revision control and versioning, learning and creating perl testing processes, and finally learning about PAUSE
 and perl publishing practices. And, somewhere in the middle, adding some of the C<bash> shell magic to the CMD shell.
 
-Some initial attempts were made using C<Win32::API> and C<Inline::C>. For example, a C<Win32::API> attempt [which caused GPFs]:
+Some initial attempts were made using L<C<Win32::API>|https://metacpan.org/pod/Win32::API> and L<C<Inline::C>|https://metacpan.org/pod/Inline::C>.
+For example, a C<Win32::API> attempt (which caused GPFs):
 
   @rem = '--*-Perl-*--
   @echo off
@@ -1848,10 +1859,12 @@ Some initial attempts were made using C<Win32::API> and C<Inline::C>. For exampl
   :endofperl
 
 Unfortunately, C<Win32::API> and C<Inline::C> were shown to be too fragile at the time (in 2007).
-C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> was shown to be very brittle on Win32 systems (i.e, not compensating for paths with embedded strings).
-[ See L<http://www.perlmonks.org/?node_id=625182> for a more full explanation of the problem and initial attempts at a solution. ]
+C<Win32::API> caused occasional (but reproducible) GPFs, and C<Inline::C> was shown to be very brittle on Win32 systems (i.e., not compensating for paths with embedded strings).
+(See L<http://www.perlmonks.org/?node_id=625182> for a more full explanation of the problem and initial attempts at a solution.)
 
-So, an initial XS solution was implemented. And from that point, the lure of C<bash>-like command line parsing led inexorably to the full implementation. The parsing logic is unfortunately still complex, but seems to be holding up well under testing.
+So, an initial XS solution was implemented. And from that point, the lure of C<bash>-like
+command line parsing led slowly, but inexorably, to the full implementation.
+The parsing logic is unfortunately still complex, but seems to be holding up well under testing.
 
 =for readme stop
 
@@ -1920,9 +1933,21 @@ C<":{{$module_name}}:"> requires no configuration files or environment variables
 
 =over
 
-=item C<NULLGLOB> - override the default glob expansion behavior for empty matches
+=back
+
+=head3 C<NULLGLOB>
+
+=over
+
+=item Override the default glob expansion behavior for empty matches
+
+=back
+
+=over
 
  $ENV{NULLGLOB} = 1; # undef/0 | <true>
+
+=back
 
 Default glob expansion, as in bash, expands glob patterns which match nothing into the glob pattern itself.
 Use C<$ENV{NULLGLOB}> to override this default behavior.
@@ -1940,8 +1965,6 @@ I<and> the C<$ENV{NULLGLOB}> setting.
         If set, the pattern '**' used in a filename expansion context will match all files and zero or more directories and subdirectories. If the pattern is followed by a '/', only directories and subdirectories match.
     $ENV{WIN32_COMMANDLINE_RULE} = "sh" | "bash" (case doesn't matter) => argv will parse in "sh/bash" manner if set to "default"|"undef"
     - will warn (not carp) if value unrecognized
-
-=back
 
 =for readme continue
 
@@ -2038,33 +2061,19 @@ You can also look for further information at:
 
 =item * MetaCPAN / CPAN module documentation
 
-=over
-
 L<https://metacpan.org/pod/":{{$module_name}}:">
 
 L<http://search.cpan.org/~":{{$dist_cpan_id}}:"/":{{$dist_name}}:">
 
-=back
-
 =item * Issue tracker
-
-=over
 
 L<":{{$dist_issues}}:">
 
-=back
-
 =item * CPAN Ratings
-
-=over
 
 L<https://cpanratings.perl.org/dist/":{{$dist_name}}:">
 
-=back
-
 =item * CPANTESTERS: Test results
-
-=over
 
 L<https://www.cpantesters.org/distro/":{{substr($dist_name,0,1)}}:"/":{{$dist_name}}:".html>
 
@@ -2072,15 +2081,9 @@ L<http://matrix.cpantesters.org/?dist=":{{$dist_name}}:"+":{{$VERSION}}:">
 
 L<http://fast-matrix.cpantesters.org/?dist=":{{$dist_name}}:"+":{{$VERSION}}:">
 
-=back
-
 =item * CPANTS: CPAN Testing Service module summary
 
-=over
-
 L<https://cpants.cpanauthors.org/dist/":{{$dist_name}}:">
-
-=back
 
 =back
 
@@ -2104,21 +2107,21 @@ For additional testing, set the following environment variables to a true value 
 
 =over
 
-=item TEST_AUTHOR
+=item C<TEST_AUTHOR>
 
 Perform distribution correctness and quality tests, which are essential prior to a public release.
 
-=item TEST_FRAGILE
+=item C<TEST_FRAGILE>
 
-Perform tests which have a specific (i.e., fragile) execution context (eg, network tests to named hosts).
+Perform tests which have a specific (aka, "fragile") execution context (eg, network tests to named hosts).
 These are tests that must be coddled with specific execution contexts or set up on specific machines to
 complete correctly.
 
-=item TEST_SIGNATURE
+=item C<TEST_SIGNATURE>
 
 Verify signature is present and correct for the distribution.
 
-=item TEST_ALL
+=item C<TEST_ALL>
 
 Perform ALL (non-FRAGILE) additional/optional tests. Given the likelihood of test failures without special handling,
 tests marked as 'FRAGILE' are still NOT performed unless TEST_FRAGILE is also true. Additionally, note that
@@ -2135,7 +2138,7 @@ of the build, followed by a 'build test'.
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to BrowserUK and syphilis (aka SISYPHUS on CPAN) for some helpful ideas (including an initial XS starting
-point for the module) during a discussion on PerlMonks (see L<http://www.perlmonks.org/?node_id=625182>).
+point for the module) during L<a discussion on PerlMonks|http://www.perlmonks.org/?node_id=625151>.
 
 =for ToDO
     POST in REPLY to http://www.perlmonks.org/?parent=625182;node_id=3333
@@ -2151,31 +2154,43 @@ point for the module) during a discussion on PerlMonks (see L<http://www.perlmon
 
 ":{{$dist_author}}:"
 
-=for ToDO
-    =head1 CONTRIBUTORS (auto-generate from .mailmap)
+":{{
+# CONTRIBUTORS
+my $s=q//;
+my %contributor_summary;
+for ( @repo_contributors ) { $contributor_summary{$_}++ };
+my @contributors = grep { not /\Q$dist_author\E/ } sort keys %contributor_summary;
+if ( @contributors ) {
+    $s.=qq/=head1 CONTRIBUTORS\n\n=over\n\n/;
+    # foreach ( @contributors ) { $s.=qq/=item $_ ($contributor_summary{$_} commits)\n\n/; }
+    foreach ( @contributors ) { $s.=qq/=item $_\n\n/; }
+    $s .= qq/=back\n\n/;
+    }
+$s;
+}}:"
 
 =for readme continue
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
  Copyright (c) 2007-2018, ":{{$dist_author}}:". All rights reserved.
 
-Z<>
+=head1 LICENSE
 
- This module is free software; you can redistribute it and/or modify it under the
- Perl Artistic License v2.0 (see L<http://opensource.org/licenses/artistic-license-2.0.php>).
+This module is free software; you can redistribute it and/or modify it under the
+L<Perl Artistic License v2.0|http://opensource.org/licenses/artistic-license-2.0.php>.
 
 =head1 DISCLAIMER OF WARRANTY
 
- THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
- AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
- ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
- BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
- THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS"
+AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT
+ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED
+BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF
+THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- [REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
+[REFER TO THE FULL LICENSE FOR EXPLICIT DEFINITIONS OF ALL TERMS.]
 
 =for readme stop
 
