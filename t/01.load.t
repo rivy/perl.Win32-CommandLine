@@ -16,6 +16,8 @@ my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $f
 
 use Test::More;     # included with perl v5.6.2+
 
+diag("$^O, perl v$], $^X"); ## no critic ( ProhibitPunctuationVars )
+
 use version qw//;
 my @required_modules = ( 'CPAN::Meta' );  # @required_modules = ( '<MODULE> [<MIN_VERSION> [<MAX_VERSION>]]', ... )
 my $have_required = 1;
@@ -37,9 +39,9 @@ my $have_metafile_content = $have_metafile && (-s $metafile);
 my $meta_href = $have_metafile_content ? CPAN::Meta->load_file( $metafile ) : undef;
 my $packages_href = (defined $meta_href) ? $meta_href->{provides} : undef;
 
-diag("$^O, perl v$], $^X"); ## no critic ( ProhibitPunctuationVars )
+plan skip_all => "'no packages found in '$metafile'" if not defined $packages_href or ( scalar( keys %{$packages_href} ) < 1 );
 
-plan tests => scalar( defined $packages_href ? keys %{$packages_href} : 0 ) * 2;
+plan tests => scalar( keys %{$packages_href} ) * 2;
 
 foreach my $module_name ( sort keys %{$packages_href} ) {
     my $message = "Missing $module_name";
@@ -52,13 +54,13 @@ foreach my $module_name ( sort keys %{$packages_href} ) {
     require_ok( $module_name );
 
     # loaded expected version?
+    # note: some perl/version combos leave alpha markers in version->numify() results (eg, [from smoke testers] 5.16.3.1/0.9902 and 5.16.0.1/0.9904)
     my $module_version = $module_name->VERSION();
     my $provides_version = ${$packages_href}{$module_name}{version};
     my (  $module_version_n, $provides_version_n );
-    { no warnings 'numeric'; ## no critic ( ProhibitNoWarnings ) ## suppress any 'alpha_version->numify() is lossy' warning(s)
-    $module_version_n  = version->parse($module_version)->numify;
-    $provides_version_n = version->parse($provides_version)->numify;
-    }
+    # * remove any alpha markers and numify versions for comparison
+    $module_version_n = version->parse( do { my $v = $module_version; $v =~ s/_//gmsx; $v } )->numify;
+    $provides_version_n = version->parse( do { my $v = $provides_version; $v =~ s/_//gmsx; $v } )->numify;
     is( $module_version_n, $provides_version_n, q/loaded version matches metafile 'provides' information/ );
 
     diag( qq{$module_name $provides_version, \$$module_name->VERSION()=$module_version} );

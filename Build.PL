@@ -48,13 +48,17 @@ use English qw( -no_match_vars ); # enable long-form built-in variable names; '-
 # [NOTE: perl 'Extended Version' (multi-dot) format is prefered and created from any single dotted (major.minor) or non-dotted (major) versions; see 'perldoc version']
 use version qw(); our $VERSION; { my $defaultVERSION = '0.4'; my $generate_alphas = 0; $VERSION = ( $defaultVERSION, qw( $Version: 0.4.1.340 $ ))[-2]; if ($VERSION =~ /^\d+([\._]\d+)?$/msx) {$VERSION .= '.0'; if (!defined($1)) {$VERSION .= '.0'}}; if ($generate_alphas) { $VERSION =~ /(\d+)[\._](\d+)[\._](\d+)(?:[\._])?(.*)/msx; $VERSION = $1.'.'.$2.((!$4&&($2%2))?'_':'.').$3.($4?((($2%2)?'_':'.').$4):q{}); $VERSION = version->new( $VERSION ); }; } ## no critic ( ProhibitCallsToUnexportedSubs ProhibitCaptureWithoutTest ProhibitNoisyQuotes ProhibitMixedCaseVars ProhibitMagicNumbers Capitalization RequireConstantVersion ProhibitEscapedMEtaCharacters )
 
+use FindBin; () = eval {FindBin::again()}; # FindBin paranoia ## swallow errors for older FindBin without `FindBin::again()`
+
 ##- config
 my %config;
 
 ## config options which are NOT configurable in config file ... ToDO: change to alternate name or use prefix 'ro_...' and logic on readin to avoid overwrites
 # config must (may?) be done via a local config file [REQUIRED ... ToDO: make OPTIONAL?]     ## allows Build.PL to be maintained seperately and used without changes between modules
 $config{'rc_filename'} = 'Build.PL.config'; ##  # configuration file name (in .NET style)
-$config{'dist_path'} = File::Spec->canonpath( $FindBin::RealBin );
+$config{'self_path'} = File::Spec->canonpath( $PROGRAM_NAME );
+$config{'self_parent_path'} = File::Spec->canonpath( $FindBin::RealBin );
+$config{'dist_path'} = $config{'self_parent_path'};
 
 # Module::Build DEFAULTS [ ** DO NOT CHANGE, use the Build.PL.config to set the values ]
 # * required
@@ -168,12 +172,12 @@ use File::Basename qw/ dirname /;
 use File::Find qw//;
 use File::Spec;
 use File::Spec::Functions qw/ rel2abs /;
-use FindBin; () = eval {FindBin::again()}; # FindBin paranoia ## swallow errors for older FindBin without `FindBin::again()`
 use Module::Build;
 use URI;
 
 # Build.PL must be located in the main directory of the distribution (all described paths are relative to the main distribution directory)
 # Build.PL expects to be executed with CWD == the Build.PL containing directory == the main directory of the distribution
+# ToDO: relax this? allowing Build.PL to be re-located as long as 'dist_path' is recalculated in rc file?
 if ( File::Spec->canonpath( $FindBin::RealBin ) ne File::Spec->canonpath( Cwd::getcwd ) ) { die 'Must execute Build.PL from the base directory' }
 
 # # $config{} helper variables
@@ -182,33 +186,15 @@ if ( File::Spec->canonpath( $FindBin::RealBin ) ne File::Spec->canonpath( Cwd::g
 
 # pull in needed custom builder code
 my %code = rivy_builder_code_subs();
-() = eval $code{q/@/};                ## no critic ( ProhibitStringyEval )  ## init / prereq
+() = eval $code{q/#/};                ## no critic ( ProhibitStringyEval )  ## init / prereq
 () = eval $code{q/@/.'version'};      ## no critic ( ProhibitStringyEval )  ## version loading / manipulation
-() = eval $code{'repo'};              ## no critic ( ProhibitStringyEval )  ## repo code
+# () = eval $code{q/@/.'repo'};         ## no critic ( ProhibitStringyEval )  ## repo code
 
 # $config{VERSION}
 # * generated from any existing VERSION file in the main directory
 $config{'VERSION_filename'} = 'VERSION';
-%config = ( %config, version_from_vfile( rel2abs($config{'VERSION_filename'}, File::Spec->canonpath($FindBin::RealBin)) ) );
+%config = ( %config, version_from_vfile( rel2abs($config{'VERSION_filename'}, $config{'dist_path'}) ) );
 if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//imsx; $config{'dist_version'} = $v; }
-
-$config{'repo_type'} = is_repo();
-my $repo;   # reference to hash reference to code
-
-if ( $config{'repo_type'} ) { $repo = repo_commands( $config{'repo_type'} ) };
-
-if ( $repo ) {
-    # print "Gathering current [".$config{'repo_type'}."] repo & commit information\n";
-    $config{'repo_branch'} = $repo->{branch}();
-    $config{'repo_is_dirty'} = $repo->{is_dirty}();
-    $config{'repo_commit_id'} = $repo->{commit_id}();
-    $config{'repo_commit_id_medium'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_medium'};
-    $config{'repo_commit_id_short'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_short'};
-    $config{'repo_commit_id_tiny'} = substr $config{'repo_commit_id'}, 0, $config{'repo_commit_id_length_tiny'};
-    $config{'repo_commit_number'} = $repo->{commit_number}();
-    $config{'repo_commit_author'} = $repo->{commit_author}();
-    $config{'repo_commit_describe'} = $repo->{commit_describe}();
-    }
 
 # include configuration options, if the file exists
 # config file format:
@@ -218,8 +204,7 @@ if ( $repo ) {
 #
 # where each "<var_name> => <value>" follows perl hash entry definition semantics (including embedded comments)
 # ToDO: <value> can be multiline, terminated by EOF or next '<var_nameM> => ...' line
-
-my $config_filename = rel2abs($config{'rc_filename'}, File::Spec->canonpath( $FindBin::RealBin ));
+my $config_filename = rel2abs($config{'rc_filename'}, $config{'dist_path'});
 #print "config => ".$config_filename;
 if ( -e $config_filename )
 {
@@ -270,7 +255,7 @@ if ( -e $config_filename )
                     }
                 if ($key eq 'VERSION_filename') {
                     # determine VERSION from file, if present
-                    %config = ( %config, version_from_vfile( rel2abs($config{'VERSION_filename'}, File::Spec->canonpath($FindBin::RealBin)) ) );
+                    %config = ( %config, version_from_vfile( rel2abs($config{'VERSION_filename'}, $config{'dist_path'}) ) );
                     if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//i; $config{'dist_version'} = $v; }
                     }
             }
@@ -416,10 +401,56 @@ my $build = $class->new(
 # push $config{*} info into $build->notes
 foreach ( keys %config ) {
     $build->notes("config/$_" => $config{$_});
+    # print STDERR "$_ ... $config{$_}\n" ;
     ##print "$_ => ".$build->notes("config/$_")."\n";
     }
 
 $build->create_build_script;
+
+####
+
+sub version_from_vfile { ## ( $:file ) => %:version_info
+    # determine VERSION from file, if present
+
+    # VERSION: Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
+    # * NOTE: "boring" versions are preferred (ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17])
+
+    my $VERSION_filename = shift;
+    my %RETval = ();
+    $RETval{'VERSION'} = undef;
+    if ( -e $VERSION_filename ) {
+        my $fh;
+        open( $fh, '<', $VERSION_filename ) or die qq{Can't open "$VERSION_filename": $OS_ERROR\n}; ## no critic ( RequireCarping )
+        my $file_contents;
+        {# slurp entire file
+            local $/ = undef;
+            $file_contents = <$fh>;
+        }
+        close $fh or die qq{Can't close "$VERSION_filename" after reading: $OS_ERROR\n}; ## no critic ( RequireCarping )
+        $file_contents = q// if not defined $file_contents;
+
+        # remove and save any leading whitespace and/or trailing non-version text (comments, etc)
+        if ( $file_contents =~ /^([\s\n]*)((?:\d|[._])+)((?:.|\s)*?)$/msx ) {
+            $RETval{'VERSION_prefix'} = $1;
+            $RETval{'VERSION'} = $2;
+            $RETval{'VERSION_suffix'} = $3;
+            $RETval{'VERSION'} =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
+            # print qq{Found version ('$RETval{VERSION}') in "$VERSION_filename"\n};
+            }
+        else
+            {
+            $RETval{'VERSION'} = '0.001';
+            warn qq{build: warning, using default version ('$RETval{VERSION}'); no version found in "$VERSION_filename"\n};
+            }
+
+        ( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} ) = ( $RETval{'VERSION'} =~ /\d+/msxg );
+        $RETval{'VERSION'} = version_f( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} );
+        # print "\\$VERSION = '$RETval{VERSION}'\n";
+    }
+
+    ##print STDERR '\\$RETval{VERSION} = '.($RETval{VERSION} ? $RETval{VERSION} : q{})."\n";
+    return %RETval;
+}
 
 ####
 
@@ -462,7 +493,7 @@ sub rivy_builder_code
 sub rivy_builder_code_subs
 {; ## no critic (ValuesAndExpressions::RequireInterpolationOfMetachars ValuesAndExpressions::ProhibitImplicitNewlines)
 my %code;
-$code{q/@/} = q{
+$code{q/#/} = q{
     use strict;
     use warnings;
     use English qw( -no_match_vars ); ## enable long-form built-in variable names; '-no_match_vars' avoids regex performance penalty for perl versions <= 5.16
@@ -479,6 +510,8 @@ $code{q/@/} = q{
     use IO::File;
     use Text::Template;
     use URI;
+
+    # print STDERR "\#(use section): HERE\\n";
 };
 $code{'@qprinf'} = q{
     {
@@ -523,54 +556,14 @@ $code{'@version'} = q{
         $v .= sprintf( q/_/.(($alpha == 1) ? '%d' : '%03d'), $alpha ) if $alpha ne q//;
         return $v;
         }
-
-    sub version_from_vfile { ## ( $:file ) => %:version_info
-        # determine VERSION from file, if present
-
-        # VERSION: Major.minor[_alpha] { if no alpha: minor is ODD => alpha (aka, developer, beta, or experimental), minor is EVEN => stable or release }
-        # * NOTE: "boring" versions are preferred (ref: http://www.dagolden.com/index.php/369/version-numbers-should-be-boring @@ https://archive.is/7PZQL @@ http://www.webcitation.org/66Z1eHR17])
-
-        # my $VERSION_filename = rel2abs($config{'VERSION_filename'}, dirname(rel2abs($0)));
-        my $VERSION_filename = rel2abs( shift, rel2abs($0) );
-        my %RETval = ();
-        $RETval{'VERSION'} = undef;
-        if ( -e $VERSION_filename ) {
-            my $fh;
-            open( $fh, '<', $VERSION_filename ) or die qq{Can't open "$VERSION_filename": $OS_ERROR\n}; ## no critic ( RequireCarping )
-            my $file_contents;
-            {# slurp entire file
-                local $/ = undef;
-                $file_contents = <$fh>;
-            }
-            close $fh or die qq{Can't close "$VERSION_filename" after reading: $OS_ERROR\n}; ## no critic ( RequireCarping )
-            $file_contents = q// if not defined $file_contents;
-
-            # remove and save any leading whitespace and/or trailing non-version text (comments, etc)
-            if ( $file_contents =~ /^([\s\n]*)((?:\d|[._])+)((?:.|\s)*?)$/msx ) {
-                $RETval{'VERSION_prefix'} = $1;
-                $RETval{'VERSION'} = $2;
-                $RETval{'VERSION_suffix'} = $3;
-                $RETval{'VERSION'} =~ s/(.*?)[._]*$/$1/;  # remove any trailing '.|_'
-                # print qq{Found version ('$RETval{VERSION}') in "$VERSION_filename"\n};
-                }
-            else
-                {
-                $RETval{'VERSION'} = '0.001';
-                warn qq{build: warning, using default version ('$RETval{VERSION}'); no version found in "$VERSION_filename"\n};
-                }
-
-            ( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} ) = ( $RETval{'VERSION'} =~ /\d+/msxg );
-            $RETval{'VERSION'} = version_f( $RETval{'VERSION_M'}, $RETval{'VERSION_m'}, $RETval{'VERSION_a'} );
-            # print "\$VERSION = '$RETval{VERSION}'\n";
-        }
-
-        ##print STDERR '$config{VERSION} = '.($config{VERSION} ? $config{VERSION} : q{})."\n";
-        return %RETval;
-        }
 };
 $code{'repo'} = q{
-    sub is_repo
+    sub repo_property_update ## ( )
     {
+        my $self = shift;
+
+        # print STDERR "repo_property_update()\\n";
+
         use File::Spec::Functions qw( rel2abs );
         use File::Basename qw( dirname );
 
@@ -578,27 +571,40 @@ $code{'repo'} = q{
 
         my $null = File::Spec->devnull();
 
-        # prefer GIT
-        # : GIT
-        $filename = rel2abs('.git', dirname(rel2abs($0)));
-        if ( -d $filename )
-            {
-            # if ( system("git --version 1>$null 2>&1") == 0 ) { return 'git' };
-            if ( system("git --no-pager log -1 --pretty=oneline 1>$null 2>&1") == 0 ) { return 'git' };
+        my $repo_commands_ref = undef;
+
+        if ( not $repo_commands_ref ) {
+            # prefer GIT
+            # : GIT
+            $filename = rel2abs('.git', $self->base_dir);
+            if ( -d $filename )
+                {
+                # if ( system("git --version 1>$null 2>&1") == 0 ) { return 'git' };
+                if ( system("git --no-pager log -1 --pretty=oneline 1>$null 2>&1") == 0 ) { $repo_commands_ref = _repo_commands('git'); };
+                }
             }
 
-        # : Mercurial
-        $filename = rel2abs('.hg', dirname(rel2abs($0)));
-        if ( -d $filename )
-            {
-            if ( system("hg --version 2>&1 1>$null") == 0 ) { return 'hg' };
+        if ( not $repo_commands_ref ) {
+            # : Mercurial
+            $filename = rel2abs('.hg', $self->base_dir);
+            if ( -d $filename )
+                {
+                if ( system("hg --version 2>&1 1>$null") == 0 ) { $repo_commands_ref =_repo_commands('hg'); };
+                }
             }
 
-        return undef;
+        if ( $repo_commands_ref ) {
+            foreach ( keys %{$repo_commands_ref} ) {
+                # print STDERR "\\$repo_commands_ref->{$_}()=".scalar($repo_commands_ref->{$_}())."\n";
+                $self->notes( "repo_$_" => scalar( $repo_commands_ref->{$_}() ) );
+            }
+        }
+
+        return;
     }
-    sub repo_commands
+    sub _repo_commands # ( [ $:repo_type ] ) => $REPO_FUNCTION_REF
     {
-        my $repo_type = shift;
+        my $repo_type = shift;  # [ 'git', 'hg' ]
 
         my $repo_function_ref;
         my $function_name;
@@ -664,23 +670,23 @@ $code{'repo'} = q{
             return $RETval;
             };
 
-        # commit_id_of_size
-        $function_name = 'commit_id_of_size';
-        $repo_function_ref->{git}{$function_name} = sub {
-            # URLref: [How to retrieve the hash for the current commit in Git?] http://stackoverflow.com/a/949391/43774
-            my $size = shift;
-            my @lines = qx{git rev-parse --short=$size HEAD};
-            my $RETval = $lines[0];
-            chomp( $RETval );
-            return $RETval;
-            };
-        $repo_function_ref->{hg}{$function_name} = sub {
-            my $size = shift;
-            my @lines = qx{hg log -r . --template '{node}'};
-            my $RETval = $lines[0];
-            chomp( $RETval );
-            return substr ( $RETval, 0, $size );
-            };
+        # # commit_id_of_size
+        # $function_name = 'commit_id_of_size';
+        # $repo_function_ref->{git}{$function_name} = sub {
+        #     # URLref: [How to retrieve the hash for the current commit in Git?] http://stackoverflow.com/a/949391/43774
+        #     my $size = shift;
+        #     my @lines = qx{git rev-parse --short=$size HEAD};
+        #     my $RETval = $lines[0];
+        #     chomp( $RETval );
+        #     return $RETval;
+        #     };
+        # $repo_function_ref->{hg}{$function_name} = sub {
+        #     my $size = shift;
+        #     my @lines = qx{hg log -r . --template '{node}'};
+        #     my $RETval = $lines[0];
+        #     chomp( $RETval );
+        #     return substr ( $RETval, 0, $size );
+        #     };
 
         # commit_describe
         $function_name = 'commit_describe';
@@ -697,6 +703,18 @@ $code{'repo'} = q{
             return $RETval;
             };
 
+        # contributors
+        $function_name = 'contributors';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = ();
+            @lines = qx{git log --format="%aN <%aE>"};
+            return wantarray ? @lines : \\@lines;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = qx{hg log --template "{author}\\n"};
+            return wantarray ? @lines : \\@lines;
+            };
+
         # is_dirty
         $function_name = 'is_dirty';
         $repo_function_ref->{git}{$function_name} = sub {
@@ -707,6 +725,15 @@ $code{'repo'} = q{
         $repo_function_ref->{hg}{$function_name} = sub {
             my @lines = qx{hg status -mard};
             return scalar(@lines) != 0;
+            };
+
+        # type
+        $function_name = 'type';
+        $repo_function_ref->{git}{$function_name} = sub {
+            return 'git';
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            return 'hg';
             };
 
         if ( $repo_type )
@@ -831,7 +858,7 @@ Execute a trial action (for testing purposes).
 #         #return $self;
 #         my $self = shift;
 #         my ($args, $action) = $self->read_args(@ARGV);
-
+#
 #         if ($action) {
 # ##            $self->do_system($self->{properties}{perl}.' Build.PL');  ## causes intermittent errors as $self is not well-formed yet
 #             system "$^X $0";
@@ -845,7 +872,7 @@ Execute a trial action (for testing purposes).
 #                 die "Too early to specify a build action '$action'.  Do 'perl Build.PL' instead.\n";
 #                 }
 #             }
-
+#
 #         return $self->SUPER::new( @_ );
 #         }
 # };
@@ -868,7 +895,7 @@ $code{'ACTION_PL_files'} = q{
 
         foreach my $file (sort keys %$files) {
         my $to = $files->{$file};
-        unless ($self->FILES_up_to_date( $to, [ $file, 'Build.PL', 'Build.PL.config' ], { ignore_case => 1 } )) {
+        unless ($self->FILES_up_to_date( $to, [ $file, 'Build', 'Build.PL', 'Build.PL.config' ], { ignore_case => 1 } )) {
             $self->run_perl_script($file, [], [@$to]) or die "$file failed";
             # $self->add_to_cleanup(@$to);
             }
@@ -910,11 +937,26 @@ $code{'get_template_vars'} = q{
 
         my %notes = $self->notes;
 
+        # add notes() to template vars
         for ( keys %notes ) {
-            next unless /^config\/(.*)$/;
+            # next unless /^config[/](.*)$/;
+            next unless /^config\\/(.*)$/;
             # next if not defined $notes{$_};
-            $vars{$1} = $notes{$_};
+            $vars{$1} = do { my $t = $notes{$_}; ref $t ? \\$t : $t; };  # counteract auto-dereference
             }
+
+        # add repo properties (if they exist) to template vars
+        for ( keys %notes ) {
+            next unless /^repo_(.*)$/;
+            $vars{'repo_'.$1} = $notes{$_};
+            }
+
+        # create numeric VERSION
+        {
+        my $v = $vars{VERSION};
+        $v =~ s/_//gmsx; # remove any alpha markers
+        $vars{VERSION_numeric} = version->parse( $v )->numify;
+        }
 
         if (defined $output_filename) {
             # define file specific variables
@@ -1016,7 +1058,7 @@ $code{'ACTION_meta'} = q{
         # my @RETval = $self->SUPER::ACTION_meta( @_ );
 
         $self->depends_on('build');
-        $self->do_create_metafile if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from, sort keys %{$self->notes('config/PL_target_files_href')} ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
+        $self->do_create_metafile if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build', 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from, sort keys %{$self->notes('config/PL_target_files_href')} ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
 
         # return wantarray ? @RETval : $RETval[0];
       }
@@ -1128,6 +1170,9 @@ $code{'dispatch'} .= q{
         # color output using the normal TAP::Formatter::Color method uses Win32::Console; seems to only to set colors for primary CMD shells and only subshells which have soley CMD parents up to the primary shell (any TCC within the chain stops color output)
 ##      },
 
+        # update repo properties
+        $self->repo_property_update();
+
         return $self->SUPER::dispatch( @_ );
     \}
 };
@@ -1138,7 +1183,7 @@ $code{'create_build_script'} = q{
 
         my @RETval;
 
-        # $self->do_create_metafile if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
+        # $self->do_create_metafile if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build', 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
         @RETval = $self->SUPER::create_build_script( @_ );
         $self->FILES_to_NIX( 'Build' );
         return wantarray ? @RETval : $RETval[0];
@@ -1564,6 +1609,8 @@ $code{'ACTION_upload_cpan'} = q{
         $self->log_info("Distribution built successfully.\n");
         $self->depends_on('disttestall');
         $self->log_info("Testing of distribution completed successfully.\n");
+
+        if ( $self->notes('repo_is_dirty') ) { die "Repository has uncommited changes; bailing out before upload." }
 
         my $devnull = File::Spec->devnull();
         my $haveCPANUpload = ( qx{cpan-upload --help 2>$devnull} =~ /\scpan-upload\s/m );
@@ -2094,14 +2141,14 @@ $code{'ACTION_distmeta'} = q{
 
         # NOTE: FILES_up_to_date( $|\@ dependent_file(s), $|\@ antecedent(s) [, \%] ) {...}
 
-        # do { $self->do_create_makefile_pl; FILES_to_NIX('Makefile.PL'); } if ($self->do_create_makefile_pl and not $self->FILES_up_to_date('Makefile.PL', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
+        # do { $self->do_create_makefile_pl; FILES_to_NIX('Makefile.PL'); } if ($self->do_create_makefile_pl and not $self->FILES_up_to_date('Makefile.PL', [ 'Build', 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
         # do { $self->do_create_readme; FILES_to_NIX('README'); } if ($self->create_readme and not $self->FILES_up_to_date('README', $self->dist_version_from, { ignore_case => 1 }));    ## worry about _main_docfile(), ASSERT?
-        # do { $self->do_create_license; FILES_to_NIX('LICENSE'); } if ($self->create_license and not $self->FILES_up_to_date('LICENSE', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
-        # do { $self->do_create_metafile; FILES_to_NIX('META.json', 'META.yml'); } if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
-        $self->create_makefile_pl if ($self->create_makefile_pl and not $self->FILES_up_to_date('Makefile.PL', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
+        # do { $self->do_create_license; FILES_to_NIX('LICENSE'); } if ($self->create_license and not $self->FILES_up_to_date('LICENSE', [ 'Build', 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
+        # do { $self->do_create_metafile; FILES_to_NIX('META.json', 'META.yml'); } if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build', 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
+        $self->create_makefile_pl if ($self->create_makefile_pl and not $self->FILES_up_to_date('Makefile.PL', [ 'Build', 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
         $self->do_create_readme if ($self->create_readme and not $self->FILES_up_to_date('README', $self->dist_version_from, { ignore_case => 1 }));    ## worry about _main_docfile(), ASSERT?
-        $self->do_create_license if ($self->create_license and not $self->FILES_up_to_date('LICENSE', [ 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
-        $self->do_create_metafile if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
+        $self->do_create_license if ($self->create_license and not $self->FILES_up_to_date('LICENSE', [ 'Build', 'Build.PL', 'Build.PL.config', $self->_main_docfile ], { ignore_case => 1 }));  ## worry about _main_docfile(), ASSERT?
+        $self->do_create_metafile if (not $self->FILES_up_to_date([ 'META.json', 'META.yml' ], [ 'Build', 'Build.PL', 'Build.PL.config', 'LICENSE', $self->dist_version_from ], { ignore_case => 1 }));   ## worry about _main_docfile(), ASSERT?
 
         # TODO: check file(s) for up-to-date before recreation of files (and DON'T call SUPER)
         ## Makefile.PL [ check create_metafile_pl ... ]
@@ -2123,7 +2170,7 @@ $code{'ACTION_distmeta'} = q{
             #   (my $pod_file = $pm_file) =~ s/.pm$/.pod/;
             #   return (-e $pod_file ? $pod_file : $pm_file);
             #  } else {
-            #   return undef;
+            #   return;
             #  }
             #}
 
