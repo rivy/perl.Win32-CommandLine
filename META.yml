@@ -88,7 +88,7 @@ resources:
   bugtracker: https://github.com/rivy/perl.Win32-CommandLine/issues
   homepage: https://github.com/rivy/perl.Win32-CommandLine
   license: http://www.perlfoundation.org/artistic_license_2_0
-  repository: https://github.com/rivy/perl.Win32-CommandLine.git
+  repository: git://github.com/rivy/perl.Win32-CommandLine.git
 version: 0.953_1
 x_authority: cpan:RIVY
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
