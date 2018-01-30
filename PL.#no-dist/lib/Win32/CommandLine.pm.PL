@@ -32,11 +32,7 @@ package ":{{$module_name}}:";
 
 =head1 VERSION
 
-=over
-
  $":{{$module_name}}:"::VERSION = '":{{$VERSION_numeric}}:"';  # ( ":{{$dist_name}}:"-":{{$dist_version}}:" )
-
-=back
 
 =cut
 ## Perl::Critic policy exceptions
@@ -1575,8 +1571,6 @@ sub _home_paths
     This section will be as far as many users bother reading
     so make it as educational and exemplary as possible.
 
-=over
-
  @ARGV = ":{{$module_name}}:"::argv() if eval { require ":{{$module_name}}:"; };
 
 B<or>
@@ -1584,8 +1578,6 @@ B<or>
  use ":{{$module_name}}:" qw( command_line parse );
  my $commandline = command_line();
  my @args = parse( $commandline );
-
-=back
 
 =head1 DESCRIPTION
 
@@ -1606,16 +1598,12 @@ contain meta-notations, such as 'C<a[bc]*>' or 'C<foo.{bat,pl,exe,o}>'.
 
 =head2 Quote mechanics/expansion and subshell command substitution
 
-=over
-
  '...'    literal (no escapes and no globbing within quotes)
  "..."    literal (no escapes and no globbing within quotes) (see *NOTE-1)
  $'...'   string including all ANSI C string escapes (see *NOTE-2); no globbing within quotes
  $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
  $( ... ) command substitution (see *NOTE-3)
  $("...") command substitution (quotes removed; see *NOTE-4)
-
-=back
 
 NOTE-1: DOS character escape sequences (such as C<"\"">) are parsed prior to being put into the command
 line and, so, are valid and still (unavoidably) interpreted within double-quotes.
@@ -1640,8 +1628,6 @@ ref: L<bash ANSI-C Quoting|http://www.gnu.org/software/bash/manual/html_node/ANS
 
 =head2 Expansion and C<glob> meta-characters
 
-=over
-
  \           Quote the next metacharacter
  []          Character class
  {}          Multiple pattern
@@ -1650,8 +1636,6 @@ ref: L<bash ANSI-C Quoting|http://www.gnu.org/software/bash/manual/html_node/ANS
  ~           Current user home directory
  ~USERNAME   Home directory of USERNAME
  ~TEXT       Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USERNAME expansion]
-
-=back
 
 The multiple pattern meta-notation 'C<a{b,c,d}e>' is a shorthand for 'C<abe ace ade>'.  Left to
 right order is preserved, with results of matches being sorted separately at a low level to preserve this order.
@@ -1663,9 +1647,7 @@ right order is preserved, with results of matches being sorted separately at a l
 =for CHECK-THIS
      verify and document ~<text> overrides ~<name> ## TRUE, except $ENV{~} which has no effect ## verify and document which has priority
 
-=head2 C<xx.bat> USAGE
-
-=over
+=head2 C<xx.bat> Usage
 
  doskey type=call xx type $*
  type [a-c]*.pl
@@ -1686,8 +1668,6 @@ right order is preserved, with results of matches being sorted separately at a l
  @:: print all files (non-directories) in current directory
  xx echo $(" ls -ALp --quoting-style=shell --color=no . | grep --color=no -v "[\\/]$" ")
 
-=back
-
 =for ToDO
     add a reference to github.com/rivy/scoop ( which should include `ls`/`msls` in the baseline buckets )
 
@@ -1695,27 +1675,19 @@ right order is preserved, with results of matches being sorted separately at a l
 
 To install this module, run the following commands:
 
-=over
-
  perl Build.PL
  perl Build
  perl Build test
  perl Build install
 
-=back
-
 This is minor modification of the usual perl build idiom. This version is portable across multiple platforms.
 
 Alternatively, the standard make idiom is also available (although it is deprecated):
-
-=over
 
  perl Makefile.PL
  make
  make test
  make install
-
-=back
 
 On Windows platforms, when using this make idiom, replace B<"C<make>"> with the result of 'C<perl -MConfig -e "print $Config{make}">'
 (usually, either B<C<dmake>>, B<C<gmake>>, or B<C<nmake>>).
@@ -1754,11 +1726,7 @@ This allows for uninstalls (by using 'C<ppm uninstall ":{{$module_name}}:">') an
 
 Use the Win32 API to recapture the original command line for the current process.
 
-=over
-
- my $commandline = command_line();
-
-=back
+    my $commandline = command_line();
 
 =head2 C<< argv( [\%options] ) => @ARGS >>
 
@@ -1790,15 +1758,11 @@ Reparse & glob-expand the original command line, returning a new, revised argume
 
 =back
 
-Parse & glob-expand a string argument; returns the results of parsed/expanded argument as an array.
-
-=over
-
  my @argv_new = parse( command_line() );
 
-=back
+Parse & glob-expand a string argument; returns the results of parsed/expanded argument as an array.
 
-=head2 Function Options ( C<\%options> )
+=head2 Function options ( C<\%options> )
 
     my %options = (
         remove_exe_prefix => 1,     # = 0/<true> [default = true]       # if true, remove all initial args up to and including the exe name from the @args array
@@ -1813,7 +1777,7 @@ Parse & glob-expand a string argument; returns the results of parsed/expanded ar
         ## ToDO: add globstar option
         );
 
-=head1 SUBROUTINES/METHODS
+=for head1 SUBROUTINES/METHODS
 
 =for author_to_fill_in
     Write a separate section listing the public components of the modules
@@ -1890,15 +1854,13 @@ This is a list of internal XS functions (brief descriptions will be added at a l
 =for further_expansion
     other internal function notes
 
-=head1 DIAGNOSTICS
+=for head1 DIAGNOSTICS
 
 =for author_to_fill_in
     List every single error and warning message that the module can
     generate (even the ones that will ''never happen''), with a full
     explanation of each problem, one or more likely causes, and any
     suggested remedies.
-
-Pending documentation...
 
 =begin FUTURE-DOCUMENATION
 
@@ -1918,7 +1880,7 @@ Pending documentation...
 
 =end FUTURE-DOCUMENATION
 
-=head1 CONFIGURATION AND ENVIRONMENT
+=head1 CONFIGURATION and ENVIRONMENT
 
 =for author_to_fill_in
     A full explanation of any configuration system(s) used by the
@@ -1995,7 +1957,7 @@ implementation based on %ENV variables, and therefore will still work even witho
 
 None reported.
 
-=head1 BUGS AND LIMITATIONS
+=head1 CAVEATS
 
 =for author_to_fill_in
     A list of known problems with the module, together with some
@@ -2006,28 +1968,45 @@ None reported.
     limitations on the size of data sets, special cases that are not
     (yet) handled, etc.
 
-Please report any issues (bugs or feature requests) through the issue tracker at L<":{{$dist_issues}}:">. The developers will be notified, and you'll automatically be notified of progress on your issue.
-
 =head2 Operational Notes
 
-IMPORTANT NOTE: Special shell characters (shell redirection [ C<'|'>, C<'<'>, C<'>'> ] and continuation C<'&'>) must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "foo | bar" >>). The shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection and continuation characters) before B<any> process can get a look at the command line. So, the special shell characters can only be hidden from shell interpretation by quoting them with double-quote characters.
+IMPORTANT NOTE: Special shell characters (shell redirection, C<'|'>, C<< '<' >>, C<< '>' >>, and
+continuation, C<'&'>) must be B<DOUBLE-quoted> to escape shell interpretation (eg, C<< "foo | bar" >>).
+The shell does initial parsing and redirection/continuation (stripping away everything after I/O redirection
+and continuation characters) before B<any> process can get a look at the command line. So, the special shell
+characters can only be hidden from shell interpretation by quoting them with double-quote characters.
 
 =for CORRECTION
     special characters need to be DOUBLE-QUOTED or escaped (usually the escape character is ^)...
 
-C<< %<X> >> is also replaced by the corresponding %ENV variable by the shell before handing the command line off to the OS. So, C<%%> must be used to place single %'s in the command line (eg, C<< perl -e "use ":{{$module_name}}:"; %%x = ":{{$module_name}}:"::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>).
+C<< %<X>% >> is also replaced by the corresponding environment variable by the shell before handing the
+command line off to the OS. The caret C<^> escape character can be used to break the interpretation when
+needed (eg, C<%^COMSPEC^%> instead of C<%COMSPEC%>).
 
 =for CORRECTION
-    for TCC: %X and %X% are replaced prior to expansion
+    removing: ... So, C<%%> must be used to place single %'s in the command line (eg, C<< perl -e "use ":{{$module_name}}:"; %%x = ":{{$module_name}}:"::_home_paths(); for (sort keys %%x) { print qq{$_ => $x{$_}\n}; }" >>).
     for CMD: %X% is replaced but %X is left alone ( and lack of whitespace is not a barrier to interpretation ... '%o = (t=>1); @k = keys %o;' => 'o;'
+    for TCC: %X and %X% are replaced prior to expansion
     for TCC: %NOT_AN_ENV_VAR% => <null>
     for CMD: %NOT_AN_ENV_VAR% => %NOT_AN_ENV_VAR%
 
-Brackets ('{' and '}') and braces ('[' and ']') must be quoted (single or double quotes) to be matched literally. This may be a gotcha for some users, although if the filename has internal spaces, tab expansion of filenames for the standard Win32 shell (cmd.exe) or 4NT/TCC/TCMD will automatically surround the entire path with spaces (which corrects the issue).
+Brackets ('{' and '}') and braces ('[' and ']') must be quoted (single or double quotes) to be matched literally.
+This may be a gotcha for some users, although if the filename has internal spaces, tab expansion of filenames for the
+standard Win32 shell (cmd.exe) or 4NT/TCC/TCMD will automatically surround the entire path with spaces (which corrects
+the issue).
 
-Some programs may expect their arguments to maintain their surrounding quotes, but argv() parsing only quotes arguments which require it to maintain equivalence for shell parsing (i.e., those containing spaces, special characters, etc). And, since single quotes have no special meaning to the shell, all arguments which require quoting for correct shell interpretation will be quoted with double-quote characters, even if they were originally quoted with single-quotes. Neither of these issues should be a problem for programs using Win32::CommandLine, but may be an issue for 'legacy' applications which have their command line expanded with B<C<xx.bat>>.
+Some programs may expect their arguments to maintain their surrounding quotes, but C<argv()> parsing only
+quotes arguments which require it to maintain equivalence for shell parsing (i.e., those containing spaces,
+special characters, etc). And, since single quotes have no special meaning to the shell, all arguments which
+require quoting for correct shell interpretation will be quoted with double-quote characters, even if they
+were originally quoted with single-quotes. Neither of these issues should be a problem for programs using
+C<Win32::CommandLine>, but may be an issue for 'legacy' applications which have their command line expanded
+with B<C<xx.bat>>.
 
-Be careful with backslashed quotes within quoted strings. Note that "foo\" is an B<unbalanced> string containing a double quote. Place the backslash outside of the quotation ("foo"\) or use a double backslash within ("foo\\") to include the backslash it in the parsed token. However, backslashes ONLY need to be doubled when placed prior to a quotation mark ("foo\bar" will work as expected).
+Be careful with backslashed quotes within quoted strings. Note that "foo\" is an B<unbalanced> string
+containing a double quote. Place the backslash outside of the quotation ("foo"\) or use a double backslash
+within ("foo\\") to include the backslash it in the parsed token. However, backslashes ONLY need to be
+doubled when placed prior to a quotation mark ("foo\bar" will work as expected).
 
 =for further_expansion
     GOTCHA: Note this behavior (ending \" => ", which is probably not what is desired or expected in this case (? what about other cases, should this be "fixed" or would it break something else?)
@@ -2041,21 +2020,23 @@ Be careful with backslashed quotes within quoted strings. Note that "foo\" is an
         -- can try PPIDs if Win32::API is present...
             => DONE [2009-02-18] [seems to be working now... if Win32::API is available, parentEXE is checked and $ENV{CMDLINE} is used if the parent process matches 4nt/tcc/tcmd]
 
-=head2 Bugs
-
-No bugs have been reported.
+=for head2 Bugs
+    No bugs have been reported.
 
 =head1 SUPPORT
 
-You can find documentation for this module with the perldoc command.
+=head2 Bugs / Feature Requests
 
-=over
+Please report any issues through the issue tracker at L<":{{$dist_issues}}:">.
+The developers will be notified, and you'll automatically be notified of progress on your issue.
+
+=head2 Documentation
+
+You can find documentation for this module with the perldoc command:
 
  perldoc ":{{$module_name}}:"
 
-=back
-
-You can also look for further information at:
+=head3 Further information
 
 =over
 
@@ -2093,9 +2074,14 @@ L<https://cpants.cpanauthors.org/dist/":{{$dist_name}}:">
     * CPANFORUM: Forum discussing ":{{$module_name}}:"
       http://www.cpanforum.com/dist/":{{$dist_name}}:"
 
-=head1 ToDO
+=for head2 Source code
+    This is open source software. The code repository is available for public review and contribution
+    under the terms of the license.
 
-Expand and polish the documentation. Add argument/option explanations and examples for interface functions.
+=for head1 ToDO
+    Expand and polish the documentation. Add argument/option explanations and examples for interface functions.
+
+=begin MOVE_to_CONTRIBUTING
 
 =head1 TESTING
 
@@ -2129,6 +2115,8 @@ the 'build testall' command can be used as an equivalent to setting TEST_ALL to 
 of the build, followed by a 'build test'.
 
 =back
+
+=end MOVE_to_CONTRIBUTING
 
 =for ToDO
     =head1 SEE ALSO
