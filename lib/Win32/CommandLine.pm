@@ -1,7 +1,7 @@
 ## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
-# Win32::CommandLine 0.953_1 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
+# Win32::CommandLine 0.954 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
 package Win32::CommandLine;
 
 # Module Summary
@@ -14,7 +14,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
- $Win32::CommandLine::VERSION = '0.953100';  # ( Win32-CommandLine-0.953_1 )
+ $Win32::CommandLine::VERSION = '0.954';  # ( Win32-CommandLine-0.954 )
 
 =cut
 ## Perl::Critic policy exceptions
@@ -68,7 +68,7 @@ use 5.008008;    # earliest tested perl version (v5.8.8); v5.6.1 is no longer te
 # * NOTE: *two-line* version definition is intentional so that Module::Build / CPAN get a correct alpha version, but users receive a simple decimal version
 {
     ; ## no critic ( RequireConstantVersion )
-    our $VERSION = '0.953_1';    # VERSION definition
+    our $VERSION = '0.954';    # VERSION definition
     $VERSION =~ s/_//g;                   # numify VERSION (needed for alpha versions)
 }
 
@@ -101,7 +101,7 @@ sub argv;                                                                       
 
 # Module Implementation
 
-bootstrap Win32::CommandLine '0.953_1';
+bootstrap Win32::CommandLine '0.954';
 
 sub command_line ## ( ) => $
 {
@@ -2040,9 +2040,9 @@ L<https://cpanratings.perl.org/dist/Win32-CommandLine>
 
 L<https://www.cpantesters.org/distro/W/Win32-CommandLine.html>
 
-L<http://matrix.cpantesters.org/?dist=Win32-CommandLine+0.953_1>
+L<http://matrix.cpantesters.org/?dist=Win32-CommandLine+0.954>
 
-L<http://fast-matrix.cpantesters.org/?dist=Win32-CommandLine+0.953_1>
+L<http://fast-matrix.cpantesters.org/?dist=Win32-CommandLine+0.954>
 
 =item * CPANTS: CPAN Testing Service module summary
 
