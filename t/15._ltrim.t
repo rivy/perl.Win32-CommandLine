@@ -3,13 +3,13 @@
 use strict;
 use warnings;
 
-use lib "t/lib";
+# use lib "t/lib";
 use Test::More;
 use Test::Differences;
 
 my $haveTestNoWarnings = eval { require Test::NoWarnings; import Test::NoWarnings; 1; }; # (should be AFTER any plan skip_all ...)
 
-use lib qw{ lib blib/lib blib/arch };
+# use lib qw{ lib blib/lib blib/arch };
 
 use Win32::CommandLine;
 
