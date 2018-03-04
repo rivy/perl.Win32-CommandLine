@@ -11,7 +11,7 @@ my $output_filename = shift;
 
 use Module::Build;
 
-binmode DATA, ':raw:utf8'; ## no critic ( RequireEncodingWithUTF8Layer ) ## utf8 + avoid EOL translations
+binmode DATA, ':raw:encoding(UTF-8)';   # binmode (no EOL translations) + utf8
 
 () = Module::Build->current()->expand_template( $output_filename, [<DATA>] );
 
