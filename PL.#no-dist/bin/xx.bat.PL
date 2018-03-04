@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use utf8;
 
-require SelfLoader if 0; ## no critic (ProhibitPostfixControls) ## purely a signal compelling `perltidy` to reformat code post-"__DATA__"
+require SelfLoader if 0; ## no critic (ProhibitPostfixControls) ## compel `perltidy` to reformat code post-"__DATA__"
 
 my $output_filename = shift;
 

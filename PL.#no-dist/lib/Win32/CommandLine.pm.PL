@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use utf8;
 
-require SelfLoader if 0; ## no critic (ProhibitPostfixControls) ## purely a signal compelling `perltidy` to reformat code post-"__DATA__"
+require SelfLoader if 0; ## no critic (ProhibitPostfixControls) ## compel `perltidy` to reformat code post-"__DATA__"
 
 my $output_filename = shift;
 
@@ -37,9 +37,8 @@ package ":{{$module_name}}:";
 =cut
 
 ## Perl::Critic policy exceptions
-## no critic ( ProhibitUselessNoCritic ) ## ToDO: revisit/remove
-## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls RequirePodAtEnd )
-## no critic ( RequireArgUnpacking RequireDotMatchAnything RequireExtendedFormatting RequireLineBoundaryMatching Capitalization ProhibitUnusedPrivateSubroutines ProhibitDeepNests ProhibitBacktickOperators ProhibitExcessComplexity ProhibitConstantPragma ProhibitCascadingIfElse RequireInterpolationOfMetachars ) # ToDO: revisit/remove
+## no critic ( CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls )
+## no critic ( RequireInterpolationOfMetachars ProhibitExcessComplexity ProhibitDeepNests ProhibitCascadingIfElse ProhibitBacktickOperators ) ## ToDO: remove/revisit
 
 # ref: [Bash - Shell Expansions] http://www.gnu.org/software/bash/manual/bashref.html#Shell-Expansions @@ http://www.webcitation.org/66XDGrX05
 
@@ -88,13 +87,13 @@ use 5.008008;    # earliest tested perl version (v5.8.8); v5.6.1 is no longer te
 {
     ; ## no critic ( RequireConstantVersion )
     our $VERSION = '":{{$VERSION}}:"';    # VERSION definition
-    $VERSION =~ s/_//g;                   # numify VERSION (needed for alpha versions)
+    $VERSION =~ s/_//gmsx;                # numify VERSION (needed for alpha versions)
 }
 
 # Module base/ISA and Exports
 
 ## ref: Good Practices/Playing Safe in 'perldoc Exporter'
-## refs: [base.pm vs @ISA: http://www.perlmonks.org/?node_id=643366]; http://search.cpan.org/perldoc?base; http://search.cpan.org/perldoc?parent; http://perldoc.perl.org/DynaLoader.html; http://perldoc.perl.org/Exporter.html
+## refs: [base.pm vs @ISA](http://www.perlmonks.org/?node_id=643366)[`@`](https://archive.is/LTNaj); http://search.cpan.org/perldoc?base; http://search.cpan.org/perldoc?parent; http://perldoc.perl.org/DynaLoader.html; http://perldoc.perl.org/Exporter.html
 ## ToDO?: look into using Readonly::Array and Readonly::Hash for EXPORT_OK and EXPORT_TAGS
 #use base qw( DynaLoader Exporter );    # use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
 #use parent qw( DynaLoader Exporter );  # use base qw(Exporter) => requires perl v5.8 (according to Perl::MinimumVersion)
@@ -104,17 +103,20 @@ BEGIN { require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter ); 
 {
     no strict 'refs'; ## no critic ( ProhibitNoStrict )
     %EXPORT_TAGS = (
-        'ALL' => [ ( grep { /^(?!bootstrap|dl_load_flags|import).*$/msx } grep { /^.*[[:lower:]].*$/msx } grep { /^([^_].*)$/msx } keys %{ __PACKAGE__ . q{::} } ) ],    # all non-internal symbols [Note: internal symbols are ALL_CAPS or start with a leading '_']
-        '_INTERNAL' => [ ( grep { /^(([_].*)|([[:upper:]_]*))$/msx } keys %{ __PACKAGE__ . q{::} } ) ],                                                                  # all internal functions [Note: internal functions are ALL_CAPS or start with a leading '_']
+        ## [note: internal symbols are ALL_CAPS or start with a leading '_']
+        # 'ALL' => all non-internal symbols
+        'ALL' => [ ( grep { /^(?!bootstrap|dl_load_flags|import).*$/msx } grep { /^.*[[:lower:]].*$/msx } grep { /^([^_].*)$/msx } keys %{ __PACKAGE__ . q{::} } ) ],
+        # '_INTERNAL' => all internal functions
+        '_INTERNAL' => [ ( grep { /^(([_].*)|([[:upper:]_]*))$/msx } keys %{ __PACKAGE__ . q{::} } ) ],
         );
     @EXPORT_OK = ( map { @{$_} } $EXPORT_TAGS{'ALL'} );
 }
 
 # Module Interface
 
-sub command_line;                                                                                                                                                        # return Win32 command line string (already includes prior $ENV{} variable substitutions done by the shell)
-sub parse;                                                                                                                                                               # parse string as a "bash-like" command line (globbing and subshell command substitution are done, but no other substitions)
-sub argv;                                                                                                                                                                # get commandline and reparse it, returning a new ARGV array
+sub command_line;    # return Win32 command line string (already includes prior $ENV{} variable substitutions done by the shell)
+sub parse;           # parse string as a "bash-like" command line (globbing and subshell command substitution are done, but no other substitions)
+sub argv;            # get commandline and reparse it, returning a new ARGV array
 
 ####
 
@@ -124,28 +126,29 @@ bootstrap ":{{$module_name . qq{ '$VERSION'}}}:";
 
 sub command_line ## ( ) => $
 {
-    my $retVal = _wrap_GetCommandLine();
+    ; ## no critic ( Capitalization ) ## ToDO: remove/revisit
+    my $retval = _wrap_GetCommandLine();
 
     ## ToDO: add %% => % test (for both TCC and CMD)
-    $retVal =~ s/%%/%/g;    # %% => % [ standardize %% handling for CMD and TCC ]
+    $retval =~ s/%%/%/gmsx;    # %% => % [ standardize %% handling for CMD and TCC ]
 
-    #print "c_l retVal = $retVal\n";
+    #print "c_l retVal = $retval\n";
 
     # 4NT/TCC/TCMD compatibility
     my $parentEXE = _getparentname();
-    if ( $parentEXE && ( $parentEXE =~ /(?:4nt|tcc|tcmd)[.](?:com|exe|bat)$/i ) && $ENV{CMDLINE} ) { $retVal = $ENV{CMDLINE}; }
+    if ( $parentEXE && ( $parentEXE =~ /(?:4nt|tcc|tcmd)[.](?:com|exe|bat)$/imsx ) && $ENV{CMDLINE} ) { $retval = $ENV{CMDLINE}; }
 
-    return $retVal;
+    return $retval;
 }
 
-sub argv ## ( [\%OPTIONS] ) => @ARGV_new
-{
+sub argv ## ( [\%OPTIONS] ) => @ARGS
+{ ## no critic ( RequireArgUnpacking )
     return parse( command_line(), @_ );    # get commandline and reparse it returning the new ARGV array
 }
 
-sub parse ## ( $COMMAND_LINE, [\%OPTIONS] ) => @ARGV_new
-{
-    # parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed [ie, no variable substitution is performed])
+sub parse ## ( $COMMAND_LINE, [\%OPTIONS] ) => @ARGS
+{ ## no critic ( RequireArgUnpacking )
+    ## parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed [ie, no variable substitution is performed])
     return _argv(@_);
 }
 
@@ -214,7 +217,8 @@ my %_G = (
 
     if ( ( $^O eq 'MSWin32' ) and not $ENV{PERL5SHELL} ) {
         my $regex = quotemeta( $ENV{SystemRoot} . q{\\} ) . q{(System32|SysWOW64)} . quotemeta(q{\\cmd.exe});
-        if ( not $ENV{COMSPEC} =~ m/$regex/i ) {
+        if ( not $ENV{COMSPEC} =~ m/$regex/imsx ) {
+            ## no critic ( RequireInterpolationOfMetaChars )
             if ( -e $ENV{SystemRoot} . q{\\system32\\cmd.exe} ) {
                 $ENV{COMSPEC} = $ENV{SystemRoot} . q{\\system32\\cmd.exe};
                 $msg = q{WARNING: $ENV{COMSPEC} has been reset and now points to CMD.exe (for compatibility, since Perl defaults to using "cmd.exe /x/d/c" for subshell execution); set $ENV{PERL5SHELL} or use the usual CMD.exe $ENV{COMSPEC} to correct this problem};
@@ -288,13 +292,12 @@ my %_G = (
     # #!#   $isWorkingSystem = eval { ``; return ( $? ? 0 : 1 ) };  # quietly test system() and backtick subshell calls
     # #!#   if (not $isWorkingSystem) { if (not $msg) { $msg = q{ERROR: Unable to find a shell (eg, CMD.exe) for system(); to correct the problem, add path for CMD.exe to PATH or set PERL5SHELL}.($p5s ? qq{; try "set PERL5SHELL=$p5s" to correct this problem} : q{}).q{\n} } };
     if ( $msg and not $ENV{HARNESS_ACTIVE} ) { warn '":{{$module_name}}:": ' . $msg . qq{\n}; }
-    ; ## no critic ( RequireCheckedSyscalls ) # ToDO: remove/revisit
 }
 
-sub _getparentname
+sub _getparentname ## ( ) => $PARENT_NAME
 {
-    ## no critic ( ProhibitConstantPragma ProhibitPunctuationVars ) # ToDO: remove/revisit
-    # _getparentname( <null> ): returns $
+    # ToDO: remove/revisit
+    ## no critic ( Capitalization ProhibitConstantPragma ProhibitPunctuationVars )
     # find parent process ID and return the exe name
     # DONE :: ToDO?: add to .xs and remove Win32::API recommendation/dependence
     # ToDO: look into Win32::ToolHelp (currently, doesn't compile under later ActivePerl or strawberry 5.12)
@@ -395,10 +398,10 @@ sub _getparentname
     return;
 }
 
-sub _dosify
-{
-    # _dosify( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
-    # dosify string, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+sub _dosify ## ( [ @ ] ) => <null>|$|@
+{ ## no critic ( RequireArgUnpacking )
+    ## * "shortcut" function
+    ## dosify string, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
     # ToDO: NOTE: this also changes '/' to '\' which is fine for files but not so good for strings ... LOOK INTO this...
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
@@ -409,26 +412,29 @@ sub _dosify
 
     # ToDO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, _likely_ escape character [^], [%]?, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
     #   **  should we make the assumption that these are paths? or pass an argument to that effect (eg, path => 0/1) _OR_ separate function (ie, _dosify_path() )?
-    my $dos_special_chars = '"<>|^';
-    my $dc                = quotemeta($dos_special_chars);
+    my $dos_special_chars = '"<>|^&';
+
+    my $dc = quotemeta($dos_special_chars);
     for ( @_ ? @_ : $_ ) {
         #print "_ = $_\n";
-        s:\/:\\:g;    # forward to back slashes
-        if ( $_ =~ qr{(\s|[$dc])} ) {    # found whitespace and/or special characters which must be double quoted
-                                         #print "in qr\n";
-            s:":\\":g;                   # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
-            s:([\\]+)\\":($1 x 2).q{\\"}:eg; ## no critic ( ProhibitUnusedCapture ) ## double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
-            $_ = q{"} . $_ . q{"};       # quote the final token
+        s:\/:\\:gmsx;    # forward to back slashes
+        if ( $_ =~ qr{(\s|[$dc])}msx ) {
+            # found whitespace and/or special characters which must be double quoted
+            #print "in qr\n";
+            s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
+            s:([\\]+)\\":($1 x 2).q{\\"}:egmsx;    # double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
+            $_ = q{"} . $_ . q{"};                 # quote the final token
         }
     }
 
+    return if not defined wantarray;
     return wantarray ? @_ : "@_";
 }
 
-sub _dos_quote
-{
-    # _dos_quote( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
-    # quote string in DOS manner, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+sub _dos_quote ## ( [ @ ] ) => <null>|$|@
+{ ## no critic ( RequireArgUnpacking )
+    ## * "shortcut" function
+    ## quote string in DOS manner, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
@@ -437,24 +443,26 @@ sub _dos_quote
     ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
     # ToDO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
-    my $dos_special_chars = '"<>|';
-    my $dc                = quotemeta($dos_special_chars);
+    my $dos_special_chars = '"<>|&';
+
+    my $dc = quotemeta($dos_special_chars);
     for ( @_ ? @_ : $_ ) {
         #print "_ = $_\n";
         #s:\/:\\:g;                             # forward to back slashes
-        if ( $_ =~ qr{(\s|[$dc])} ) {
+        if ( $_ =~ qr{(\s|[$dc])}msx ) {
             #print "in qr\n";
-            s:":\\":g;    # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
-            s:([\\]+)\\":($1 x 2).q{\\"}:eg; ## no critic ( ProhibitUnusedCapture ) ## double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
-            $_ = q{"} . $_ . q{"};    # quote the final token
+            s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
+            s:([\\]+)\\":($1 x 2).q{\\"}:egmsx;    # double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
+            $_ = q{"} . $_ . q{"};                 # quote the final token
         }
     }
 
+    return if not defined wantarray;
     return wantarray ? @_ : "@_";
 }
 
 {
-    sub _decode;                      # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+    sub _decode; ## ( [ @ ] ) => <null>|$|@
     my %table;
 ###
 ## ANSI Escape Character Sequences (based on bash ANSI-C quoting (from C/C++); refs: http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html @@ http://www.webcitation.org/66WCe6rMT; http://msdn.microsoft.com/en-us/library/6aw8xdf2.aspx @@ http://www.webcitation.org/66WCHgnjV; http://ascii-table.com/control-chars.php @@ http://www.webcitation.org/6rQ9pOg3G)
@@ -533,9 +541,9 @@ sub _dos_quote
     for my $i ( 0 .. 0x1f ) { $table{ 'c' . ( uc chr( $base_char + $i ) ) } = $table{ 'c' . ( lc chr( $base_char + $i ) ) } = chr($i); } ## no critic ( ProhibitMagicNumbers ) ##
     $table{'c?'} = chr(0x7f); ## no critic ( ProhibitMagicNumbers ) ##
 
-    sub _decode
-    {
-        # _decode( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
+    sub _decode  ## ( [ @ ] ) => <null>|$|@
+    { ## no critic ( RequireArgUnpacking )
+        ## * "shortcut" function
         # decode ANSI C string
         @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
@@ -544,16 +552,18 @@ sub _dos_quote
                                                                                                #for my $k (sort keys %table) { #print "table{:$k:} = $table{$k}\n";}
 #   for (@_ ? @_ : $_) { s/\\([$c]|[0-7]{1,3}|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/:$1:/g }
 #   for (@_ ? @_ : $_) { s/\\([0-7]{1,3}|[$c]|x[0-9a-fA-F]{2}|X[0-9a-fA-F]{2}|c.)/$table{$1}/g } ## no critic ( ProhibitEnumeratedClasses ) ##
-        for ( @_ ? @_ : $_ ) { s/\\([0-7]{1,3}|[$c]|x[0-9a-fA-F]{2}|c.)/$table{$1}/g } ## no critic ( ProhibitEnumeratedClasses ) ## ToDO: \XHH no longer matches (TEST and remove this comment)
+        for ( @_ ? @_ : $_ ) { s/\\([0-7]{1,3}|[$c]|x[0-9a-fA-F]{2}|c.)/$table{$1}/gmsx } ## no critic ( ProhibitEnumeratedClasses ) ## ToDO: \XHH no longer matches (TEST and remove this comment)
 
+        return if not defined wantarray;
         return wantarray ? @_ : "@_";
     }
 }
 
-sub _decode_dosqq
-{
-    # _decode_dosqq( <null>|$|@ ): returns <null>|$|@ ['shortcut' function]
-    # decode double quoted string (replace internal \" with ")
+sub _decode_dosqq ## ( [@] ) => <null>|$|@
+{ ## no critic ( RequireArgUnpacking )
+    ## * "shortcut" function
+    ## ( [ @ ] ) => <null>|$|@
+    ## decode double quoted string (replace internal \" with ")
     # CMD/DOS quirk NOTES:
     #   {\\} => {\\} UNLESS followed by a double-quote mark, then {\\"} => {\"} and {\"} => {"} (acting just as a character and not an enclosing quotation mark)
     #   EOL acts as a closing quotation mark
@@ -569,28 +579,28 @@ sub _decode_dosqq
     my $q = quotemeta q{"};     # double-quote (")
     for ( @_ ? @_ : $_ ) {
         #Carp::Assert::assert( not /(?<!$e)$q$q/, '_decode_dosqq: sequential double-quotes without preceding escape character not allowed' );      # ASSERT: no internal "" unless preceeded by \  (current parsing should not allow this to happen)
-        s:([$e]+)([$q]):((substr $1, 0, 1) x (length($1)/2)).$2:eg;
+        s:([$e]+)([$q]):((substr $1, 0, 1) x (length($1)/2)).$2:egmsx;
     }
 
+    return if not defined wantarray;
     return wantarray ? @_ : "@_";
 }
 
-sub _is_const
-{
+sub _is_const ## ( $ ) => $IS_CONST
+{ ## no critic ( RequireArgUnpacking )
     my $is_const = !eval { ( $_[0] ) = $_[0]; 1; };
     return $is_const;
 }
 
-sub _ltrim
-{
-    # _ltrim( $|@:STRING(s) [,\%:OPTIONAL_ARGS] ): returns $|@ ['shortcut' function] (with optional hash_ref containing function options)
+sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
+{ ## no critic ( RequireArgUnpacking )
+    ## * "shortcut" function
     # trim leading characters (defaults to whitespace)
     # NOTE: not able to currently determine the difference between a function call with a zero arg list {"f(());"} and a function call with no arguments {"f();"}
     #       so, by the Principle of Least Surprise, f() in void context is disallowed instead of being an alias of "f($_)" so that f(@array) doesn't silently perform f($_) when @array has zero elements
     #       carp on f(<empty>) in void context
     #       use "f($_)" instead of "f()" when needed
     # NOTE: alternatively, could use _ltrim( <null>|$|\@[,\%] ), carping on more than one argument
-    # NOTE: alternatively, could use _ltrim( <null>|$|@|\@[,\%] ), carping on more than one argument
     # NOTE: Perl6 (if it ever arrives) CAN see a difference between "f()" and "f(())", so we may re-enable the ability to use f() as an alias for f($_)
     # NOTE: after thinking and reading PBP (specifically Dollar-Underscore (p85) and Interator Variables (p105)), I think disallowing zero arguments is for the best.
     #       making operation on $_ require explicit coding breeds more maintainable code with little extra effort
@@ -602,8 +612,10 @@ sub _ltrim
     #   _ltrim(@bar) if @bar;
     #   $foo = _ltrim($_);
     #   _ltrim($_);
-    #   @bar = (); $xxx = ltrim(@bar);  ## ERROR
-    #   $xxx = ltrim();                 ## ERROR
+    #   @bar = (); $xxx = ltrim(@bar);  ## OK
+    #   @bar = (); @foo = ltrim(@bar);  ## OK
+    #   $xxx = ltrim();                 ## OK
+    #   @bar = (); ltrim(@bar);         ## ERROR
     #   ltrim();                        ## ERROR
     my %opt = ( trim_re => '\s+', );
 
@@ -617,7 +629,7 @@ sub _ltrim
         }
     }
     if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of ' . $me . ' with no arguments in void return context (did you want ' . $me . '($_) instead?)'; return; } ## no critic ( RequireInterpolationOfMetachars ) #
-    if ( !@_ ) { Carp::carp 'Useless use of ' . $me . ' with no arguments'; return; }
+    # if ( !@_ ) { Carp::carp 'Useless use of ' . $me . ' with no arguments'; return; }
 
     my $t = $opt{trim_re};
 
@@ -627,32 +639,34 @@ sub _ltrim
 
     for my $arg ( @{$arg_ref} ) {
         if ( _is_const($arg) ) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-        $arg =~ s/\A$t//;
+        $arg =~ s/\A$t//msx;
     }
 
+    return if not defined wantarray;
     return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
-sub _gen_delimeted_regexp
+sub _gen_delimeted_regexp ## ( $delimiters, $escapes ) => $
 {
-    # _gen_delimeted_regexp ( $delimiters, $escapes ): returns $
     # from "Mastering Regular Expressions, 2e; p. 281" and modified from Text::Balanced::gen_delimited_pat($;$) [v1.95]
     # $DOUBLE = qr{"[^"\\]+(?:\\.[^"\\]+)+"};
     # $SINGLE = qr{'[^'\\]+(?:\\.[^'\\]+)+'};
-    ## no critic (ControlStructures::ProhibitCStyleForLoops)
     my ( $dels, $escs ) = @_;
-    return q{} unless $dels =~ /^\S+$/; ## no critic (ProhibitPostfixControls)
+    return q{} unless $dels =~ /\A\S+$/msx; ## no critic (ProhibitPostfixControls)
     $escs = q{} unless $escs; ## no critic (ProhibitPostfixControls)
 
     #print "dels = $dels\n";
     #print "escs = $escs\n";
 
+    my @dels = split //msx, $dels;
+    my @escs = split //msx, $escs;
+
     my @pat = ();
-    for ( my $i = 0 ; $i < length $dels ; $i++ ) {
-        my $d = quotemeta substr( $dels, $i, 1 );
+    foreach (@dels) {
+        my $d = quotemeta;
         if ($escs) {
-            for ( my $j = 0 ; $j < length $escs ; $j++ ) {
-                my $e = quotemeta substr( $escs, $j, 1 );
+            foreach (@escs) {
+                my $e = quotemeta;
                 if ( $d eq $e ) {
                     push @pat, "$d(?:[^$d]*(?:(?:$d$d)[^$d]*)*)$d";
                 }
@@ -668,10 +682,11 @@ sub _gen_delimeted_regexp
     return "(?:$pat)";
 }
 
-sub _dequote
-{
-    # _dequote( <null>|$|@ [,\%] ): returns <null>|$|@ ['shortcut' function] (with optional hash_ref containing function options)
+sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
+{ ## no critic ( RequireArgUnpacking )
+    ## * "shortcut" function
     # trim balanced outer quotes
+    # \%OPTIONS: an optional hash_ref containing function options as named parameters
     # $opt{'surround_re'} = 'whitespace' surround which is removed  [default = '\s*']
     # $opt{'allowed_quotes_re'} = balanced 'quote' delimeters which are removed [default = q{['"]} ]
 
@@ -698,7 +713,7 @@ sub _dequote
     @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     for ( @_ ? @_ : $_ ) {
-        s/^$w($q)(.*)\1$w$/$2/;
+        s/^$w($q)(.*)\1$w$/$2/msx;
         if ( defined($1) ) { $quoter = $1; }
         #print "_ = $_\n";
     }
@@ -709,12 +724,13 @@ sub _dequote
         #print "_ = @_\n";
     }
 
+    return if not defined wantarray;
     return wantarray ? @_ : "@_";
 }
 
-sub _argv_parse
-{
-    # _argv( $ [,\%] ): returns @
+sub _argv_parse ## ( $ [,\%OPTIONS] ) => @ARGS
+{ ## no critic ( RequireArgUnpacking )
+    ## _argv( $ [,\%] ): returns @
     # parse scalar using bash-like rules for quotes and command/subshell block replacements (no globbing or environment variable substitutions are performed)
     # [\%]: an optional hash_ref containing function options as named parameters
     ## NOTE: once $(<...>) is implemented => need to parse "\n" as whitespace (use the /s argument for regexp) because there may be embedded newlines as whitespace
@@ -749,7 +765,8 @@ sub _argv_parse
 
     # $s == string being parsed
     while ( $s ne q{} ) {                                          # $s is non-empty and starts with non-whitespace character
-        Carp::Assert::assert( $s =~ /^\S/ );
+        ## no critic ( Capitalization )  ## ToDO: remove/revist
+        Carp::Assert::assert( $s =~ /\A\S/msx );
         my $start_s1 = $s;
         my $t        = q{};                                        # token (may be a partial/in-progess or full/finished token)
         my @argY;
@@ -758,7 +775,7 @@ sub _argv_parse
         $s = _ltrim($s);
         # get and concatenate chunks
         #print "1.s = `$s`\n";
-        while ( $s =~ /^\S/ ) {
+        while ( $s =~ /\A\S/msx ) {
             # $s has initial non-whitespace character
             # process and concat chunks until non-quoted whitespace is encountered
             # chunk types:
@@ -789,7 +806,7 @@ sub _argv_parse
                     #print "ss:block_chunk = `$block_chunk`\n";
                     #print "ss:type = `$type`\n";
                     #print "ss:s = `$s`\n";
-                    if    ( $block_chunk eq q{} )       { Carp::croak 'unbalanced subshell block [#1]'; }
+                    if    ( $block_chunk eq q{} )       { Carp::croak 'unbalanced subshell block [#1]' . qq{\n}; }
                     elsif ( $type eq 'subshell_start' ) { $in_subshell_n++; }
                     elsif ( $type eq 'subshell_end' )   { $in_subshell_n--; }
                     else {
@@ -800,14 +817,14 @@ sub _argv_parse
                 $block = _dequote($block);
                 if ( $block ne q// ) {
                     # only need to eval non-empty $block ; additionally, qx// of an empty variable causes TAINT, so avoid it
-                    # print STDERR "# block = '$block'\n";
+                    #print STDERR "# block = '$block'\n";
                     ##my $output = `$block`;
                     my $shell_exe = ( defined( $ENV{PERL5SHELL} ) and ( $ENV{PERL5SHELL} ne q// ) ) ? $ENV{PERL5SHELL} : $ENV{COMSPEC};
                     my $output = `$shell_exe /c $block`;
                     #print "output = `$output`\n";
-                    if ( $opt{_die_subshell_error} and $? ) { Carp::croak 'error ' . q{'} . ( ( $? > 0 ) ? $? >> 8 : $? ) . q{'} . ' while executing subshell block `' . $block . q{`}; } ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-                    $output =~ s/\n$//s;    # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
-                    $s = $output . $s;      # graft to the front of $s for further interpretation
+                    if ( $opt{_die_subshell_error} and $? ) { Carp::croak 'exit status ' . q{'} . ( ( $? > 0 ) ? $? >> 8 : $? ) . q{'} . ' while executing subshell block `' . $block . q{`} . qq{\n}; } ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+                    $output =~ s/\n\z//msx;    # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
+                    $s = $output . $s;         # graft to the front of $s for further interpretation
                 }
                 _ltrim($s);
                 #print "s = `$s`\n";
@@ -820,16 +837,17 @@ sub _argv_parse
                     # remove and concat any initial non-escaped/non-subshell portion of the string
                     # peel individual characters out...
                     my $sss = quotemeta q{$(};
-                    while ( $ss =~ /^($sss|\\[\\\"\$]|.)(.*)$/ )    #"
+                    while ( $ss =~ /^($sss|\\[\\\"\$]|.)(.*)$/msx )    #"
                     {
                         my $o = $1;
                         $ss = $2;
                         if ( length($o) > 1 ) {
                             if ( substr( $o, 0, 1 ) eq q{\\} ) { $o = substr( $o, 1, 1 ); }
-                            else {                                  # subshell_start
-                                                                    #print "\$double-quote: in subshell consumer\n";
-                                                                    #print "\$dq.sss.ss = `$ss`\n";
-                                                                    # NOTE: UNlike BASH, the internal subshell command block may be quoted and will be interpreted with any external, balanced quotes (' or ") removed. This allows pipe and redirection characters within the subshell command block (eg, $("dir | sort")).
+                            else {
+                                # subshell_start
+                                #print "\$double-quote: in subshell consumer\n";
+                                #print "\$dq.sss.ss = `$ss`\n";
+                                # NOTE: UN-like BASH, the internal subshell command block may be quoted and will be interpreted with any external, balanced quotes (' or ") removed. This allows pipe and redirection characters within the subshell command block (eg, $("dir | sort")).
                                 my $in_subshell_n = 1;
                                 my $block         = q{};
                                 my $block_chunk;
@@ -838,7 +856,7 @@ sub _argv_parse
                                     #print "ssc:block_chunk = `$block_chunk`\n";
                                     #print "ssc:type = `$type`\n";
                                     #print "ssc:ss = `$ss`\n";
-                                    if    ( $block_chunk eq q{} )       { Carp::croak 'unbalanced subshell block [#2]'; }
+                                    if    ( $block_chunk eq q{} )       { Carp::croak 'unbalanced subshell block [#2]' . qq{\n}; }
                                     elsif ( $type eq 'subshell_start' ) { $in_subshell_n++; }
                                     elsif ( $type eq 'subshell_end' )   { $in_subshell_n--; }
                                     else {
@@ -850,9 +868,9 @@ sub _argv_parse
                                 #print "dq.block = `$block`\n";
                                 my $output = `$block`;
                                 #print "dq.output = `$output`\n";
-                                if ( $opt{_die_subshell_error} and $? ) { Carp::croak 'error ' . q{'} . ( ( $? > 0 ) ? $? >> 8 : $? ) . q{'} . ' while executing subshell block `' . $block . q{`}; } ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
-                                $output =~ s/\n$//s;    # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
-                                $o = $output;           # output as single token ## do this within $"..."
+                                if ( $opt{_die_subshell_error} and $? ) { Carp::croak 'exit status ' . q{'} . ( ( $? > 0 ) ? $? >> 8 : $? ) . q{'} . ' while executing subshell block `' . $block . q{`} . qq{\n}; } ## no critic ( ProhibitMagicNumbers ) # ToDO: revisit/remove
+                                $output =~ s/\n\z//msx;    # remove any final NL (internal NLs and ending NLs > 1 are preserved, if present)
+                                $o = $output;              # output as single token ## do this within $"..."
                             }
                         }
                         #$t .= $o;
@@ -891,8 +909,8 @@ sub _argv_parse
                 #print "token = $token\n";
                 $t .= $token;
 #               if (($token =~ /^[\'\"]/) and $opt{_carp_unbalanced}) { Carp::croak 'Unbalanced command line quotes [#1] (at token`'.$token.'` from command line `'.$command_line.'`)'; }   #"
-                if ( $token =~ /^[\'\"]/ ) { Carp::croak 'Unbalanced command line quotes [#1] (at token`' . $token . '` from command line `' . $command_line . '`)'; }    #"
-                Carp::Assert::assert( $type ne 'null', 'Found a null chunk in $s (should be impossible with $s =~ /^\S/)' );
+                if ( $token =~ /^[\'\"]/msx ) { Carp::croak 'Unbalanced command line quotes [#1] (at token`' . $token . '` from command line `' . $command_line . '`)'; }    #"
+                Carp::Assert::assert( $type ne 'null', 'Found a null chunk in $s (should be impossible with $s =~ /\A\S/msx)' );
             }
             Carp::Assert::assert( $start_s2 ne $s, 'Parsing is proceeding ($s is being consumed)' );
         }
@@ -919,8 +937,8 @@ sub _argv_parse
 }
 
 sub _get_next_chunk
-{
-    # _get_next_chunk( $ ): returns ( $chunk, $suffix, $type )
+{ ## no critic ( RequireArgUnpacking )
+    ## _get_next_chunk( $ ): returns ( $chunk, $suffix, $type )
     # parse next chunk of text returning the $chunk removed, the $suffix remaining, and the $type of chunk returned
     # chunks are raw (unprocessed) with whatever leading whitespace might be present in $
     my $s = shift @_;
@@ -957,16 +975,16 @@ sub _get_next_chunk
     $ret_chunk = q{};
 
     #print "gc.1.s = `$s`\n";
-    if ( $s =~ /^(\s+)(.*)/s ) {    # remove leading whitespace
-                                    #print "ws.1    = `$1`\n" if $1;
-                                    #print "ws.2    = `$2`\n" if $2;
+    if ( $s =~ /^(\s+)(.*)/msx ) {    # remove leading whitespace
+                                      #print "ws.1    = `$1`\n" if $1;
+                                      #print "ws.2    = `$2`\n" if $2;
         $ret_type  = 'null';                   # 'null' type so far
         $ret_chunk = $1;
         $s         = defined($2) ? $2 : q{};
     }
     #print "gc.2.s = `$s`\n";
     if ( $s ne q{} ) {
-        if ( $s =~ /^(\$[(])(.*)$/s ) {        # subshell_start == unquoted '$(' characters
+        if ( $s =~ /^(\$[(])(.*)$/msx ) {      # subshell_start == unquoted '$(' characters
                                                # $1 = subshell block starting token
                                                # $2 = rest of string [if exists]
                                                #print "sss.1   = `$1`\n" if $1;
@@ -975,7 +993,7 @@ sub _get_next_chunk
             $ret_chunk .= $1;
             $s = defined($2) ? $2 : q{};
         }
-        elsif ( $s =~ /^([)])(.*)$/s ) {       # subshell_end == unquoted ')' character
+        elsif ( $s =~ /^([)])(.*)$/msx ) {     # subshell_end == unquoted ')' character
                                                # $1 = subshell block ending token
                                                # $2 = rest of string [if exists]
                                                #print "sse.1   = `$1`\n" if $1;
@@ -984,10 +1002,10 @@ sub _get_next_chunk
             $ret_chunk .= $1;
             $s = defined($2) ? $2 : q{};
         }
-        elsif ( $s =~ /^((\$)?$re_qq_escok)(.*)$/s ) {    # double-quoted or $double-quoted chunk (possible internal escapes)
-                                                          # $1 = leading $ (if present)
-                                                          # $2 = double-quoted chunk
-                                                          # $3 = rest of string [if exists]
+        elsif ( $s =~ /^((\$)?$re_qq_escok)(.*)$/msx ) {    # double-quoted or $double-quoted chunk (possible internal escapes)
+                                                            # $1 = leading $ (if present)
+                                                            # $2 = double-quoted chunk
+                                                            # $3 = rest of string [if exists]
             $ret_type = 'double-quoted';
             if ( defined($2) ) { $ret_type = $2 . $ret_type; }
             $ret_chunk .= $1;
@@ -997,37 +1015,37 @@ sub _get_next_chunk
             #print "dq.3    = `$3`\n" if $3;
             #print "dq.s    = `$s`\n";
         }
-        elsif ( $s =~ /^(\$$re_q_escok)(.*)$/s ) {    # $single-quoted chunk (possible internal escapes)
-                                                      # $1 = $single-quoted chunk
-                                                      # $2 = rest of string [if exists]
-                                                      #print "\$sq.1  = `$1`\n" if $1;
-                                                      #print "\$sq.2  = `$2`\n" if $2;
+        elsif ( $s =~ /^(\$$re_q_escok)(.*)$/msx ) {    # $single-quoted chunk (possible internal escapes)
+                                                        # $1 = $single-quoted chunk
+                                                        # $2 = rest of string [if exists]
+                                                        #print "\$sq.1  = `$1`\n" if $1;
+                                                        #print "\$sq.2  = `$2`\n" if $2;
             $ret_type = '$single-quoted';
             $ret_chunk .= $1;
             $s = defined($2) ? $2 : q{};
         }
-        elsif ( $s =~ /^($re_q)(.*)$/s ) {            # single-quoted chunk (no internal escapes)
-                                                      # $1 = single-quoted token
-                                                      # $2 = rest of string [if exists]
-                                                      #print "sq.1    = `$1`\n" if $1;
-                                                      #print "sq.2    = `$2`\n" if $2;
+        elsif ( $s =~ /^($re_q)(.*)$/msx ) {            # single-quoted chunk (no internal escapes)
+                                                        # $1 = single-quoted token
+                                                        # $2 = rest of string [if exists]
+                                                        #print "sq.1    = `$1`\n" if $1;
+                                                        #print "sq.2    = `$2`\n" if $2;
             $ret_type = 'single-quoted';
             $ret_chunk .= $1;
             $s = defined($2) ? $2 : q{};
         }
-        elsif ( $s =~ /^([$q_qm].*)$/s ) {            # quoted chunk unmatched above (unbalanced)
-                                                      # $1 = quoted token
-                                                      #print "ub.1    = `$1`\n" if $1;
+        elsif ( $s =~ /^([$q_qm].*)$/msx ) {            # quoted chunk unmatched above (unbalanced)
+                                                        # $1 = quoted token
+                                                        #print "ub.1    = `$1`\n" if $1;
             $ret_type = 'unbalanced-quoted';
             $ret_chunk .= $1;
             $s = q{};
         }
-        else {                                        # simple non-whitespace character chunk  ##default
+        else {                                          # simple non-whitespace character chunk  ##default
             ## n#o critic ( ProhibitDeepNests )
-            Carp::Assert::assert( $s =~ /^\S/ );
+            Carp::Assert::assert( $s =~ /\A\S/msx );
             #print "s = $s\n";
             $ret_type = 'simple';
-            if ( $s =~ /^([^\s$q_qm\$()]+)(.*)$/s ) {
+            if ( $s =~ /^([^\s$q_qm\$()]+)(.*)$/msx ) {
                 # $1 = non-whitespace/non-quoted/non-subshell_start/non-subshell_end token
                 # $2 = rest of string [if exists]
                 #print "simple.1    = `$1`\n" if defined($1);
@@ -1037,7 +1055,7 @@ sub _get_next_chunk
             }
             else {    # cover the case for isolated $
                 ## no critic ( ProhibitCaptureWithoutTest )     ## ToDO: revisit / reanalyze & remove
-                $s =~ /^(\S)(.*)$/s;
+                $s =~ /^(\S)(.*)$/msx;
                 # $1 = non-whitespace character
                 # $2 = rest of string [if exists]
                 #Carp::Assert::assert( defined $1 );
@@ -1051,8 +1069,8 @@ sub _get_next_chunk
 }
 
 sub _argv_do_glob
-{
-    # _argv_do_glob( @args ): returns @
+{ ## no critic ( RequireArgUnpacking )
+    ## _argv_do_glob( @args ): returns @
     ## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
     ## no critic ( ProhibitUnusualDelimiters ) # ToDO: remove/revisit
@@ -1084,14 +1102,14 @@ sub _argv_do_glob
     my %home_paths = _home_paths();
     # if <username> is duplicated in environment vars, it overrides any previous path found in the registry
     for my $k ( keys %ENV ) {
-        if ( $k =~ /^~(\w+)$/ ) {
+        if ( $k =~ /^~(\w+)$/msx ) {
             my $username = $1;
-            $ENV{$k} =~ /\s*"?\s*(.*)\s*"?\s*/;
+            $ENV{$k} =~ /\s*"?\s*(.*)\s*"?\s*/msx;
             if   ( defined $1 ) { $home_paths{ lc($username) } = $1; }
             else                { $home_paths{ lc($username) } = $ENV{$k}; }
         }
     }
-    for my $k ( keys %home_paths ) { $home_paths{$k} =~ s/\\/\//g; };    # unixify path seperators
+    for my $k ( keys %home_paths ) { $home_paths{$k} =~ s/\\/\//gmsx; };    # unixify path seperators
     my $home_path_re = q{(?i)} . q{^~(} . join( q{|}, keys %home_paths ) . q{)?(/|$)}; ## no critic (RequireInterpolationOfMetachars)
 
     use File::Glob;
@@ -1111,7 +1129,7 @@ sub _argv_do_glob
             $s .= $t;
             if ( $chunk->{glob} ) {
                 $glob_this = 1;
-                $t =~ s/\\/\//g;
+                $t =~ s/\\/\//gmsx;
                 #print "s = $s\n";
                 #print "t = $t\n";
             }
@@ -1137,20 +1155,20 @@ sub _argv_do_glob
         }
 
         if ( $opt{glob} && $glob_this ) {
-            $pat =~ s:\\\\:\/:g; ## no critic ( ProhibitUnusualDelimiters )  ## replace all backslashes (assumed to be backslash quoted already) with forward slashes
+            $pat =~ s:\\\\:\/:gmsx; ## no critic ( ProhibitUnusualDelimiters )  ## replace all backslashes (assumed to be backslash quoted already) with forward slashes
 
-            if ( $pat =~ m/$home_path_re/ ) {    # deal with possible prefixes
-                                                 # ToDO: NOTE: this allows quoted <usernames> which is different from bash, but needed because Win32 <username>'s can have internal whitespace
-                                                 # ToDO: CHECK: are there any cases where the $s wouldn't match but $pat would causing incorrect fallback string?
-                                                 #print "pat(pre-prefix)  = `$pat`\n";
-                                                 #print "s(pre-prefix)    = `$s`\n";
-                $pat =~ s/$home_path_re/$home_paths{lc($1)}$2/;
-                $s =~ s:\\:\/:g;                                 # unixify $s for processing
-                $s =~ s/$home_path_re/$home_paths{lc($1)}$2/;    # need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
+            if ( $pat =~ m/$home_path_re/msx ) {    # deal with possible prefixes
+                ## ToDO: NOTE: this allows quoted <usernames> which is different from bash, but needed because Win32 <username>'s can have internal whitespace
+                ## ToDO: CHECK: are there any cases where the $s wouldn't match but $pat would causing incorrect fallback string?
+                ##print "pat(pre-prefix)  = `$pat`\n";
+                ##print "s(pre-prefix)    = `$s`\n";
+                $pat =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;
+                $s =~ s:\\:\/:gmsx;                                 # unixify $s for processing
+                $s =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;    # need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
             }
 
-            if ( $pat =~ /\\[?*]/ ) { ## '?' and '*' are not allowed in filenames in Win32, and Win32 DosISH globbing doesn't correctly escape them when backslash quoted, so skip globbing for any tokens containing these characters
-                                                                 #print "pat contains escaped wildcard characters ($pat)\n";
+            if ( $pat =~ /\\[?*]/msx ) { ## '?' and '*' are not allowed in filenames in Win32, and Win32 DosISH globbing doesn't correctly escape them when backslash quoted, so skip globbing for any tokens containing these characters
+                ##print "pat contains escaped wildcard characters ($pat)\n";
                 @g = ($s);
             }
             else {
@@ -1160,15 +1178,15 @@ sub _argv_do_glob
                 if ( ( scalar(@g) == 1 ) && ( $g[0] eq $pat ) ) { @g = ($s); }
                 elsif ( $opt{dashprefix} ) {
                     foreach (@g) {
-                        if (m/^-/) { $_ = q{./} . $_; }
+                        if (m/^-/msx) { $_ = q{./} . $_; }
                     }
                 }
                 if ( $opt{dosify} ) {
                     foreach (@g) { _dosify($_); }
                 }
                 elsif ( $opt{unixify} ) {
-                    foreach (@g) { s:\\:\/:g; }
-                } ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
+                    foreach (@g) { s:\\:\/:gmsx; }
+                }
             }
         }
         else {
@@ -1179,13 +1197,13 @@ sub _argv_do_glob
                 foreach (@g) {
                     if (-e) { _dosify($_); }
                 }
-            } ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
+            }
             elsif ( $opt{dosquote} ) {
                 foreach (@g) { _dos_quote($_); }
             }
             elsif ( $opt{unixify} eq 'all' ) {
-                foreach (@g) { s:\\:\/:g; }
-            } ## no critic (ProhibitUselessTopic) # ToDO: remove/revisit
+                foreach (@g) { s:\\:\/:gmsx; }
+            }
         }
         #print "glob_this = $glob_this\n";
         #print "s   = `$s`\n";
@@ -1208,8 +1226,8 @@ sub _argv_do_glob
 }
 
 sub _zero_position
-{
-    # _zero_position( @args, \% ): returns $
+{ ## no critic ( RequireArgUnpacking )
+    ## _zero_position( @args, \% ): returns $
     # find and return the position of the current executable within the given argument array
     # @args = the parsed argument array     ## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
     ## no critic ( ProhibitEscapedCharacters ) # ToDO: remove/revisit
@@ -1240,9 +1258,9 @@ sub _zero_position
     #print "0 = $0\n";
     #win32 - filenames are case-preserving but case-insensitive [so, solely case difference compares equal => convert to lowercase]
     # ToDO: for use in C# programs under PerlScript => if $PROGRAM_NAME eq q{}, assume 0 position is correct (any other ramifications?)
-    my $zero    = $PROGRAM_NAME; ## no critic (Variables::ProhibitPunctuationVars)
+    my $zero    = $PROGRAM_NAME;
     my $zero_lc = lc($zero);
-    my $zero_dq = _dequote( $zero_lc, { allowed_quotes_re => $opt{quote_re} } );     # dequoted $0
+    my $zero_dq = _dequote( $zero_lc, { allowed_quotes_re => $opt{quote_re} } );    # dequoted $0
 
     #print "zero = $zero\n";
     #print "zero_lc = $zero_lc\n";
@@ -1263,7 +1281,7 @@ sub _zero_position
                                          #print "\tMATCH (direct)\n";
             last;
         }
-        $arg =~ s/($q_re)(.*)\1/$2/;
+        $arg =~ s/($q_re)(.*)\1/$2/msx;
         #print "arg = $arg\n";
         if ( $zero_lc eq lc($arg) ) {    # dequoted match
                                          #print "\tMATCH (dequoted)\n";
@@ -1299,8 +1317,8 @@ sub _zero_position
 }
 
 sub _argv
-{
-    # _argv( $ [,\%] ): returns @
+{ ## no critic ( RequireArgUnpacking )
+    ## _argv( $ [,\%] ): returns @
     # parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed)
     # [\%]: an optional hash_ref containing function options as named parameters
     my %opt = (
@@ -1391,7 +1409,7 @@ sub _argv
 }
 
 sub _quote_gc_meta
-{
+{ ## no critic ( RequireArgUnpacking )
     my $s = shift @_;
 #   my $gc = $_G{glob_char};
 
@@ -1402,7 +1420,7 @@ sub _quote_gc_meta
 #   $s =~ s/([$gc])/\\$1/g;                 # backslash quote all metacharacters (note: there should be no backslashes to quote)
 
 #   $s =~ s/([$gc])/\\$1/g;                 # backslash quote all metacharacters (backslashes are ignored)
-    $s =~ s/([$gc])/\\$1/g;    # backslash quote all glob metacharacters (backslashes as well)
+    $s =~ s/([$gc])/\\$1/gmsx;    # backslash quote all glob metacharacters (backslashes as well)
 
 #   $s =~ s/([$dgc])/\\\\\\\\\\$1/g;        # see Dos::Glob notes for literally quoting '*' or '?'  ## doesn't work for Win32 (? only MacOS)
 
@@ -1429,10 +1447,10 @@ sub _home_paths
 
     my %home_paths = ();
 
-# initial paths for user from environment vars
+    # initial paths for user from environment vars
     if ( $ENV{USERNAME} && $ENV{USERPROFILE} ) { $home_paths{q{}} = $home_paths{ lc( $ENV{USERNAME} ) } = $ENV{USERPROFILE}; }
 
-# add All Users / Public
+    # add All Users / Public
     $home_paths{'all users'} = $ENV{ALLUSERSPROFILE};    #?? should this be $ENV{PUBLIC} on Vista/Win7+?
     if   ( $ENV{PUBLIC} ) { $home_paths{public} = $ENV{PUBLIC}; }
     else                  { $home_paths{public} = $ENV{ALLUSERSPROFILE}; }
@@ -1453,18 +1471,18 @@ sub _home_paths
 
         foreach my $p ( keys %{$profiles_href} ) {
             #print "p = $p\n";
-            if ( $p =~ /^(S(?:-\d+)+)\\$/ ) {
+            if ( $p =~ /^(S(?:-\d+)+)\\$/msx ) {
                 my $sid_str = $1;
                 my $sid     = Win32::Security::SID::ConvertStringSidToSid($1);
                 my $uid     = Win32::Security::SID::ConvertSidToName($sid);
                 my $domain  = q{};
-                if ( $uid =~ /^(.+)\\(.+)$/ ) {
+                if ( $uid =~ /^(.+)\\(.+)$/msx ) {
                     $domain = $1;
                     $uid    = $2;
                 }
                 if ( $domain eq $node_name || $domain eq $domain_name ) {
                     my $path = $profiles_href->{$p}->{ProfileImagePath};
-                    $path =~ s/\%(.+)\%/$ENV{$1}/eg;
+                    $path =~ s/\%(.+)\%/$ENV{$1}/egmsx;
                     #print $uid."\n";
                     $uid = lc($uid);              # remove/ignore user case
                     $home_paths{$uid} = $path;    # save uid => path
@@ -1472,22 +1490,22 @@ sub _home_paths
             }
         }
         foreach my $uid ( sort keys %home_paths ) {    # add paths for UIDs with internal whitespace removed (for convenience)
-            if ( $uid =~ /\s/ ) {
+            if ( $uid =~ /\s/msx ) {
                 # $uid contains whitespace
                 my $path = $home_paths{$uid};
-                $uid =~ s/\s+//g;                      # remove any internal whitespace (Win32 usernames may have internal whitespace)
+                $uid =~ s/\s+//gmsx;                   # remove any internal whitespace (Win32 usernames may have internal whitespace)
                 if ( !$home_paths{$uid} ) { $home_paths{$uid} = $path; }    # save uid(no-whitespace) => path (NOTE: no overwrites if previously defined, to avoid possible collisions with other UIDs)
             }
         }
     }
 
-#for my $k (keys %home_paths) { #print "$k => $home_paths{$k}\n"; }
+    #for my $k (keys %home_paths) { #print "$k => $home_paths{$k}\n"; }
     return %home_paths;
 }
 
 #print '#registry entries = '.scalar( keys %{$Win32::TieRegistry::Registry} )."\n";
 
-1;                                                                          # Magic true value required at end of module (for require)
+1; ## Magic true value required at end of module (for require)
 
 ####
 
