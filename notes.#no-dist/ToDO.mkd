@@ -4,6 +4,42 @@
 
 ----
 
+alternative methods of parsing the command line ... faster, allowing "quote contexts"
+
+- ? generally portable quote sequence for perl programs
+    ...> `perl -E "..."` is problematic on `bash` because of "$x" intepretation within the string
+    ...> `perl -E '...'` is problematic on `cmd` because CMD sees nothing special about single-quotes, breaking up the string argument and intepreting "special" characters (such as "&", "|", "||", "&&", etc.)
+
+----
+
+## add x_contributors to META.json
+
+refactor repo functions to work in Build.PL and in generated build script
+
+load contributors into dist_contributors_aref and merge into x_contributors in META.json
+
+? also add dist_authority for x_authority?
+
+## rethink quoting
+
+ref: [Bash variables and command substitution](http://www.compciv.org/topics/bash/variables-and-substitution)[`@`](https://archive.is/uEyXa)
+
+- Explore "$(...)" as a viable subshell command returning one argument, including CRLFs.
+- Explore removing $("...") as a special case for CMD/DOS to encapsulate special characters => use $(xx "...").
+  ... or keep $(\s*"..."\s*) as a special case, but allow execution of command requiring quoting as well ... how to differentiate?
+  ... special CMD characters == [space]&()[]{}^=;!'+,~\`
+- Think more deeply about quoting...
+  - `xx "'ls' ..."` vs `xx -a $(xx "ls")` vs `xx -a $(xx 'ls')`
+  - internal single-quoted strings are turned into double-quoted CMD/DOS-escaped strings ("dosified")
+  - use bash-like quote contexts? ... or just turn single-quoted strings into double-quoted CMD/DOS escaped strings
+
+- make `xx -e $(" ls -ALp --color=no | grep --color=no '[\\/]$' ")` work without error
+- give better subshell error messages ... not just "error '1' while executing subshell block ..."
+  ... report actual STDERR output as well, if existent
+  ... <STDERR> "exit status = '1' from subshell block `...`"
+  ... remove trailing "at C:\Users\Roy\AppData\Local\scoop\apps\perl\5.26.1.1-PDL\perl\site\bin/xx.bat line 251." portion
+  ... NOTE: bash doesn't die on subshell errors ... just no output
+
 ## enforce decimal versions
 
 * no dotted-decimal, no v-strings, no leading 'v'
@@ -16,9 +52,15 @@ repo #dbin should be spare and only have shell script files calling out to imple
 
 use a node/js implementation (in the parent directory) ?
 
+## add '--one'/'-1' option to xx.bat
+
+- combines all output into single argument for caller
+  - ? need to remove CR/LFs
+
 ## add style testing
 
-similar to `test-repo-whitespace`
+- similar to `test-repo-whitespace`
+- "t\00.style.t"
 
 ## add spell checking
 
@@ -34,6 +76,15 @@ scoop install rivy/hunspell
 build & podspell lib\Win32\CommandLine.pm | hunspell | grep "&"
 build & podspell lib\Win32\CommandLine.pm | hunspell -d en_US-large | grep "&"
 ```
+
+## add repo information
+
+@untracked_files == `git status --porcelain | grep '??' | sed 's/^??\s*//';`
+  - use as augment to $repo_is_dirty for "cpan_upload"
+
+@repo_files == `git ls-tree --name-only -r -t HEAD $dist_path\.`
+  - committed files
+  - use for style checking tests => eg, "t\00.style.t" (PENDING)
 
 ## improve documentation
 

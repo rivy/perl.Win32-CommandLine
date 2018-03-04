@@ -1,3 +1,9 @@
+"refactor AppVeyor CI"
+- rename and refactor version setup in appveyor_install-perl
+- reorder steps in AppVeyor config
+
+====
+
 CHANGED: added testing and fixup (via PERL5SHELL), if needed, for subshell calls
 CHANGED: improved error text for failed subshell calls
 UPDATED: build package (Build.PL, tests, and ANT) pulled from upstream
