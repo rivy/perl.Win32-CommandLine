@@ -10,7 +10,7 @@ my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $f
 
 use Test::More;     # included with perl v5.6.2+
 
-plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL};
 
 ## no critic ( RequireCarping )
 

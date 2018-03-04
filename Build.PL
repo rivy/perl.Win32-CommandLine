@@ -1,3 +1,4 @@
+
 #!perl -w   -- ## emacs -*- tab-width: 4; mode: cperl; indent-tabs-mode: nil; basic-offset: 2 -*- ## (jedit) :tabsize=4:mode=perl: ## (notepad++) vim:ts=4:sw=2:et:sta:sts=2 ## no critic ( CodeLayout::RequireTidyCode Modules::ProhibitExcessMainComplexity )
 #$Id: Build.PL,v 0.4.1.340 ( r112:594c42f8f73c [mercurial] ) 2013/12/26 05:30:45 rivy $
 
@@ -117,7 +118,8 @@ $config{'test_requires_href'} = {                   # distribution requirements 
     'Probe::Perl' => '0',
     'Test::CPAN::Meta' => '0',
     'Test::CPAN::Meta::JSON' => '0',
-    'Test::Differences' => '0', 'Test::More' => '0',        ## Test::More + Test::Differences
+    'Test::Differences' => '0',
+    'Test::More' => '0',
     'version' => '0.77',                                    ## version v0.77+ needed for v5.10+ extended version support & declare->()
     };
 $config{'sign'} = 'true';                           # always sign the distribution, if possible (note: this is only used when the distribution is built/tested (or when testing the author signature ($ENV{TEST_ALL} or $ENV{TEST_SIGNATURE} are set)))
@@ -253,6 +255,10 @@ if ( -e $config_filename )
                     $config{'dist_repo_web_host'} = $url->authority if not defined $config{'dist_repo_web_host'};
                     $config{'dist_repo_web_path'} = $url->path if not defined $config{'dist_repo_web_path'};
                     }
+                if ($key eq 'module_name' && (not defined $config{'dist_name'})) {
+                    # guess dist_name
+                    $config{'dist_name'} = $config{'module_name'}; $config{'dist_name'} =~ s/::/-/gmsx;
+                    }
                 if ($key eq 'VERSION_filename') {
                     # determine VERSION from file, if present
                     %config = ( %config, version_from_vfile( rel2abs($config{'VERSION_filename'}, $config{'dist_path'}) ) );
@@ -315,7 +321,9 @@ $config{'add_to_versioned_aref'} = [ @{$config{'add_to_versioned_aref'}}, ( grep
 
 # UPDATE files for 'clean'
 # * if using MSVC compiler ('cl'), add Visual C debug files ('vc[1-9][0-9]*.pdb') to cleanup
-if (lc($Config{'cc'}) eq 'cl') { $config{'add_to_cleanup_aref'} = [ 'vc[1-9][0-9]*.pdb', @{$config{'add_to_cleanup_aref'}} ]; }
+if (lc($Config{'cc'}) eq 'cl') { $config{'add_to_cleanup_aref'} = [ @{$config{'add_to_cleanup_aref'}}, 'vc[1-9][0-9]*.pdb', ]; }
+# * automatically add distribution files to cleanup
+$config{'add_to_cleanup_aref'} = [ @{$config{'add_to_cleanup_aref'}} , ( map { $config{'dist_name'}.q/-/.$config{'VERSION'}.$_ } ( '-PPM.tar.gz', '.tar.gz', '-*.par' ) ) , $config{'dist_name'}.'.ppd', ];
 
 # UPDATE files for 'realclean'
 # * automatically add Makefile.PL to cleanup if $config{'create_metafile_pl'} == ANY
@@ -346,7 +354,7 @@ if ( defined $config{'VERSION'} ) { my $v = $config{'VERSION'}; $v =~ s/^v//imsx
 #use lib 'inc';
 #require Devel::AssertOS; import Devel::AssertOS ( @{$config{'assert_os_aref'}} );
 # [DONE: WORKS fine] TODO: check with CPAN testers whether the current failure output string is close enough to the 'standard' "OS unsupported\n" string so that test failures are NA for unsupported OS's
-if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O =~ /$os/; }; if (!$found) { die "OS unsupported : $config{dist_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n";}; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
+if (defined($config{'assert_os_aref'}) && @{$config{'assert_os_aref'}}) { my $found = 0; for my $os (@{$config{'assert_os_aref'}}) { $found = 1 if $^O =~ /$os/; }; if (!$found) { die "OS unsupported : $config{module_name} is designed to be used for ( @{$config{assert_os_aref}} ) systems only - installation aborted\n";}; }; ## no critic (Variables::ProhibitPunctuationVars ErrorHandling::RequireCarping)
 
 my $class = Module::Build->subclass( class => 'RIVY::Builder', code => rivy_builder_code() );
 my %optional_args = ();     # Module::Build::new() optional args (only included if they are non-empty; otherwise, if included as empty list(s)/hash(es) in new(), Module::Build carps that the specified [and needed] files are missing)
@@ -359,6 +367,7 @@ if ( @{$config{'script_files_aref'}} )              { %optional_args = ( %option
 if ( keys %{$config{'pm_files_href'}} )             { %optional_args = ( %optional_args, pm_files =>  { %{$config{'pm_files_href'}} }); }
 if ( keys %{$config{'pod_files_href'}} )            { %optional_args = ( %optional_args, pod_files => { %{$config{'pod_files_href'}} }); }
 if ( keys %{$config{'xs_files_href'}} )             { %optional_args = ( %optional_args, xs_files =>  { %{$config{'xs_files_href'}} }); }
+
 my $build = $class->new(
     get_options => { color => { type => '=s' } }, ## option to output in color ## OPTION color => 0/never/no/off; 1/on/yes; always # parsed in dispatch()
 
@@ -391,11 +400,11 @@ my $build = $class->new(
 
     PL_files             => { %{$config{'PL_files_href'}} },
 
-    add_to_cleanup       => [ @{$config{'add_to_cleanup_aref'}}, ( map { join( q{-}, split(/::/xms) ) . q{-*} } $config{'dist_name'} ), ( map { join( q{-}, split(/::/xms) ) . '.ppd' } $config{'dist_name'} ) ],
+    add_to_cleanup       => [ @{$config{'add_to_cleanup_aref'}} ],
 
     add_to_realcleanup   => [ @{$config{'add_to_realcleanup_aref'}} ],
 
-    add_to_verycleanup  => [ @{$config{'add_to_verycleanup_aref'}} ],
+    add_to_verycleanup   => [ @{$config{'add_to_verycleanup_aref'}} ],
 );
 
 # push $config{*} info into $build->notes
@@ -616,13 +625,13 @@ $code{'repo'} = q{
         $repo_function_ref->{git}{$function_name} = sub {
             my @lines = qx{git rev-parse --abbrev-ref HEAD};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
         $repo_function_ref->{hg}{$function_name} = sub {
             my @lines = qx{hg branch};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
 
@@ -631,13 +640,13 @@ $code{'repo'} = q{
         $repo_function_ref->{git}{$function_name} = sub {
             my @lines = qx{git show --pretty="%aN <%aE>"};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
         $repo_function_ref->{hg}{$function_name} = sub {
-            my @lines = qx{hg log -r . --template '{author}'};
+            my @lines = qx{hg log -r . --template "{author}"};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
 
@@ -648,9 +657,9 @@ $code{'repo'} = q{
             return scalar(@lines);
             };
         $repo_function_ref->{hg}{$function_name} = sub {
-            my @lines = qx{hg log -r . --template '{rev}'};
+            my @lines = qx{hg log -r . --template "{rev}"};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
 
@@ -660,13 +669,13 @@ $code{'repo'} = q{
             # URLref: [How to retrieve the hash for the current commit in Git?] http://stackoverflow.com/a/949391/43774
             my @lines = qx{git rev-parse HEAD};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
         $repo_function_ref->{hg}{$function_name} = sub {
-            my @lines = qx{hg log -r . --template '{node}'};
+            my @lines = qx{hg log -r . --template "{node}"};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
 
@@ -677,14 +686,14 @@ $code{'repo'} = q{
         #     my $size = shift;
         #     my @lines = qx{git rev-parse --short=$size HEAD};
         #     my $RETval = $lines[0];
-        #     chomp( $RETval );
+        #     chomp( $RETval ) if defined $RETval;
         #     return $RETval;
         #     };
         # $repo_function_ref->{hg}{$function_name} = sub {
         #     my $size = shift;
-        #     my @lines = qx{hg log -r . --template '{node}'};
+        #     my @lines = qx{hg log -r . --template "{node}"};
         #     my $RETval = $lines[0];
-        #     chomp( $RETval );
+        #     chomp( $RETval ) if defined $RETval;
         #     return substr ( $RETval, 0, $size );
         #     };
 
@@ -693,13 +702,13 @@ $code{'repo'} = q{
         $repo_function_ref->{git}{$function_name} = sub {
             my @lines = qx{git describe --tags --always};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
         $repo_function_ref->{hg}{$function_name} = sub {
-            my @lines = qx{hg log -r . --template '{latesttag}-{latesttagdistance}-{node|short}\n'};
+            my @lines = qx{hg log -r . --template "{latesttag}-{latesttagdistance}-{node|short}\n"};
             my $RETval = $lines[0];
-            chomp( $RETval );
+            chomp( $RETval ) if defined $RETval;
             return $RETval;
             };
 
@@ -711,7 +720,52 @@ $code{'repo'} = q{
             return wantarray ? @lines : \\@lines;
             };
         $repo_function_ref->{hg}{$function_name} = sub {
-            my @lines = qx{hg log --template "{author}\\n"};
+            my @lines = qx{hg log --template "{author}\n"};
+            return wantarray ? @lines : \\@lines;
+            };
+
+        # files
+        $function_name = 'files';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = split /\0/, qx{git ls-tree --full-name --full-tree --name-only -r -t -z HEAD};
+            return wantarray ? @lines : \\@lines;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = map { s/^.\s//msx; $_ } grep { /^[MARC!]\s/msx } ( split /\0/, qx{hg status --all --print0} );
+            return wantarray ? @lines : \\@lines;
+            };
+
+        # files_binary
+        $function_name = 'files_binary';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = grep { /^-/msx } split /\0/, qx{git diff-tree -z --numstat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 HEAD};
+            foreach ( @lines ) { s/^-\t-\t// };
+            return wantarray ? @lines : \\@lines;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = map { s/^.\s//msx; $_ } grep { /^[MARC!]\s/msx } ( split /\0/, qx{hg status --all "set:binary()" --print0} );
+            return wantarray ? @lines : \\@lines;
+            };
+
+        # files_ignored
+        $function_name = 'files_ignored';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = map { s/^[!][!]\s//msx; $_ } grep { /^[!][!]\s/msx } ( split /\0/, qx{git status --ignored --porcelain -z} );
+            return wantarray ? @lines : \\@lines;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = map { s/^.\s//msx; $_ } grep { /^[I]\s/msx } ( split /\0/, qx{hg status --all --print0} );
+            return wantarray ? @lines : \\@lines;
+            };
+
+        # files_untracked
+        $function_name = 'files_untracked';
+        $repo_function_ref->{git}{$function_name} = sub {
+            my @lines = map { s/^[?][?]\s//msx; $_ } grep { /^[?][?]\s/msx } ( split /\0/, qx{git status --porcelain -z} );
+            return wantarray ? @lines : \\@lines;
+            };
+        $repo_function_ref->{hg}{$function_name} = sub {
+            my @lines = map { s/^.\s//msx; $_ } grep { /^[?]\s/msx } ( split /\0/, qx{hg status --all --print0} );
             return wantarray ? @lines : \\@lines;
             };
 
@@ -1610,7 +1664,10 @@ $code{'ACTION_upload_cpan'} = q{
         $self->depends_on('disttestall');
         $self->log_info("Testing of distribution completed successfully.\n");
 
-        if ( $self->notes('repo_is_dirty') ) { die "Repository has uncommited changes; bailing out before upload." }
+        my @issues;
+        if ( $self->notes('repo_is_dirty') ) { push @issues, 'uncommited changes'; }
+        if ( @{$self->notes('repo_files_untracked')} ) { push @issues, 'untracked files'; }
+        if ( @issues ) { die q{Repository has }.( join ' and ', @issues ).q{; bailing out before upload.}."\n"; }
 
         my $devnull = File::Spec->devnull();
         my $haveCPANUpload = ( qx{cpan-upload --help 2>$devnull} =~ /\scpan-upload\s/m );
@@ -2240,6 +2297,29 @@ $code{'ACTION_distmeta'} = q{
             local ($ExtUtils::Manifest::Verbose, $ExtUtils::Manifest::Quiet) = (0,1);
             $self->ACTION_manifest;         # [use direct execution of ACTION; depends_on() will cache and execute each ACTION only once per script execution]
         }
+    }
+};
+$code{'ACTION_test_ci'} = q{
+    sub ACTION_test_ci {
+        my $self = shift;
+
+        $ENV{CI} = 1;
+
+        $self->depends_on('distmeta');
+
+        return $self->ACTION_test( @_ );
+    }
+};
+$code{'ACTION_test_release'} = q{
+    sub ACTION_test_release {
+        my $self = shift;
+
+        $ENV{TEST_RELEASE} = 1;
+
+        $self->depends_on('distmeta');
+        if ( $self->{properties}{sign} and not File::Glob::bsd_glob('SIGNATURE',File::Glob::GLOB_NOCASE()) ) { $self->depends_on('sign') };    # [case insensitive search on all platforms] don't touch SIGNATURE if already present; and don't touch at all unless going to be tested [use build sign to resign the package]
+
+        return $self->ACTION_test( @_ );
     }
 };
 $code{'ACTION_testall'} = q{

@@ -28,7 +28,7 @@ my $message = q{};
 unless ($message || $haveSIGNATURE) { $message = 'Missing SIGNATURE file'; }
 unless ($message || $haveNonEmptySIGNATURE) { $message = 'Empty SIGNATURE file'; }
 
-unless ($message || ($ENV{TEST_SIGNATURE} or $ENV{TEST_ALL})) { $message = 'Signature test [to run: set TEST_SIGNATURE]'; }
+unless ($message || ($ENV{TEST_SIGNATURE} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL} or $ENV{CI})) { $message = 'Signature test [to run: set TEST_SIGNATURE]'; }
 
 unless ($message || $haveModuleSignature) { $message = 'Module::Signature required to check distribution SIGNATURE'; }
 unless ($message || $haveSHA) { $message = 'One of Digest::SHA, Digest::SHA1, or Digest::SHA::PurePerl is required'; }

@@ -18,7 +18,7 @@ use Test::Differences;
 
 #
 
-plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL} or $ENV{CI};
 plan skip_all => 'TAINT mode not supported (Module::Build is eval tainted)' if in_taint_mode();
 
 use Module::Build;

@@ -10,7 +10,7 @@ my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $f
 
 use Test::More;
 
-plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_ALL};
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL} or $ENV{CI};
 
 my $haveTestPerlCritic = eval {	require Test::Perl::Critic;	1; };
 
@@ -24,7 +24,7 @@ $config{-exclude} = [ qw( ProhibitExcessMainComplexity CodeLayout::ProhibitHardT
 $config{-verbose} = '[%l:%c]: (%p; Severity: %s) %m. %e. ';
 ##
 
-import Test::Perl::Critic ( %config );
+Test::Perl::Critic->import( %config );
 
 my @files = glob('t/*.t');
 

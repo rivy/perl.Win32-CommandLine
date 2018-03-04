@@ -1,14 +1,16 @@
 # .appveyor.yml
 
-# ref: https://www.appveyor.com/docs/appveyor-yml @@ https://archive.is/OUJHS
-# * validation tool @ https://ci.appveyor.com/tools/validate-yaml
+# ref: <https://www.appveyor.com/docs/appveyor-yml>[`@`](https://archive.is/OUJHS)
+# * validation tool @ <https://ci.appveyor.com/tools/validate-yaml>
 
 # * note: AppVeyor setup
 # 1. add an AppVeyor project observing the repository
 # 2. enable "General / Skip branches without appveyor.yml" within the project SETTINGS
+# 3. verify correct CI_TESTING_EXTRA_MODULES
+# 4. (optional) add CODECOV_TOKEN and/or COVERALLS_TOKEN (from respective sites) as encrypted environment variables
 
-# note: alternate perl AppVeyor implementation @ https://github.com/rivy/Sub-Quote/blob/6fc8fa26ebdb5bf31107e1153764bd436455b575/.appveyor.yml
-#   ... (with associated https://github.com/rivy/Sub-Quote/blob/6fc8fa26ebdb5bf31107e1153764bd436455b575/.appveyor.cmd )
+# note: alternate perl AppVeyor implementation @ <https://github.com/rivy/Sub-Quote/blob/6fc8fa26ebdb5bf31107e1153764bd436455b575/.appveyor.yml>
+#   ... (with associated <https://github.com/rivy/Sub-Quote/blob/6fc8fa26ebdb5bf31107e1153764bd436455b575/.appveyor.cmd> )
 
 version: "{build} ~ {branch}"
 
@@ -19,6 +21,8 @@ branches:
     - gh-pages
 
 environment:
+    global:
+        CI_TESTING_EXTRA_MODULES: 'Test::CPAN::Meta Test::CPAN::Meta::JSON Test::MinimumVersion~">= 0.008" Test::Perl::Critic Test::Pod Test::Pod::Coverage'
     matrix:
         - Perl_VERSION: "latest"
           COVERAGE: "Codecov Coveralls" ## note: case sensitive!
@@ -38,6 +42,7 @@ environment:
 
 install:
     # move "C:\mingw" to avoid cross library linking (a problem with older perl versions, breaking dll compilation with "/mingw/lib/dllcrt2.o:(.text+0xd1): undefined reference to `__dyn_tls_init_callback'")
+    # * only truly needed for modules containing XS compilation, but harmless for all modules
     - move c:\mingw c:\mingw.o >NUL
     # ensure CWD is project main directory
     - cd "%APPVEYOR_BUILD_FOLDER%"
@@ -47,7 +52,9 @@ install:
     - if DEFINED APPVEYOR_REPO_BRANCH ( git checkout "%APPVEYOR_REPO_BRANCH%" & git reset --hard "%APPVEYOR_REPO_COMMIT%" )
     # install perl
     # * install strawberry perl
-    - call .appveyor.install-perl.BAT
+    - call .appveyor_install-perl.BAT
+    # * show perl version verification
+    - perl -V
     # * install `cpanm` (needed for older perl versions)
     - cpan -T -i App::cpanminus 2>&1 | rem
     # * pre-install problematic modules for perl versions < 5.14
@@ -61,12 +68,17 @@ install:
     #   'ExtUtils::ParseXS'
     #   - updated ParseXS needed to install File::Spec (o/w PathTools installation fails with "Cwd.o:Cwd.c:(.text+0x593): undefined reference to `croak_xs_usage'")
     - cpanm --no-interactive --no-man-pages --notest --quiet ExtUtils::ParseXS 2>&1
-    # * show perl version verification
-    - perl -V
+    # #   'Win32'
+    # #   - updated Win32 needed to avoid "Use of inherited AUTOLOAD for non-method Win32::GetConsoleCP() is deprecated at C:/strawberry/perl/site/lib/ExtUtils/MakeMaker/Locale.pm line 50" in perl 5.12 (using Win32 0.44)
+    # - cpanm --no-interactive --no-man-pages --notest --quiet Win32 2>&1
     # install baseline dependencies
     - cpanm --no-interactive --no-man-pages --notest --quiet --skip-satisfied --installdeps .
     # check OS_unsupported
     - perl Build.PL 2>&1 | findstr /b /i /r "OS unsupported\b" >NUL 2>&1 && set "OS_unsupported=OS unsupported" || set "OS_unsupported="
+    # install any extra dependencies (including recommended dependencies)
+    - if NOT DEFINED OS_unsupported ( cpanm --no-interactive --no-man-pages --notest --quiet --skip-satisfied --with-recommends --installdeps . )
+    # * install extra dependencies for full CI testing
+    - if NOT DEFINED OS_unsupported if defined CI_TESTING_EXTRA_MODULES ( cpanm --no-interactive --no-man-pages --notest --quiet --skip-satisfied %CI_TESTING_EXTRA_MODULES% )
     # check code coverage
     - ps: |
         if ($env:COVERAGE) {
@@ -83,8 +95,6 @@ install:
             $env:COVERAGE = $coverage -join " "
             # write-host "env:COVERAGE = $env:COVERAGE"
             }
-    # install any extra dependencies (including recommended dependencies)
-    - if NOT DEFINED OS_unsupported ( cpanm --no-interactive --no-man-pages --notest --quiet --skip-satisfied --with-recommends --installdeps . )
     # install any needed code coverage dependencies
     - ps: |
         if (-not $env:OS_unsupported -and $env:COVERAGE) {
@@ -115,6 +125,7 @@ before_build:
     - if DEFINED COVERAGE (set HARNESS_PERL_SWITCHES=-MJSON::PP %HARNESS_PERL_SWITCHES%)
     # display environment
     - echo AUTOMATED_TESTING=%AUTOMATED_TESTING%
+    - echo CI_TESTING_EXTRA_MODULES=%CI_TESTING_EXTRA_MODULES%
     - echo COVERAGE=%COVERAGE%
     - echo DEVEL_COVER_OPTIONS=%DEVEL_COVER_OPTIONS%
     - echo HARNESS_OPTIONS=%HARNESS_OPTIONS%

@@ -39,7 +39,7 @@ my $have_metafile_content = $have_metafile && (-s $metafile);
 my $meta_href = $have_metafile_content ? CPAN::Meta->load_file( $metafile ) : undef;
 my $packages_href = (defined $meta_href) ? $meta_href->{provides} : undef;
 
-plan skip_all => "'no packages found in '$metafile'" if not defined $packages_href or ( scalar( keys %{$packages_href} ) < 1 );
+plan skip_all => "No packages found in '$metafile'" if not defined $packages_href or ( scalar( keys %{$packages_href} ) < 1 );
 
 plan tests => scalar( keys %{$packages_href} ) * 2;
 
