@@ -24,17 +24,18 @@ package ":{{$module_name}}:";
 
 # Module Summary
 
-=for stopwords CMD GPF GPFs Win32 subshell Makefile ToDO BrowserUK CPAN CPANTS MetaCPAN PerlMonks trouchelle eg
-
 =head1 NAME
 
 ":{{$module_name}}:" - ":{{$dist_abstract}}:"
 
 =head1 VERSION
 
- $":{{$module_name}}:"::VERSION = '":{{$VERSION_numeric}}:"';  # ( ":{{$dist_name}}:"-":{{$dist_version}}:" )
+ $":{{$module_name}}:"::VERSION = '":{{$VERSION_numeric}}:"';  # ":{{$dist_name}}:"-":{{$dist_version}}:"
+
+=for stopwords CMD GPF GPFs Win32 subshell Makefile ToDO BrowserUK CPAN CPANTS MetaCPAN PerlMonks trouchelle eg
 
 =cut
+
 ## Perl::Critic policy exceptions
 ## no critic ( ProhibitUselessNoCritic ) ## ToDO: revisit/remove
 ## no critic ( CodeLayout::ProhibitHardTabs CodeLayout::ProhibitParensWithBuiltins ProhibitPostfixControls RequirePodAtEnd )
@@ -1585,23 +1586,47 @@ B<or>
     Write a full description of the module and its features here.
     Use subsections (=head2, =head3) as appropriate.
 
+=for refs
+ - https://mywiki.wooledge.org/glob[`@`](https://archive.is/fszMp)
+ - http://tldp.org/LDP/Bash-Beginners-Guide/html/sect_03_04.html[`@`](https://archive.is/S5IcL)
+
 This module provides a simple way for any perl script to reread and reparse the windows
 command line, adding improved parsing and more robust quote mechanics, augmented with
-powerful bash-like shell enhancements (including brace and tilde expansion, extended file
-glob expansion, and subshell command substitution).
+powerful C<bash>-like shell enhancements (including brace and tilde expansion, quote and
+subshell command substitution, and file name glob expansion).
 
 Use of the companion script, B<C<xx.bat>> (along with B<C<doskey>>), can, transparently,
 grant those same features to the command line interface of I<any> windows executable.
 
-Note that bash-compatible globbing and argument expansion are supplied, including command substitution. Glob patterns may also
-contain meta-notations, such as 'C<a[bc]*>' or 'C<foo.{bat,pl,exe,o}>'.
+=head2 Command line expansion
 
-=head2 Quote mechanics/expansion and subshell command substitution
+=over
 
- '...'    literal (no escapes and no globbing within quotes)
- "..."    literal (no escapes and no globbing within quotes) (see *NOTE-1)
- $'...'   string including all ANSI C string escapes (see *NOTE-2); no globbing within quotes
- $"..."   literal (no escapes and no globbing within quotes) [same as "..."]
+=item B<1. Brace expansion>
+
+Brace expansion is performed before any other expansions, and any characters special to other
+expansions are preserved in the result. It is strictly textual.
+
+=for CHECK-THIS
+    As special cases C<{}> and unmatched C<}> are passed through undisturbed to the final command line. [TRUE]
+    Unmatched C<{> is consumed. [TRUE, differs from File::Glob ! ... may change?]
+
+=item B<2. Tilde expansion>
+
+=for html <!-- end "=item" (for markdown conversion) -->
+
+ ~           Current user home directory
+ ~USERNAME   Home directory of USERNAME
+ ~TEXT       Environment variable named ~TEXT (aka $ENV{~TEXT}; overrides ~USERNAME expansion)
+
+=item B<3. Quote and subshell command substitution>
+
+ '...'    literal content (no escapes and no globbing within quotes)
+ "..."    literal content (no escapes and no globbing within quotes) (see *NOTE-1)
+ $"..."   literal content (no escapes and no globbing within quotes) [same as "..."; same as C<bash>]
+
+ $'...'   interpreted content, including ANSI C string escapes (see *NOTE-2); no globbing within quotes
+
  $( ... ) command substitution (see *NOTE-3)
  $("...") command substitution (quotes removed; see *NOTE-4)
 
@@ -1609,43 +1634,45 @@ NOTE-1: DOS character escape sequences (such as C<"\"">) are parsed prior to bei
 line and, so, are valid and still (unavoidably) interpreted within double-quotes.
 
 NOTE-2: ANSI C string escapes are
-C<\a>, C<\b>, C<\e>, C<\f>, C<\n>, C<\r>, C<\t>, C<\v>, C<\\>, C<\'>, C<\">,
-C<\[0-9]{1,3}>, C<\x[0-9a-fA-F]{1,2}>, C<\c[@A-Z[\\\]^_`?>
-;
+C<\a>, C<\b>, C<\e>, C<\f>, C<\n>, C<\r>, C<\t>, C<\v>,
+C<\\>, C<\'>, C<\">,
+octal (C<\[0-9]{1,3}>), hexadecimal (C<\x[0-9a-fA-F]{1,2}>), and control characters (C<\c[@A-Z[\\\]^_`?>);
 all other escaped characters are left in place without transformation (C<< \<x> >> => C<< \<x> >>).
 
 NOTE-3: Command substitution replaces the C<$(...)> argument with the standard output of that
 argument's execution. Command substitution strings are not, themselves, automatically expanded;
-use 'C<$(xx *COMMAND*)>' to trigger expansion of the subshell command line.
+use C<$(xx *COMMAND*)> to trigger further expansion of the subshell command line.
 
 NOTE-4: C<$("...")> is present to enable delayed DOS/Windows interpretation of redirection & continuation
 characters. This allows redirection & continuation characters to be used within the subshell command string.
 
-ref: L<bash ANSI-C Quoting|http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html>L<C<@>|http://www.webcitation.org/66M8skmP8>
+=for ToDO
+    Explore "$(...)" as a viable subshell command returning one argument.
+    Explore removing $("...") as a special case for CMD/DOS => use $(xx "...").
+
+=item B<4. Glob expansion and meta-characters>
+
+ ?           Match any single character
+ *           Match any string of characters
+ []          Character class (including POSIX and negated classes)
+ \           Quote the next metacharacter
 
 =for ToDO
     NOTE: \XHH also currently works (although capitalized versions of the other escape sequences DO NOT cause a transformation)... ? remove \XHH ## needs research
 
-=head2 Expansion and C<glob> meta-characters
-
- \           Quote the next metacharacter
- []          Character class
- {}          Multiple pattern
- *           Match any string of characters
- ?           Match any single character
- ~           Current user home directory
- ~USERNAME   Home directory of USERNAME
- ~TEXT       Environment variable named ~TEXT (aka $ENV{~TEXT}) [overrides ~USERNAME expansion]
+=back
 
 The multiple pattern meta-notation 'C<a{b,c,d}e>' is a shorthand for 'C<abe ace ade>'.  Left to
 right order is preserved, with results of matches being sorted separately at a low level to preserve this order.
 
-=for CHECK-THIS
-    As special cases C<{}> and unmatched C<}> are passed through undisturbed to the final command line. [TRUE]
-    Unmatched C<{> is consumed. [TRUE, may change?]
+=head3 Examples
+
+...
 
 =for CHECK-THIS
      verify and document ~<text> overrides ~<name> ## TRUE, except $ENV{~} which has no effect ## verify and document which has priority
+
+ref: L<bash ANSI-C Quoting|http://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html>L<C<@>|http://www.webcitation.org/66M8skmP8>
 
 =head2 C<xx.bat> Usage
 
@@ -1663,10 +1690,10 @@ right order is preserved, with results of matches being sorted separately at a l
 
  @:: * assumes `ls` is installed
  @:: print all directories in current directory
- xx echo $(" ls -ALp --quoting-style=c --color=no . | grep --color=no "[\\/]$" ")
+ xx -e $(" ls -ALp --quoting-style=c --color=no . | grep --color=no [\\/]$ ")
 
  @:: print all files (non-directories) in current directory
- xx echo $(" ls -ALp --quoting-style=shell --color=no . | grep --color=no -v "[\\/]$" ")
+ xx -e $(" ls -ALp --quoting-style=shell --color=no . | grep --color=no -v [\\/]$ ")
 
 =for ToDO
     add a reference to github.com/rivy/scoop ( which should include `ls`/`msls` in the baseline buckets )
@@ -1716,18 +1743,6 @@ This allows for uninstalls (by using 'C<ppm uninstall ":{{$module_name}}:">') an
     exported, or methods that may be called on objects belonging to the
     classes provided by the module.
 
-=head2 C<< command_line( ) => $ >>
-
-=over
-
-=item * C<$> : [return] the original command line for the process (as a string)
-
-=back
-
-Use the Win32 API to recapture the original command line for the current process.
-
-    my $commandline = command_line();
-
 =head2 C<< argv( [\%options] ) => @ARGS >>
 
 =over
@@ -1738,13 +1753,26 @@ Use the Win32 API to recapture the original command line for the current process
 
 =back
 
-Reparse & glob-expand the original command line, returning a new, revised argument array (which is a drop-in replacement for @ARGV).
-
-=over
+Reparse & glob-expand the original command line, returning a new, revised argument array
+(which may be used as a drop-in replacement for @ARGV).
 
  @ARGV = argv();
 
+=over
+
 =back
+
+=head2 C<< command_line( ) => $S >>
+
+=over
+
+=item * C<$S> : [return] the original command line for the process (as a string)
+
+=back
+
+Use the Win32 API to recapture the original command line for the current process.
+
+ my $commandline = command_line();
 
 =head2 C<< parse( $s [,\%options ] ) => @ARGS >>
 
@@ -1758,12 +1786,13 @@ Reparse & glob-expand the original command line, returning a new, revised argume
 
 =back
 
- my @argv_new = parse( command_line() );
-
 Parse & glob-expand a string argument; returns the results of parsed/expanded argument as an array.
+
+ my @argv_new = parse( command_line() );
 
 =head2 Function options ( C<\%options> )
 
+=for original text
     my %options = (
         remove_exe_prefix => 1,     # = 0/<true> [default = true]       # if true, remove all initial args up to and including the exe name from the @args array
         dosquote => 0,              # = 0/<true>/'all' [default = 0]    # if true, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
@@ -1776,6 +1805,78 @@ Parse & glob-expand a string argument; returns the results of parsed/expanded ar
         carp_unbalanced => 1,       # = 0/true/'quotes'/'subshells' [default = true] # if true, carp for unbalanced command line quotes or subshell blocks
         ## ToDO: add globstar option
         );
+
+    my %options = (
+        remove_exe_prefix => 1,     # = 0/<true> [default = <true>]
+        dosquote => 0,              # = 0/<true>/'all' [default = 0]
+        dosify => 0,                # = 0/<true>/'all' [default = 0]
+        unixify => 0,               # = 0/<true>/'all' [default = 0]
+        nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,   # = 0/<true> [default = 0]
+        glob => 1,                  # = 0/<true> [default = <true>]
+        croak_unbalanced => 1,      # = 0/true/'quotes'/'subshells' [default = <true>]
+        carp_unbalanced => 1,       # = 0/true/'quotes'/'subshells' [default = <true>]
+        ## ToDO: add globstar option
+        );
+
+=over
+
+=item * C<remove_exe_prefix>
+
+Allowable values: C<0>, C<< <true> >>
+
+Default value: C<< <true> >>
+
+If C<< <true> >>, remove all initial args up to and including the exe name from the returned @ARGS array.
+
+=item * C<dosquote>
+
+Allowable values: C<0>, C<< <true> >>, C<'all'>
+
+Default value: C<0>
+
+If C<< <true> >>, convert all non-globbed ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters)
+
+=item * C<dosify>
+
+ dosify => 0,                # = 0/<true>/'all' [default = 0]
+
+- if true, convert all _globbed_ ARGS to DOS/Win32 CLI compatible tokens (escaping internal quotes and quoting whitespace and special characters); 'all' => do so for for _all_ ARGS which are determined to be files
+
+=item * C<unixify>
+
+ unixify => 0,               # = 0/<true>/'all' [default = 0]
+
+- if true, convert all _globbed_ ARGS to UNIX path style; 'all' => do so for for _all_ ARGS which are determined to be files
+
+=item * C<nullglob>
+
+ nullglob => defined($ENV{nullglob}) ? $ENV{nullglob} : 0,       # = 0/<true> [default = 0]
+
+- if true, patterns which match no files are expanded to a null string (no token), rather than the pattern itself  ## $ENV{nullglob} (if it exists) overrides the default
+
+=item * C<glob>
+
+ glob => 1,                  # = 0/<true> [default = true]
+
+- when true, globbing is performed
+
+=for ToDO: rework this ... need carp/croak on unbalanced quotes/subshells (? carp_ub_quotes, carp_ub_shells, carp = 0/1/warn/carp/die/croak)
+
+=item * C<croak_unbalanced>
+
+ croak_unbalanced => 1,      # = 0/true/'quotes'/'subshells' [default = true]
+
+- if true, croak for unbalanced command line quotes or subshell blocks (takes precedence over carp_unbalanced)
+
+=item * C<carp_unbalanced>
+
+ carp_unbalanced => 1,       # = 0/true/'quotes'/'subshells' [default = true]
+
+- if true, carp for unbalanced command line quotes or subshell blocks
+
+-for ToDO: add globstar option
+
+=back
 
 =for head1 SUBROUTINES/METHODS
 
@@ -1907,15 +2008,15 @@ C<":{{$module_name}}:"> requires no configuration files or environment variables
 
 =over
 
- $ENV{NULLGLOB} = 1; # undef/0 | <true>
+ $ENV{NULLGLOB} = 1; # undef/''/0 | <true>
 
 =back
 
 Default glob expansion, as in bash, expands glob patterns which match nothing into the glob pattern itself.
 Use C<$ENV{NULLGLOB}> to override this default behavior.
 
-Analogous to the bash command 'C<shopt -s nullglob>', when C<$ENV{NULLGLOB}> is set to a true (non-NULL, non-zero)
-value, a glob expansion which matches nothing will expand to the null string (aka, C<q{}>).
+Analogous to the bash command 'C<shopt -s nullglob>', when C<$ENV{NULLGLOB}> is set to a true (defined, non-NULL,
+non-zero) value, a glob expansion which matches nothing will expand to the null string (aka, C<q{}>).
 
 Note: the default glob expansion behavior can also be modified programmatically
 via the function option, C<nullglob>, when passed to the argv() and parse() functions.
