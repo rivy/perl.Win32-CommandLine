@@ -114,9 +114,9 @@ BEGIN { require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter ); 
 
 # Module Interface
 
-sub command_line;    # return Win32 command line string (already includes prior $ENV{} variable substitutions done by the shell)
-sub parse;           # parse string as a "bash-like" command line (globbing and subshell command substitution are done, but no other substitions)
-sub argv;            # get commandline and reparse it, returning a new ARGV array
+sub command_line;    # get Win32 command line (result has already had $ENV{} variable substitution completed)
+sub parse;           # parse "bash-like" command line (globbing and subshell command substitution are done, but no other substitions)
+sub argv;            # get and reparse the original command line; returns drop-in replacement for @ARGV
 
 ####
 
@@ -141,15 +141,16 @@ sub command_line ## ( ) => $
     return $retval;
 }
 
-sub argv ## ( [\%OPTIONS] ) => @ARGS
-{ ## no critic ( RequireArgUnpacking )
-    return parse( command_line(), @_ );    # get commandline and reparse it returning the new ARGV array
-}
-
 sub parse ## ( $COMMAND_LINE, [\%OPTIONS] ) => @ARGS
 { ## no critic ( RequireArgUnpacking )
-    ## parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed [ie, no variable substitution is performed])
-    return _argv(@_);
+    ## parse "bash-like" command line string ("bash-like" parsing with globbing and subshell command substitution, but no other expansions or substitutions are performed [ie, no variable substitution is performed])
+    return _parse(@_);
+}
+
+sub argv ## ( [\%OPTIONS] ) => @ARGS
+{ ## no critic ( RequireArgUnpacking )
+    ## get and reparse the original command line
+    return parse( command_line(), @_ );
 }
 
 use Carp qw();
@@ -401,7 +402,7 @@ sub _getparentname ## ( ) => $PARENT_NAME
 sub _dosify ## ( [ @ ] ) => <null>|$|@
 { ## no critic ( RequireArgUnpacking )
     ## * "shortcut" function
-    ## dosify string, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+    ## dosify string(s), returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
     # ToDO: NOTE: this also changes '/' to '\' which is fine for files but not so good for strings ... LOOK INTO this...
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
@@ -728,9 +729,8 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
     return wantarray ? @_ : "@_";
 }
 
-sub _argv_parse ## ( $ [,\%OPTIONS] ) => @ARGS
+sub _parse_args ## ( $ [,\%OPTIONS] ) => @ARGS
 { ## no critic ( RequireArgUnpacking )
-    ## _argv( $ [,\%] ): returns @
     # parse scalar using bash-like rules for quotes and command/subshell block replacements (no globbing or environment variable substitutions are performed)
     # [\%]: an optional hash_ref containing function options as named parameters
     ## NOTE: once $(<...>) is implemented => need to parse "\n" as whitespace (use the /s argument for regexp) because there may be embedded newlines as whitespace
@@ -921,7 +921,7 @@ sub _argv_parse ## ( $ [,\%OPTIONS] ) => @ARGS
         #print "[end (\$s ne '')] s = `$s`\n";
         Carp::Assert::assert( $start_s1 ne $s, 'Parsing is not proceeding ($s is unchanged)' );
     }
-    #print "-- _argv_parse [RETURNING]\n";
+    #print "-- _parse_args [RETURNING]\n";
     #print "args[".scalar(@args)."] => `@args`\n";
     #print "args[".scalar(@args)."]\n";
     #push @{    $argX[ $i ] }, { token => _dequote($o), glob => $opt{_glob_within_qq}, id => 'complex:re_qq_escok_dollar' };
@@ -1068,9 +1068,9 @@ sub _get_next_chunk
     return ( $ret_chunk, $s, $ret_type );
 }
 
-sub _argv_do_glob
+sub _parse_do_glob
 { ## no critic ( RequireArgUnpacking )
-    ## _argv_do_glob( @args ): returns @
+    ## _parse_do_glob( @args ): returns @
     ## @args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
     ## no critic ( ProhibitUnusualDelimiters ) # ToDO: remove/revisit
@@ -1316,9 +1316,9 @@ sub _zero_position
     return $pos;
 }
 
-sub _argv
+sub _parse
 { ## no critic ( RequireArgUnpacking )
-    ## _argv( $ [,\%] ): returns @
+    ## _parse( $ [,\%] ): returns @
     # parse scalar as a command line string (bash-like parsing of quoted strings with globbing of resultant tokens, but no other expansions or substitutions are performed)
     # [\%]: an optional hash_ref containing function options as named parameters
     my %opt = (
@@ -1352,8 +1352,8 @@ sub _argv
 
     #print "$me: command_line = $command_line\n";
 
-    # parse tokens from the $command_line string
-    my @args = _argv_parse( $command_line, { _glob_within_qq => $opt{_glob_within_qq}, _carp_unbalanced => $opt{_carp_unbalanced}, _die_subshell_error => $opt{_die_subshell_error} } );
+    # parse arguments from the $command_line string
+    my @args = _parse_args( $command_line, { _glob_within_qq => $opt{_glob_within_qq}, _carp_unbalanced => $opt{_carp_unbalanced}, _die_subshell_error => $opt{_die_subshell_error} } );
     #@args = []of{token=>'', chunks=>chunk_aref[]of{chunk=>'',glob=>0,id=>''}, globs=>glob_aref[]}
 
     #print "$me:pre-remove_exe_prefix\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "args[$pos]->{token} = `$args[$pos]->{token}`\n"; }
@@ -1371,7 +1371,7 @@ sub _argv
 
     if ( $opt{glob} ) {    # do globbing
                            #print 'globbing'.qq{\n};
-        @args = _argv_do_glob( @args, { dashprefix => $opt{dashprefix}, dosquote => $opt{dosquote}, dosify => $opt{dosify}, unixify => $opt{unixify}, nullglob => $opt{nullglob} } );
+        @args = _parse_do_glob( @args, { dashprefix => $opt{dashprefix}, dosquote => $opt{dosquote}, dosify => $opt{dosify}, unixify => $opt{unixify}, nullglob => $opt{nullglob} } );
     }
     else {                 # copy tokens to 'glob' position (for output later)
                            #ToDO: testing
@@ -1379,7 +1379,7 @@ sub _argv
         for my $arg (@args) { $arg->{globs} = [ $arg->{token} ]; }
     }
 
-    ## ToDO: TEST -- NOW DONE in _argv_do_glob()
+    ## ToDO: TEST -- NOW DONE in _csv_val_do_glob()
     #if ($opt{dosify} eq 'all')
     #   {
     #   foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { _dosify($glob); }}}
@@ -1389,7 +1389,7 @@ sub _argv
     #   foreach my $arg (@args) { for my $glob (@{$arg->{globs}}) { if (-e $glob) { $glob =~ s:\\:\/:g; }}}
     #   }
 
-    ## ToDO: CHECK this and think about correct function names... -- NOW DONE in _argv_do_glob()
+    ## ToDO: CHECK this and think about correct function names... -- NOW DONE in _parse_do_glob()
     #if ($opt{dosquote})
     #   {
     #   foreach (@g) { _dos_quote($_); }
