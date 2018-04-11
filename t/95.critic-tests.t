@@ -10,7 +10,7 @@ my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $f
 
 use Test::More;
 
-plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL} or $ENV{CI};
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless ($ENV{TEST_AUTHOR} or $ENV{AUTHOR_TESTING}) or ($ENV{TEST_RELEASE} or $ENV{RELEASE_TESTING}) or $ENV{TEST_ALL} or $ENV{CI};
 
 my $haveTestPerlCritic = eval {	require Test::Perl::Critic;	1; };
 
@@ -31,4 +31,3 @@ my @files = glob('t/*.t');
 plan tests => $#files+1;
 
 for my $file (@files) { critic_ok( $file ); };
-

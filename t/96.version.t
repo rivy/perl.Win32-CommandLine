@@ -12,7 +12,7 @@ my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $f
 
 use Test::More;     # included with perl v5.6.2+
 
-plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless $ENV{TEST_AUTHOR} or $ENV{TEST_RELEASE} or $ENV{TEST_ALL} or $ENV{CI};
+plan skip_all => 'Author tests [to run: set TEST_AUTHOR]' unless ($ENV{TEST_AUTHOR} or $ENV{AUTHOR_TESTING}) or ($ENV{TEST_RELEASE} or $ENV{RELEASE_TESTING}) or $ENV{TEST_ALL} or $ENV{CI};
 
 use version qw//;
 my @modules = ( 'CPAN::Meta', 'ExtUtils::MakeMaker' );  # @modules = ( '<MODULE> [<MIN_VERSION> [<MAX_VERSION>]]', ... )
@@ -22,12 +22,18 @@ foreach (@modules) {my ($module, $min_v, $max_v) = /\S+/gmsx; my $v = eval "requ
 plan skip_all => '[ '.join(', ',@modules).' ] required for testing' if not $haveRequired;
 
 my $metaFile = q//;
-    $metaFile = 'META.json' if (($metaFile eq q//) && (-f 'META.json'));
-    $metaFile = 'META.yaml' if (($metaFile eq q//) && (-f 'META.yaml'));
+    $metaFile = 'META.json'   if (($metaFile eq q//) && (-f 'META.json'));
+    $metaFile = 'META.yaml'   if (($metaFile eq q//) && (-f 'META.yaml'));
+    $metaFile = 'META.yml'    if (($metaFile eq q//) && (-f 'META.yml'));
+    # $metaFile = 'MYMETA.json' if (($metaFile eq q//) && (-f 'MYMETA.json'));
+    # $metaFile = 'MYMETA.yaml' if (($metaFile eq q//) && (-f 'MYMETA.yaml'));
+    # $metaFile = 'MYMETA.yml'  if (($metaFile eq q//) && (-f 'MYMETA.yml'));
 my $haveMetaFile = ($metaFile ne q//);
 my $haveNonEmptyMetaFile = $haveMetaFile && (-s $metaFile);
-my $meta_ref = CPAN::Meta->load_file( $metaFile );
-my $packages_href = (defined $meta_ref) ? $meta_ref->{provides} : undef;
+my $meta_href = $haveNonEmptyMetaFile ? CPAN::Meta->load_file( $metaFile ) : undef;
+my $packages_href = (defined $meta_href) ? $meta_href->{provides} : undef;
+
+if ( !$haveMetaFile ) { plan tests => 1; fail("No metafile found"); exit 0; }
 
 my @files = map { $packages_href->{$_}{file} } keys %{$packages_href};
 
