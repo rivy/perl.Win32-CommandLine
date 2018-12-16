@@ -1,0 +1,13 @@
+<!DOCTYPE markdown>
+
+# debug current uninstalled build
+
+To debug current uninstalled build (eg, to use for temporary output diagnostics)...
+
+```
+cd REPO_DIR
+perl build.pl
+perl build.pl build
+REM ... modify blib\lib\Win32\CommandLine.pm ...
+perl -Mblib -E "use Win32::CommandLine; @a = Win32::CommandLine::argv(); say qq/[ @a ]/" ARG1 ...
+```
