@@ -181,6 +181,26 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 
 add_test( [ qq{$0 't\\glob-file.tests\\'*x} ], ( q{t\\glob-file.tests\\*x} ) );
 
+add_test( [ qq{$0 missing_file} ], ( q{missing_file} ) );
+add_test( [ qq{$0 missing_file{,0}} ], ( qw/ missing_file missing_file0 / ) );
+add_test( [ qq{$0 missing_file'{,0}'} ], ( q/missing_file{,0}/ ) );
+add_test( [ qq{$0 missing_file"{,0}"} ], ( q/missing_file{,0}/ ) );
+
+add_test( [ qq[$0 -] ], ( qw[-] ) );
+add_test( [ qq[$0 -''] ], ( qw[-] ) );
+add_test( [ qq[$0 -""] ], ( qw[-] ) );
+
+add_test( [ qq[$0 -{}] ], ( qw[./-] ) );
+add_test( [ qq[$0 -"{}"] ], ( qw[-{}] ) );
+add_test( [ qq[$0 -'{}'] ], ( qw[-{}] ) );
+
+add_test( [ qq[$0 -{,0}] ], ( qw[./- ./-0] ) );
+add_test( [ qq[$0 -"{,0}"] ], ( q/-{,0}/ ) );
+add_test( [ qq[$0 -'{,0}'] ], ( q/-{,0}/ ) );
+
+add_test( [ qq{$0 --option={,0}} ], ( qw[./--option= ./--option=0] ) );
+add_test( [ qq{$0 --option="{,0}"} ], ( q/--option={,0}/ ) );
+
 ### TEST_FRAGILE == tests which require a specific environment setup to work
 if ($ENV{TEST_FRAGILE}) {
     sub add_path_tests {
@@ -401,4 +421,3 @@ sub quotemeta_glob{
     $s =~ s/([$gc])/\\$1/g;                 # backslash quote all glob metacharacters (backslashes as well)
     return $s;
 }
-

@@ -1128,7 +1128,7 @@ sub _parse_do_glob
             my $t = $chunk->{token};
             $s .= $t;
             if ( $chunk->{glob} ) {
-                $glob_this = 1;
+                $glob_this = _has_glob_char($t);
                 $t =~ s/\\/\//gmsx;
                 #print "s = $s\n";
                 #print "t = $t\n";
@@ -1406,6 +1406,14 @@ sub _parse
     #print "$me:exiting\n"; for (my $pos=0; $pos<=$#args; $pos++) { print "g[$pos] = `$g[$pos]`\n"; }
 
     return @g;
+}
+
+sub _has_glob_char
+{ ## no critic ( RequireArgUnpacking )
+    my $s = shift @_;
+    # my $gc = $_G{glob_char};
+    my $gc = quotemeta( q{?*[]{}~} );
+    return $s =~ m/[$gc]/msx;
 }
 
 sub _quote_gc_meta
