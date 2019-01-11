@@ -1,7 +1,7 @@
 ## no critic ( CodeLayout::RequireTidyCode Documentation::RequirePodAtEnd )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
 
-# Win32::CommandLine 0.955_1 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
+# Win32::CommandLine 0.958 ("lib/Win32/CommandLine.pm" from "PL.#no-dist/lib/Win32/CommandLine.pm.PL")
 package Win32::CommandLine;
 
 # Module Summary
@@ -12,7 +12,7 @@ Win32::CommandLine - Retrieve and reparse the Win32 command line
 
 =head1 VERSION
 
- $Win32::CommandLine::VERSION = '0.955100';  # Win32-CommandLine-0.955_1
+ $Win32::CommandLine::VERSION = '0.958';  # Win32-CommandLine-0.958
 
 =for stopwords CMD GPF GPFs Win32 subshell Makefile ToDO BrowserUK CPAN CPANTS MetaCPAN PerlMonks trouchelle eg
 
@@ -68,7 +68,7 @@ use 5.008008;    # earliest tested perl version (v5.8.8); v5.6.1 is no longer te
 # * NOTE: *two-line* version definition is intentional so that Module::Build / CPAN get a correct alpha version, but users receive a simple decimal version
 {
     ; ## no critic ( RequireConstantVersion )
-    our $VERSION = '0.955_1';    # VERSION definition
+    our $VERSION = '0.958';    # VERSION definition
     $VERSION =~ s/_//gmsx;                # numify VERSION (needed for alpha versions)
 }
 
@@ -104,7 +104,7 @@ sub argv;            # get and reparse the original command line; returns drop-i
 
 # Module Implementation
 
-bootstrap Win32::CommandLine '0.955_1';
+bootstrap Win32::CommandLine '0.958';
 
 sub command_line ## ( ) => $
 {
@@ -2167,9 +2167,9 @@ L<https://cpanratings.perl.org/dist/Win32-CommandLine>
 
 L<https://www.cpantesters.org/distro/W/Win32-CommandLine.html>
 
-L<http://matrix.cpantesters.org/?dist=Win32-CommandLine+0.955_1>
+L<http://matrix.cpantesters.org/?dist=Win32-CommandLine+0.958>
 
-L<http://fast-matrix.cpantesters.org/?dist=Win32-CommandLine+0.955_1>
+L<http://fast-matrix.cpantesters.org/?dist=Win32-CommandLine+0.958>
 
 =item * CPANTS: CPAN Testing Service module summary
 
