@@ -1113,6 +1113,7 @@ sub _parse_do_glob
     my $home_path_re = q{(?i)} . q{^~(} . join( q{|}, keys %home_paths ) . q{)?(/|$)}; ## no critic (RequireInterpolationOfMetachars)
 
     use File::Glob;
+    use File::Globstar;
     my $s = q{};
     for ( my $i = 0 ; $i <= $#args ; $i++ ) ## no critic (ProhibitCStyleForLoops)
     {
@@ -1147,13 +1148,6 @@ sub _parse_do_glob
 
         my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_BRACE() | File::Glob::GLOB_QUOTE();
 
-        if ( $opt{nullglob} ) {
-            $glob_flags |= File::Glob::GLOB_NOMAGIC();
-        }
-        else {
-            $glob_flags |= File::Glob::GLOB_NOCHECK();
-        }
-
         if ( $opt{glob} && $glob_this ) {
             $pat =~ s:\\\\:\/:gmsx; ## no critic ( ProhibitUnusualDelimiters )  ## replace all backslashes (assumed to be backslash quoted already) with forward slashes
 
@@ -1172,10 +1166,10 @@ sub _parse_do_glob
                 @g = ($s);
             }
             else {
-                #print "bsd_glob of `$pat`\n";
-                @g = File::Glob::bsd_glob( $pat, $glob_flags );
+                #print "globstar of `$pat`\n";
+                @g = File::Globstar::globstar( $pat, $glob_flags );
                 #print "s = $s\n";
-                if ( ( scalar(@g) == 1 ) && ( $g[0] eq $pat ) ) { @g = ($s); }
+                if ( ! $opt{nullglob} && ( scalar(@g) == 0 ) ) { @g = ($s); }
                 elsif ( $opt{dashprefix} ) {
                     foreach (@g) {
                         if (m/^-/msx) { $_ = q{./} . $_; }
