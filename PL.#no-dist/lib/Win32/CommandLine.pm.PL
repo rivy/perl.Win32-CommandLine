@@ -1146,42 +1146,67 @@ sub _parse_do_glob
         # DONE=>ToDO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
         # ToDO: TEST 'dosify' and 'unixify'
 
-        my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_BRACE() | File::Glob::GLOB_QUOTE();
+        # my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_BRACE() | File::Glob::GLOB_QUOTE();
+        my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_QUOTE();
 
         if ( $opt{glob} && $glob_this ) {
             $pat =~ s:\\\\:\/:gmsx; ## no critic ( ProhibitUnusualDelimiters )  ## replace all backslashes (assumed to be backslash quoted already) with forward slashes
 
-            if ( $pat =~ m/$home_path_re/msx ) {    # deal with possible prefixes
-                ## ToDO: NOTE: this allows quoted <usernames> which is different from bash, but needed because Win32 <username>'s can have internal whitespace
-                ## ToDO: CHECK: are there any cases where the $s wouldn't match but $pat would causing incorrect fallback string?
-                ##print "pat(pre-prefix)  = `$pat`\n";
-                ##print "s(pre-prefix)    = `$s`\n";
-                $pat =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;
-                $s =~ s:\\:\/:gmsx;                                 # unixify $s for processing
-                $s =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;    # need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
-            }
+            # print "pat = $pat\n";
 
-            if ( $pat =~ /\\[?*]/msx ) { ## '?' and '*' are not allowed in filenames in Win32, and Win32 DosISH globbing doesn't correctly escape them when backslash quoted, so skip globbing for any tokens containing these characters
-                ##print "pat contains escaped wildcard characters ($pat)\n";
-                @g = ($s);
-            }
-            else {
-                #print "globstar of `$pat`\n";
-                @g = File::Globstar::globstar( $pat, $glob_flags );
-                #print "s = $s\n";
-                if ( ! $opt{nullglob} && ( scalar(@g) == 0 ) ) { @g = ($s); }
-                elsif ( $opt{dashprefix} ) {
-                    foreach (@g) {
-                        if (m/^-/msx) { $_ = q{./} . $_; }
+            # File::Globstar doesn't handle brace-expansion; pre-expand using bsd_glob() directly
+            # quote all glob characters except braces; use bsd_glob to brace expand the pattern; in order, globstar expand each de-quoted pattern
+            my $gc = quotemeta( q{?*[]~} . q{\\} );
+            $pat =~ s/([$gc])/sprintf('\%0.2x',ord($1))/egmsx;    # backslash-quote all glob metacharacters, except braces (backslashes as well)
+            # print "quoted:pat = $pat\n";
+            my @patterns = File::Glob::bsd_glob( $pat );
+            # print "patterns = [ @patterns ]\n";
+            my $no_brace_expansion = 0;
+            if ((scalar(@patterns) == 1) && ($patterns[0] eq $pat)) { $no_brace_expansion = 1; }
+            foreach (@patterns) {
+                my $p = $_;
+                $p =~ s/\\(..)/chr(hex("$1"))/egmsx; # de-backslash-quote glob metacharacters
+                my $base = $no_brace_expansion ? $s : $p;
+
+                if ( $p =~ m/$home_path_re/msx ) {    # deal with possible prefixes
+                    ## ToDO: NOTE: this allows quoted <usernames> which is different from bash, but needed because Win32 <username>'s can have internal whitespace
+                    ## ToDO: CHECK: are there any cases where the $s wouldn't match but $pat would causing incorrect fallback string?
+                    ##print "p(pre-prefix)  = `$p`\n";
+                    ##print "s(pre-prefix)    = `$s`\n";
+                    $p =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;
+                    $s =~ s:\\:\/:gmsx;                                 # unixify $s for processing
+                    $s =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;    # need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
+                }
+
+                # print "p = $p\n";
+
+                if ( $p =~ /\\[?*]/msx ) { ## '?' and '*' are not allowed in filenames in Win32, and Win32 DosISH globbing doesn't correctly escape them when backslash quoted, so skip globbing for any tokens containing these characters
+                    ##print "p contains escaped wildcard characters ($p)\n";
+                    @g = ($base);
+                }
+                else {
+                    my $should_glob = _has_glob_char($p);
+                    # print "globstar of `$p`\n";
+                    my @g_star = $should_glob ? File::Globstar::globstar( $p, $glob_flags ) : ($base);
+                    # print "g_star = [ @g_star ]\n";
+                    # print "s = $s\n";
+                    if ( ! $opt{nullglob} && ( scalar(@g_star) == 0 ) ) { @g_star = ($base); }
+                    if ( $opt{dashprefix} ) {
+                        foreach (@g_star) {
+                            if (m/^-/msx) { $_ = q{./} . $_; }
+                        }
                     }
-                }
-                if ( $opt{dosify} ) {
-                    foreach (@g) { _dosify($_); }
-                }
-                elsif ( $opt{unixify} ) {
-                    foreach (@g) { s:\\:\/:gmsx; }
+                    if ( $opt{dosify} ) {
+                        foreach (@g_star) { _dosify($_); }
+                    }
+                    elsif ( $opt{unixify} ) {
+                        foreach (@g_star) { s:\\:\/:gmsx; }
+                    }
+                    # print "g_star = [ @g_star ]\n";
+                    push @g, @g_star;
                 }
             }
+            if ( ! $opt{nullglob} && ( scalar(@g) == 0 ) ) { @g = ($s); }
         }
         else {
             @g = ($s);
