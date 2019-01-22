@@ -1146,8 +1146,7 @@ sub _parse_do_glob
         # DONE=>ToDO: add 'dosify' option => backslashes for path dividers and quoted special characters (with escaped [\"] quotes) and whitespace within the ARGs
         # ToDO: TEST 'dosify' and 'unixify'
 
-        # my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_BRACE() | File::Glob::GLOB_QUOTE();
-        my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_ALPHASORT() | File::Glob::GLOB_QUOTE();
+        my $glob_flags = File::Glob::GLOB_NOCASE() | File::Glob::GLOB_QUOTE();
 
         if ( $opt{glob} && $glob_this ) {
             $pat =~ s:\\\\:\/:gmsx; ## no critic ( ProhibitUnusualDelimiters )  ## replace all backslashes (assumed to be backslash quoted already) with forward slashes
@@ -1157,7 +1156,7 @@ sub _parse_do_glob
             # File::Globstar doesn't handle brace-expansion; pre-expand using bsd_glob() directly
             # quote all glob characters except braces; use bsd_glob to brace expand the pattern; in order, globstar expand each de-quoted pattern
             my $gc = quotemeta( q{?*[]~} . q{\\} );
-            $pat =~ s/([$gc])/sprintf('\%0.2x',ord($1))/egmsx;    # backslash-quote all glob metacharacters, except braces (backslashes as well)
+            $pat =~ s/([$gc])/sprintf('\%0.2x',ord($1))/egmsx;    # backslash/hex-quote all glob metacharacters, except braces (backslashes as well)
             # print "quoted:pat = $pat\n";
             my @patterns = File::Glob::bsd_glob( $pat );
             # print "patterns = [ @patterns ]\n";
@@ -1165,8 +1164,7 @@ sub _parse_do_glob
             if ((scalar(@patterns) == 1) && ($patterns[0] eq $pat)) { $no_brace_expansion = 1; }
             foreach (@patterns) {
                 my $p = $_;
-                $p =~ s/\\(..)/chr(hex("$1"))/egmsx; # de-backslash-quote glob metacharacters
-                my $base = $no_brace_expansion ? $s : $p;
+                $p =~ s/\\(..)/chr(hex("$1"))/egmsx; # de-backslash/hex-quote glob metacharacters
 
                 if ( $p =~ m/$home_path_re/msx ) {    # deal with possible prefixes
                     ## ToDO: NOTE: this allows quoted <usernames> which is different from bash, but needed because Win32 <username>'s can have internal whitespace
@@ -1178,7 +1176,7 @@ sub _parse_do_glob
                     $s =~ s/$home_path_re/$home_paths{lc($1)}$2/msx;    # need to change fallback string $s as well in case the final pattern doesn't expand with bsd_glob()
                 }
 
-                # print "p = $p\n";
+                my $base = $no_brace_expansion ? $s : $p;
 
                 if ( $p =~ /\\[?*]/msx ) { ## '?' and '*' are not allowed in filenames in Win32, and Win32 DosISH globbing doesn't correctly escape them when backslash quoted, so skip globbing for any tokens containing these characters
                     ##print "p contains escaped wildcard characters ($p)\n";
@@ -1188,6 +1186,16 @@ sub _parse_do_glob
                     my $should_glob = _has_glob_char($p);
                     # print "globstar of `$p`\n";
                     my @g_star = $should_glob ? File::Globstar::globstar( $p, $glob_flags ) : ($base);
+                    # File::Globstar doesn't maintain bsd_glob sorting; sort here
+                    # * use case folding over case conversion, when available; (Unicode::CaseFold::fc() or Unicode::Collate->sort() are alternatives)
+                    # * ref: https://www.perlmonks.org/?node_id=1228944 @@ https://archive.is/4tqfK , https://www.webcitation.org/75hjb1t3m , https://goo.gl/JUQsL3
+                    # * ref: http://www.howtobuildsoftware.com/index.php/how-do/cht/perl-version-dependent-fallback-code @@ https://archive.is/HdQt4 , https://goo.gl/gv5Kik
+                    if ( $] ge '5.016' ) {
+                        ## no critic ( ProhibitAmpersandSigils )
+                        @g_star = sort { ( &CORE::fc($a) ) cmp ( &CORE::fc($b) ) } @g_star;
+                        }
+                    else { @g_star = sort { ( lc $a ) cmp ( lc $b ) } @g_star; }
+                    ## ToDO: consider POSIX compatible collation (base on LC_COLLATE) ... `@g_star = sort { POSIX::strcoll($a, $b) } @g_star;`
                     # print "g_star = [ @g_star ]\n";
                     # print "s = $s\n";
                     if ( ! $opt{nullglob} && ( scalar(@g_star) == 0 ) ) { @g_star = ($base); }
