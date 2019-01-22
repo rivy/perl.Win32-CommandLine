@@ -1128,7 +1128,7 @@ sub _parse_do_glob
             my $t = $chunk->{token};
             $s .= $t;
             if ( $chunk->{glob} ) {
-                $glob_this = _has_glob_char($t);
+                $glob_this ||= _has_glob_char($t);
                 $t =~ s/\\/\//gmsx;
                 #print "s = $s\n";
                 #print "t = $t\n";
