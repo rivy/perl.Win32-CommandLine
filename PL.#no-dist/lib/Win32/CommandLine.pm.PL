@@ -105,7 +105,7 @@ BEGIN { require DynaLoader; require Exporter; @ISA = qw( DynaLoader Exporter ); 
     %EXPORT_TAGS = (
         ## [note: internal symbols are ALL_CAPS or start with a leading '_']
         # 'ALL' => all non-internal symbols
-        'ALL' => [ ( grep { /^(?!bootstrap|dl_load_flags|import).*$/msx } grep { /^.*[[:lower:]].*$/msx } grep { /^([^_].*)$/msx } keys %{ __PACKAGE__ . q{::} } ) ],
+        'ALL' => [ ( grep { !/^(?:[ab]|bootstrap|dl_load_flags|import)$/msx } grep { /[[:lower:]]/msx } grep { !/^_/msx } keys %{ __PACKAGE__ . q{::} } ) ],
         # '_INTERNAL' => all internal functions
         '_INTERNAL' => [ ( grep { /^(([_].*)|([[:upper:]_]*))$/msx } keys %{ __PACKAGE__ . q{::} } ) ],
         );
