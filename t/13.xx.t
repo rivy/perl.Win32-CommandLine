@@ -148,7 +148,7 @@ add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`
 #   }
 
 
-if ($ENV{TEST_FRAGILE}) {
+# if ($ENV{TEST_FRAGILE}) {
     # USERNAME expansion
     add_test( [ q{~} ], ( dosify($ENV{USERPROFILE}) ) );                ## ? FRAGILE
     add_test( [ qq{~$ENV{USERNAME}} ], ( dosify($ENV{USERPROFILE}) ) ); ## ? FRAGILE
@@ -161,15 +161,16 @@ if ($ENV{TEST_FRAGILE}) {
     # add_test( [ qq{~$ENV{USERNAME}} ], ( q{\\test#2} ) );    ## ? FRAGILE
     # delete $ENV{'~'.$ENV{'USERNAME'}};
     # add_test( [ qq{~$ENV{USERNAME}} ], ( dosify($ENV{USERPROFILE}) ) ); ## ? FRAGILE
-    }
+#    }
 
 # Subshells - argument generation via subshell execution & subsequent expansion of subshell output
 add_test( [ q{$( perl -e "print 0" )} ], ( q{0} ) );
 add_test( [ q{$( perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{set _x=$x\n};" )} ], ( q{set _x=Xbc} ) );
 add_test( [ q{$( echo 0 )} ], ( q{0} ) );
 add_test( [ q{$( "echo 0 && echo 1" )} ], ( q{0 1} ) );
-#add_test( [ q{$( echo 0 & echo 1 )} ], ( q{0 1} ), { fails => 1 } );       ## FAILS, as expected; the command line is broken in two pieces by the shell @ the "&" before xx gets it; xx only sees "$( echo 0 "
-#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ), { fails => 1 } );       ## FAILS, as expected; the subshell is executed with normal shell semantics, so perl sees two arguments "'print" and 0'" causing an exception
+add_test( [ q{:$( "echo 0 && echo 1" ):} ], ( q{:0 1:} ) );
+#add_test( [ q{$( echo 0 & echo 1 )} ], ( q{0 1} ) );                   ## FIXME: should FAIL, needs test support; the command line is broken in two pieces by the shell @ the "&" before xx gets it; xx only sees "$( echo 0 "
+#add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ), { fails => 1 } );   ## FIXME: should FAIL, needs test support; the subshell is executed with normal shell semantics, so perl sees two arguments "'print" and 0'" causing an exception
 
 if ($ENV{TEST_FRAGILE}) {
     add_test( [ q{$( xx perl -e 'print 0' )} ], ( q{0} ) ); ## FRAGILE :: requires an already installed and working 'xx'
