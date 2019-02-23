@@ -2617,10 +2617,19 @@ $code{'ACTION_version_set_next'} = q{
         my $m = $self->notes('config/VERSION_m');
         my $a = $self->notes('config/VERSION_a');
 
-        if ($a ne q{}) { $a++ }
+        $M = defined $M ? $M : 0;
+        $m = defined $m ? $m : 0;
+        $a = defined $a ? $a : q{};
+
+        if ($a ne q{}) {
+            if ($a < 10) { $a *= 100; }
+            $a++;
+            ($a < 1000) or die "Unable to correctly increment 'alpha' portion of VERSION (use `perl build version_set ...`)\n";  ## no critic ( RequireCarping )
+            }
         else {
             $m++;
             if (($m % 2) eq 0) { $m++ };
+            ($m < 1000) or die "Unable to correctly increment 'minor' portion of VERSION (use `perl build version_set ...`)\n";  ## no critic ( RequireCarping )
             }
 
         $v = version_f( $M, $m, $a );
@@ -2654,9 +2663,13 @@ $code{'ACTION_version_set_next_release'} = q{
         my $m = $self->notes('config/VERSION_m');
         my $a = $self->notes('config/VERSION_a');
 
+        $M = defined $M ? $M : 0;
+        $m = defined $m ? $m : 0;
+
         $a = q{};
         $m++;
         if (($m % 2) ne 0) { $m++ };
+        ($m < 1000) or die "Unable to correctly increment 'minor' portion of VERSION (use `perl build version_set ...`)\n";  ## no critic ( RequireCarping )
 
         $v = version_f( $M, $m, $a );
 
