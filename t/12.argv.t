@@ -202,6 +202,8 @@ add_test( [ qq[$0 -'{,0}'] ], ( q/-{,0}/ ) );
 add_test( [ qq{$0 --option={,0}} ], ( qw[./--option= ./--option=0] ) );
 add_test( [ qq{$0 --option="{,0}"} ], ( q/--option={,0}/ ) );
 
+add_test( [ qq{$0 "*"} ], ( q/*/ ) );
+
 ### TEST_FRAGILE == tests which require a specific environment setup to work
 if ($ENV{TEST_FRAGILE}) {
     sub add_path_tests {
@@ -335,6 +337,12 @@ add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosify => 1} ], ( qq{nodrive\
 add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosify => 'all'} ], ( qq{nodrive\\not\\a file $token} ) );
 add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosquote => 1} ], ( qq{"nodrive\\not\\a file $token"} ) );
 add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosquote => 'all'} ], ( qq{"nodrive\\not\\a file $token"} ) );
+# FIXME ...
+# add_test( [ qq{$0 "nodrive\\not\\a \"*&\" file $token"} ], ( qq{nodrive\\not\\a "*&" file $token} ) );
+# add_test( [ qq{$0 "nodrive\\not\\a \"*&\" file $token"}, {dosify => 1} ], ( qq{nodrive\\not\\a "*&" file $token} ) );
+# add_test( [ qq{$0 "nodrive\\not\\a \"*&\" file $token"}, {dosify => 'all'} ], ( qq{nodrive\\not\\a "*&" file $token} ) );
+# add_test( [ qq{$0 "nodrive\\not\\a \"*&\" file $token"}, {dosquote => 1} ], ( qq{"nodrive\\not\\a "*&" file $token"} ) );
+# add_test( [ qq{$0 "nodrive\\not\\a \"*&\" file $token"}, {dosquote => 'all'} ], ( qq{"nodrive\\not\\a "*&" file $token"} ) );
 
 ### TEST_FRAGILE == tests which require a specific environment setup to work
 if ($ENV{TEST_FRAGILE}) {

@@ -65,12 +65,22 @@ add_test( [ q{$( perl -e "$x = q{abc}; $x =~ s/a|b/X/; print qq{set _x=$x\\n};" 
 add_test( [ qq{\$(" "$perl" -e "print 0" ")} ], ( q{0} ) );
 # add_test( [ qq{\$(" "$perl" -e "\$x = q{abc}; \$x =~ s/a|b/X/; print qq{set _x=\$x\\n};" ")} ], ( q{set _x=Xbc} ) );
 #
+add_test( [ q{$( )} ], ( ) );
+add_test( [ q{$( "" )} ], ( ) );
 add_test( [ q{$( echo 0 )} ], ( q{0} ) );
 add_test( [ q{$( "echo 0 & echo 1" )} ], ( q{0 1} ) );
 add_test( [ q{$( "echo 0 && echo 1" )} ], ( q{0 1} ) );
+add_test( [ q{:$( "echo 0 && echo 1" ):} ], ( q{:0 1:} ) );
 add_test( [ q{$( "echo 0 || echo 1" )} ], ( q{0} ) );
+add_test( [ q{$( "echo 0 && echo 1 || echo 2" )} ], ( q{0 1} ) );
+add_test( [ q{$(echo 0 "&" echo 1)} ], ( q{0 "&" echo 1} ) );
+add_test( [ q{$(echo 0 "&&" echo 1)} ], ( q{0 "&&" echo 1} ) );
 #add_test( [ q{$( echo 0 & echo 1 )} ], ( q{0 1} ), { fails => 1 } );       ## FAILS, as expected; the command line is broken in two pieces by the shell @ the "&" before xx gets it; xx only sees "$( echo 0 "
 #add_test( [ q{$( perl -e 'print 0' )} ], ( q{0} ), { fails => 1 } );       ## FAILS, as expected; the subshell is executed with normal shell semantics, so perl sees two arguments "'print" and 0'" causing an exception
+#add_test( [ q{$( "echo *" )} ], ( ) ); ## FIXME: shouldn't FAIL, subshells are not automatically glob-expanded
+
+# add_test( [ q{1 't\glob-file.tests'/*}, { unixify => 1 } ], join q/ /, ( 1, glob('t/glob-file.tests/*') ) );
+# add_test( [ q{1 $(echo t)'\glob-file.tests'/*}, { unixify => 1 } ], join q/ /, ( 1, glob('t/glob-file.tests/*') ) );
 
 ## do tests
 
@@ -141,4 +151,3 @@ sub untaint {
 
     return wantarray ? @{$arg_ref} : "@{$arg_ref}";
     }
-

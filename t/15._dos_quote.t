@@ -23,12 +23,25 @@ sub do_tests;
 
 ## accumulate tests
 
-add_test( [ qq{} ], [ qq{} ] );
-add_test( [ qq{ testing} ], [ qw( testing ) ] );
-add_test( [ qq{ testing}, qq{\tTAB-test} ], [ 'testing', 'TAB-test' ] );
-add_test( [ qq{ testing}, { trim_re => '[\st]+'} ], [ 'esting'] );
-add_test( [ qq{ }, { trim_re => '[\st]+'} ], [ qq() ] );
-add_test( [ qq{ testing}, qq{\tTAB-test}, { trim_re => '(?i:[\stes]+)'}], [ 'ing', 'AB-test' ] );
+add_test( [ q{} ], [ q{} ] );
+add_test( [ q{argument} ], [ q/argument/ ] );
+add_test( [ q{space within} ], [ q/"space within"/ ] );
+add_test( [ q{postspace  } ], [ q/"postspace  "/ ] );
+add_test( [ q{ prespace} ], [ q/" prespace"/ ] );
+add_test( [ q{ arg1}, qq{arg2} ], [ q/" arg1"/, q/arg2/ ] );
+add_test( [ q{arg"} ], [ q/"arg\""/ ] );
+add_test( [ q{special_char&} ], [ q/"special_char&"/ ] );
+add_test( [ q{special_char|within} ], [ q/"special_char|within"/ ] );
+add_test( [ q{back_slash\within} ], [ q.back_slash\within. ] );
+add_test( [ q{forward_slash/within} ], [ q.forward_slash/within. ] );
+add_test( [ q{special<and>\back_slashes\within} ], [ q."special<and>\back_slashes\within". ] );
+add_test( [ q{special<and>/forward_slashes/within} ], [ q."special<and>/forward_slashes/within". ] );
+add_test( [ q{\\leading_back_slash} ], [ q.\\leading_back_slash. ] );
+add_test( [ q{/leading_forward_slash} ], [ q./leading_forward_slash. ] );
+add_test( [ q{trailing_back_slash\\} ], [ q.trailing_back_slash\\. ] );
+add_test( [ q{trailing_forward_slash/} ], [ q.trailing_forward_slash/. ] );
+add_test( [ q{\\multiple\\back\\\\slashes\\} ], [ q.\\multiple\\back\\\\slashes\\. ] );
+add_test( [ q{//multiple/forward//slashes/} ], [ q.//multiple/forward//slashes/. ] );
 
 ## do tests
 
@@ -43,7 +56,7 @@ sub add_test { push @tests, \@_; return; }
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
 sub do_tests {
-    my $sub_name = '_ltrim';
+    my $sub_name = '_dos_quote';
     my $sub_ref = \&{"Win32::CommandLine::${sub_name}"};
     foreach my $t (@tests) {
         my $arg_ref = shift @{$t};
