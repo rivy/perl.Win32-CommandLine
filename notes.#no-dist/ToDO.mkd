@@ -20,7 +20,29 @@ load contributors into dist_contributors_aref and merge into x_contributors in M
 
 ? also add dist_authority for x_authority?
 
+## add globstar info to the documentation
+
+** => ...
+
+## rethink tests
+
+=> add_test( &sub_name, [ args ], [ expected ], { fails => ... } )
+
+- how can we test in multiple return contexts (scalar, list, and void)?
+  - use refs for expected?
+    + undef for void context ... but how to test the results?
+    + \SCALAR for single value scalar return expected
+    + \LIST for list return expected
+- how can we test for use of $_ or @_ or void arguments?
+    + undef for void arguments
+
 ## rethink quoting
+
+### debug subshells and add tests
+
+- subshells should not be expanded, `xx` should be necessary to expand subshells
+
+`xx -e $("echo *")` => expands the "*" into a list of files, correctly; but, how can we formulate a subshell execution that has it's output quoted so that it's not seen as a bare-string and possibly expanded by the top-level shell?
 
 ref: [Bash variables and command substitution](http://www.compciv.org/topics/bash/variables-and-substitution)[`@`](https://archive.is/uEyXa)
 
