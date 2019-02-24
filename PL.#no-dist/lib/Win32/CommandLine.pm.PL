@@ -224,6 +224,7 @@ sub _dosify ## ( [ @ ] ) => <null>|$|@
 
     # ToDO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, _likely_ escape character [^], [%]?, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
     #   **  should we make the assumption that these are paths? or pass an argument to that effect (eg, path => 0/1) _OR_ separate function (ie, _dosify_path() )?
+    # ToDO: merge with _dos_quote(), which is only used once; use some option to select backslash-conversion behavior
     my $dos_special_chars = '"<>|^&';
 
     my $dc = quotemeta($dos_special_chars);
@@ -247,6 +248,7 @@ sub _dos_quote ## ( [ @ ] ) => <null>|$|@
 { ## no critic ( RequireArgUnpacking )
     ## * "shortcut" function
     ## quote string in DOS manner, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+    ## * differs from _dosify() by not converting backslashes ('\') to slashes ('/')
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
@@ -1026,7 +1028,7 @@ sub _parse_do_glob
                 }
             }
             elsif ( $opt{dosquote} ) {
-                foreach (@g) { _dos_quote($_); }
+                foreach (@g) { _dos_quote($_); } ## `_dosify()`, but avoids converting backslahes ('\') to slashes ('/')
             }
             elsif ( $opt{unixify} eq 'all' ) {
                 foreach (@g) { s:\\:\/:gmsx; }
