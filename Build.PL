@@ -1229,6 +1229,11 @@ $code{'dispatch'} .= q{
         # color output using the normal TAP::Formatter::Color method uses Win32::Console; seems to only to set colors for primary CMD shells and only subshells which have solely CMD parents up to the primary shell (any TCC within the chain stops color output)
 ##      },
 
+        # HACK: configure Devel::Cover to avoid probing/testing coverage of the code within the build script configuration directory
+        # NOTE: this might be moved into test, testall, etc. (but it's single source here)
+        # ToDO: move to common base code of test functions (test(), testall(), retest(), disttest(), taint_test(), taint_testall(), testcover(), testdb(), testpod(), testpodcoverage()) ## is there a common origin?
+        $ENV{'DEVEL_COVER_OPTIONS'} = (defined $ENV{'DEVEL_COVER_OPTIONS'} ? ($ENV{'DEVEL_COVER_OPTIONS'}.q/,/):q//) . '-ignore,'.$self->config_dir.'/';
+
         # update repo properties
         $self->repo_property_update();
 
