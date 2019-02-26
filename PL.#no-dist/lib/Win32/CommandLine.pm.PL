@@ -418,11 +418,11 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
     #   _ltrim(@bar) if @bar;
     #   $foo = _ltrim($_);
     #   _ltrim($_);
-    #   @bar = (); $xxx = ltrim(@bar);  ## OK
-    #   @bar = (); @foo = ltrim(@bar);  ## OK
-    #   $xxx = ltrim();                 ## OK
-    #   @bar = (); ltrim(@bar);         ## ERROR
-    #   ltrim();                        ## ERROR
+    #   @bar = (); $xxx = _ltrim(@bar);  ## OK
+    #   @bar = (); @foo = _ltrim(@bar);  ## OK
+    #   $xxx = _ltrim();                 ## OK
+    #   @bar = (); _ltrim(@bar);         ## ERROR
+    #   _ltrim();                        ## ERROR
     my %opt = ( trim_re => '\s+', );
 
     my $me = ( caller(0) )[3]; ## no critic ( ProhibitMagicNumbers )   ## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
