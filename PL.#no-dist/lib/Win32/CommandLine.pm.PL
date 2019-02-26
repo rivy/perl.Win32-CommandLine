@@ -443,7 +443,7 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
     $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     for my $arg ( @{$arg_ref} ) {
-        if ( _is_const($arg) ) { Carp::carp 'Attempt to modify readonly scalar'; return; }
+        if ( _is_const($arg) ) { Carp::carp 'Attempt to modify readonly scalar within function ' . $me; return; }
         $arg =~ s/\A$t//msx;
     }
 
