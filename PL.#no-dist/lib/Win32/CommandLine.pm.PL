@@ -435,7 +435,6 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
         }
     }
     if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of ' . $me . ' with no arguments in void return context (did you want ' . $me . '($_) instead?)'; return; } ## no critic ( RequireInterpolationOfMetachars ) #
-    # if ( !@_ ) { Carp::carp 'Useless use of ' . $me . ' with no arguments'; return; }
 
     my $t = $opt{trim_re};
 
