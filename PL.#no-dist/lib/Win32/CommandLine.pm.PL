@@ -452,7 +452,7 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
     return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
-sub _gen_delimeted_regexp ## ( $delimiters, $escapes ) => $
+sub _gen_delimited_regexp ## ( $delimiters, $escapes ) => $
 {
     # from "Mastering Regular Expressions, 2e; p. 281" and modified from Text::Balanced::gen_delimited_pat($;$) [v1.95]
     # $DOUBLE = qr{"[^"\\]+(?:\\.[^"\\]+)+"};
@@ -494,7 +494,7 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
     # trim balanced outer quotes
     # \%OPTIONS: an optional hash_ref containing function options as named parameters
     # $opt{'surround_re'} = 'whitespace' surround which is removed  [default = '\s*']
-    # $opt{'allowed_quotes_re'} = balanced 'quote' delimeters which are removed [default = q{['"]} ]
+    # $opt{'allowed_quotes_re'} = balanced 'quote' delimiters which are removed [default = q{['"]} ]
 
     my %opt = (
         surround_re       => '\s*',
@@ -759,11 +759,11 @@ sub _get_next_chunk
 
     my $_unbalanced_command_line = 0;
 
-    my $re_q_escok  = _gen_delimeted_regexp( $sq, $escape );    # regexp for single quoted string with internal escaped characters allowed
-    my $re_qq_escok = _gen_delimeted_regexp( $dq, $escape );    # regexp for double quoted string with internal escaped characters allowed
-    my $re_q   = _gen_delimeted_regexp($sq);                    # regexp for single quoted string (no internal escaped characters)
-    my $re_qq  = _gen_delimeted_regexp($dq);                    # regexp for double quoted string (no internal escaped characters)
-    my $re_qqq = _gen_delimeted_regexp($quotes);                # regexp for any-quoted string (no internal escaped characters)
+    my $re_q_escok  = _gen_delimited_regexp( $sq, $escape );    # regexp for single quoted string with internal escaped characters allowed
+    my $re_qq_escok = _gen_delimited_regexp( $dq, $escape );    # regexp for double quoted string with internal escaped characters allowed
+    my $re_q   = _gen_delimited_regexp($sq);                    # regexp for single quoted string (no internal escaped characters)
+    my $re_qq  = _gen_delimited_regexp($dq);                    # regexp for double quoted string (no internal escaped characters)
+    my $re_qqq = _gen_delimited_regexp($quotes);                # regexp for any-quoted string (no internal escaped characters)
 
     # chunk types:
     #   NULL == 'null' (nothing but whitespace found)
