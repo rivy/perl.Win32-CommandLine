@@ -7,10 +7,19 @@
 alternative methods of parsing the command line ... faster, allowing "quote contexts"
 
 - ? generally portable quote sequence for perl programs
-    ...> `perl -E "..."` is problematic on `bash` because of "$x" intepretation within the string
+    ...> `perl -E "..."` is problematic on `bash` because of "$x" interpretation within the string
     ...> `perl -E '...'` is problematic on `cmd` because CMD sees nothing special about single-quotes, breaking up the string argument and intepreting "special" characters (such as "&", "|", "||", "&&", etc.)
 
 ----
+
+## fix incorrent subshell expansions
+
+`echo {a,b}` => "{a,b}"
+`xx -e echo {a,b}` => "echo a b"
+`xx -e $(echo {a,b})` => "a b" ## INCORRECT, should be "{a,b}"
+
+- seems to be an infinite loop if there are sub-subshells (which shouldn't even be expanded)
+- only a single subshell level should be expanded
 
 ## add x_contributors to META.json
 
