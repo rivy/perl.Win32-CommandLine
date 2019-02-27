@@ -218,7 +218,9 @@ sub _dosify ## ( [ @ ] ) => <null>|$|@
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
-    @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+    my $arg_ref;
+    $arg_ref = \@_;
+    $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
@@ -228,12 +230,10 @@ sub _dosify ## ( [ @ ] ) => <null>|$|@
     my $dos_special_chars = '"<>|^&';
 
     my $dc = quotemeta($dos_special_chars);
-    for ( @_ ? @_ : $_ ) {
-        #print "_ = $_\n";
+    for ( @{$arg_ref} ) {
         s:\/:\\:gmsx;    # forward to back slashes
-        if ( $_ =~ qr{(\s|[$dc])}msx ) {
+        if ( $_ =~ qr{\s|[${dc}]}msx ) {
             # found whitespace and/or special characters which must be double quoted
-            #print "in qr\n";
             s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
             s:([\\]+)\\":($1 x 2).q{\\"}:egmsx;    # double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
             $_ = q{"} . $_ . q{"};                 # quote the final token
@@ -241,18 +241,20 @@ sub _dosify ## ( [ @ ] ) => <null>|$|@
     }
 
     return if not defined wantarray;
-    return wantarray ? @_ : "@_";
+    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
 sub _dos_quote ## ( [ @ ] ) => <null>|$|@
 { ## no critic ( RequireArgUnpacking )
     ## * "shortcut" function
     ## quote string in DOS manner, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
-    ## * differs from _dosify() by not converting backslashes ('\') to slashes ('/')
+    ## * differs from _dosify() by not converting slashes ('/') to backslashes ('\\')
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
-    @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+    my $arg_ref;
+    $arg_ref = \@_;
+    $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
@@ -260,19 +262,18 @@ sub _dos_quote ## ( [ @ ] ) => <null>|$|@
     my $dos_special_chars = '"<>|&';
 
     my $dc = quotemeta($dos_special_chars);
-    for ( @_ ? @_ : $_ ) {
-        #print "_ = $_\n";
+    for ( @{$arg_ref} ) {
         #s:\/:\\:g;                             # forward to back slashes
-        if ( $_ =~ qr{(\s|[$dc])}msx ) {
-            #print "in qr\n";
-            s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
+        if ( $_ =~ qr{\s|[$dc]}msx ) {
+            # found whitespace and/or special characters which must be double quoted
+             s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
             s:([\\]+)\\":($1 x 2).q{\\"}:egmsx;    # double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
             $_ = q{"} . $_ . q{"};                 # quote the final token
         }
     }
 
     return if not defined wantarray;
-    return wantarray ? @_ : "@_";
+    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
 {
@@ -398,7 +399,7 @@ sub _is_const ## ( $ ) => $IS_CONST
     return $is_const;
 }
 
-sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
+sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <void>|$|@
 { ## no critic ( RequireArgUnpacking )
     ## * "shortcut" function
     # trim leading characters (defaults to whitespace)
@@ -434,7 +435,6 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
             else                   { Carp::carp "Unknown option '$_' for function " . $me; return; }
         }
     }
-    if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of ' . $me . ' with no arguments in void return context (did you want ' . $me . '($_) instead?)'; return; } ## no critic ( RequireInterpolationOfMetachars ) #
 
     my $t = $opt{trim_re};
 
@@ -515,22 +515,22 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
     my $q      = $opt{allowed_quotes_re};
     my $quoter = q{};
 
-    @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+    my $arg_ref;
+    $arg_ref = \@_;
+    $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
-    for ( @_ ? @_ : $_ ) {
+    for ( @{$arg_ref} ) {
         s/^$w($q)(.*)\1$w$/$2/msx;
         if ( defined($1) ) { $quoter = $1; }
         #print "_ = $_\n";
     }
 
     if ( $opt{_return_quote} ) {
-        unshift @_, $quoter;
-        #print "quoter = $quoter\n";
-        #print "_ = @_\n";
+        unshift @{$arg_ref}, $quoter;
     }
 
     return if not defined wantarray;
-    return wantarray ? @_ : "@_";
+    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
 sub _parse_args ## ( $ [,\%OPTIONS] ) => @ARGS
