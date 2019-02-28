@@ -436,7 +436,7 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <void>|$|@
         }
     }
 
-    my $t = $opt{trim_re};
+    my $trim_re = $opt{trim_re};
 
     my $arg_ref;
     $arg_ref = \@_;
@@ -444,7 +444,7 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <void>|$|@
 
     for my $arg ( @{$arg_ref} ) {
         if ( _is_const($arg) ) { Carp::carp 'Attempt to modify readonly scalar within function ' . $me; return; }
-        $arg =~ s/\A$t//msx;
+        $arg =~ s/\A${trim_re}//msx;
     }
 
     return if not defined wantarray;
