@@ -200,21 +200,22 @@ sub _dosify ## ( [ @ ] ) => <null>|$|@
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
-    @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+    my $arg_ref;
+    $arg_ref = \@_;
+    $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
     # ToDO: check these characters for necessity => PIPE characters [<>|] and internal double quotes for sure, _likely_ escape character [^], [%]?, [:]?, [*?] glob chars needed?, what about glob character set chars [{}]?
     #   **  should we make the assumption that these are paths? or pass an argument to that effect (eg, path => 0/1) _OR_ separate function (ie, _dosify_path() )?
+    # ToDO: merge with _dos_quote(), which is only used once; use some option to select backslash-conversion behavior
     my $dos_special_chars = '"<>|^&';
 
     my $dc = quotemeta($dos_special_chars);
-    for ( @_ ? @_ : $_ ) {
-        #print "_ = $_\n";
+    for ( @{$arg_ref} ) {
         s:\/:\\:gmsx;    # forward to back slashes
-        if ( $_ =~ qr{(\s|[$dc])}msx ) {
+        if ( $_ =~ qr{\s|[${dc}]}msx ) {
             # found whitespace and/or special characters which must be double quoted
-            #print "in qr\n";
             s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
             s:([\\]+)\\":($1 x 2).q{\\"}:egmsx;    # double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
             $_ = q{"} . $_ . q{"};                 # quote the final token
@@ -222,17 +223,20 @@ sub _dosify ## ( [ @ ] ) => <null>|$|@
     }
 
     return if not defined wantarray;
-    return wantarray ? @_ : "@_";
+    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
 sub _dos_quote ## ( [ @ ] ) => <null>|$|@
 { ## no critic ( RequireArgUnpacking )
     ## * "shortcut" function
     ## quote string in DOS manner, returning a string which will be interpreted/parsed by DOS/CMD as the input string when input to the command line
+    ## * differs from _dosify() by not converting slashes ('/') to backslashes ('\\')
     # CMD/DOS quirks: dosify double-quotes:: {\\} => {\\} UNLESS followed by a double-quote mark when {\\} => {\} and {\"} => {"} (and doesn't end the quote)
     #   :: EXAMPLES: {a"b"c d} => {[abc][d]}, {a"\b"c d} => {[a\bc][d]}, {a"\b\"c d} => {[a\b"c d]}, {a"\b\"c" d} => {[a\b"c"][d]}
     #                {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\"c" d} => {[a\b\c d]}, {a"\b\\"c d} => {[a\b\c][d]}, {a"\b\\c d} => {[a\b\\c d]}
-    @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+    my $arg_ref;
+    $arg_ref = \@_;
+    $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     ## no critic ( ProhibitUnusualDelimiters ProhibitUselessTopic ) # ToDO: remove/revisit
 
@@ -240,19 +244,18 @@ sub _dos_quote ## ( [ @ ] ) => <null>|$|@
     my $dos_special_chars = '"<>|&';
 
     my $dc = quotemeta($dos_special_chars);
-    for ( @_ ? @_ : $_ ) {
-        #print "_ = $_\n";
+    for ( @{$arg_ref} ) {
         #s:\/:\\:g;                             # forward to back slashes
-        if ( $_ =~ qr{(\s|[$dc])}msx ) {
-            #print "in qr\n";
-            s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
+        if ( $_ =~ qr{\s|[$dc]}msx ) {
+            # found whitespace and/or special characters which must be double quoted
+             s:":\\":gmsx;                          # CMD: preserve double-quotes with backslash    # ToDO: change to $dos_escape
             s:([\\]+)\\":($1 x 2).q{\\"}:egmsx;    # double backslashes in front of any \" to preserve them when interpreted by DOS/CMD
             $_ = q{"} . $_ . q{"};                 # quote the final token
         }
     }
 
     return if not defined wantarray;
-    return wantarray ? @_ : "@_";
+    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
 {
@@ -378,7 +381,7 @@ sub _is_const ## ( $ ) => $IS_CONST
     return $is_const;
 }
 
-sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
+sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <void>|$|@
 { ## no critic ( RequireArgUnpacking )
     ## * "shortcut" function
     # trim leading characters (defaults to whitespace)
@@ -391,6 +394,9 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
     # NOTE: after thinking and reading PBP (specifically Dollar-Underscore (p85) and Interator Variables (p105)), I think disallowing zero arguments is for the best.
     #       making operation on $_ require explicit coding breeds more maintainable code with little extra effort
     # so:
+    #   _ltrim == _ltrim() == _ltrim(())
+    # * NOTE: _ltrim / _ltrim() != _ltrim($_)
+    #
     #   $foo = _ltrim($bar);
     #   @foo = _ltrim(@bar) if @bar;
     #   $foo = _ltrim(@bar) if @bar;
@@ -398,11 +404,11 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
     #   _ltrim(@bar) if @bar;
     #   $foo = _ltrim($_);
     #   _ltrim($_);
-    #   @bar = (); $xxx = ltrim(@bar);  ## OK
-    #   @bar = (); @foo = ltrim(@bar);  ## OK
-    #   $xxx = ltrim();                 ## OK
-    #   @bar = (); ltrim(@bar);         ## ERROR
-    #   ltrim();                        ## ERROR
+    #   @bar = (); $xxx = _ltrim(@bar);  ## OK
+    #   @bar = (); @foo = _ltrim(@bar);  ## OK
+    #   $xxx = _ltrim();                 ## OK
+    #   @bar = (); _ltrim(@bar);         ## ERROR
+    #   _ltrim();                        ## ERROR
     my %opt = ( trim_re => '\s+', );
 
     my $me = ( caller(0) )[3]; ## no critic ( ProhibitMagicNumbers )   ## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
@@ -414,25 +420,23 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <null>|$|@
             else                   { Carp::carp "Unknown option '$_' for function " . $me; return; }
         }
     }
-    if ( !@_ && !defined(wantarray) ) { Carp::carp 'Useless use of ' . $me . ' with no arguments in void return context (did you want ' . $me . '($_) instead?)'; return; } ## no critic ( RequireInterpolationOfMetachars ) #
-    # if ( !@_ ) { Carp::carp 'Useless use of ' . $me . ' with no arguments'; return; }
 
-    my $t = $opt{trim_re};
+    my $trim_re = $opt{trim_re};
 
     my $arg_ref;
     $arg_ref = \@_;
     $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
     for my $arg ( @{$arg_ref} ) {
-        if ( _is_const($arg) ) { Carp::carp 'Attempt to modify readonly scalar'; return; }
-        $arg =~ s/\A$t//msx;
+        if ( _is_const($arg) ) { Carp::carp 'Attempt to modify readonly scalar within function ' . $me; return; }
+        $arg =~ s/\A${trim_re}//msx;
     }
 
     return if not defined wantarray;
     return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
-sub _gen_delimeted_regexp ## ( $delimiters, $escapes ) => $
+sub _gen_delimited_regexp ## ( $delimiters, $escapes ) => $
 {
     # from "Mastering Regular Expressions, 2e; p. 281" and modified from Text::Balanced::gen_delimited_pat($;$) [v1.95]
     # $DOUBLE = qr{"[^"\\]+(?:\\.[^"\\]+)+"};
@@ -474,12 +478,12 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
     # trim balanced outer quotes
     # \%OPTIONS: an optional hash_ref containing function options as named parameters
     # $opt{'surround_re'} = 'whitespace' surround which is removed  [default = '\s*']
-    # $opt{'allowed_quotes_re'} = balanced 'quote' delimeters which are removed [default = q{['"]} ]
+    # $opt{'allowed_quotes_re'} = balanced 'quote' delimiters which are removed [default = q{['"]} ]
 
     my %opt = (
         surround_re       => '\s*',
         allowed_quotes_re => '[' . $_G{quote_meta} . ']',
-        _return_quote     => 0,                             # true/false [ default = false ], if true, return quote as first character in returned array
+        # _return_quote     => 0,                             # true/false [ default = false ], if true, return quote as first character in returned array
         );
 
     my $me = ( caller(0) )[3]; ## no critic ( ProhibitMagicNumbers )   ## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
@@ -496,22 +500,22 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
     my $q      = $opt{allowed_quotes_re};
     my $quoter = q{};
 
-    @_ = @_ ? @_ : $_ if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
+    my $arg_ref;
+    $arg_ref = \@_;
+    $arg_ref = [@_] if defined wantarray; ## no critic (ProhibitPostfixControls)  ## break aliasing if non-void return context
 
-    for ( @_ ? @_ : $_ ) {
+    for ( @{$arg_ref} ) {
         s/^$w($q)(.*)\1$w$/$2/msx;
         if ( defined($1) ) { $quoter = $1; }
         #print "_ = $_\n";
     }
 
-    if ( $opt{_return_quote} ) {
-        unshift @_, $quoter;
-        #print "quoter = $quoter\n";
-        #print "_ = @_\n";
-    }
+    # if ( $opt{_return_quote} ) {
+    #     unshift @{$arg_ref}, $quoter;
+    # }
 
     return if not defined wantarray;
-    return wantarray ? @_ : "@_";
+    return wantarray ? @{$arg_ref} : "@{$arg_ref}";
 }
 
 sub _parse_args ## ( $ [,\%OPTIONS] ) => @ARGS
@@ -739,11 +743,11 @@ sub _get_next_chunk
 
     my $_unbalanced_command_line = 0;
 
-    my $re_q_escok  = _gen_delimeted_regexp( $sq, $escape );    # regexp for single quoted string with internal escaped characters allowed
-    my $re_qq_escok = _gen_delimeted_regexp( $dq, $escape );    # regexp for double quoted string with internal escaped characters allowed
-    my $re_q   = _gen_delimeted_regexp($sq);                    # regexp for single quoted string (no internal escaped characters)
-    my $re_qq  = _gen_delimeted_regexp($dq);                    # regexp for double quoted string (no internal escaped characters)
-    my $re_qqq = _gen_delimeted_regexp($quotes);                # regexp for any-quoted string (no internal escaped characters)
+    my $re_q_escok  = _gen_delimited_regexp( $sq, $escape );    # regexp for single quoted string with internal escaped characters allowed
+    my $re_qq_escok = _gen_delimited_regexp( $dq, $escape );    # regexp for double quoted string with internal escaped characters allowed
+    my $re_q   = _gen_delimited_regexp($sq);                    # regexp for single quoted string (no internal escaped characters)
+    my $re_qq  = _gen_delimited_regexp($dq);                    # regexp for double quoted string (no internal escaped characters)
+    my $re_qqq = _gen_delimited_regexp($quotes);                # regexp for any-quoted string (no internal escaped characters)
 
     # chunk types:
     #   NULL == 'null' (nothing but whitespace found)
@@ -1008,7 +1012,7 @@ sub _parse_do_glob
                 }
             }
             elsif ( $opt{dosquote} ) {
-                foreach (@g) { _dos_quote($_); }
+                foreach (@g) { _dos_quote($_); } ## `_dosify()`, but avoids converting backslahes ('\') to slashes ('/')
             }
             elsif ( $opt{unixify} eq 'all' ) {
                 foreach (@g) { s:\\:\/:gmsx; }
