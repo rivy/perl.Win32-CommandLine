@@ -412,6 +412,9 @@ sub _ltrim ## ( [ @ ][,\%:OPTIONS] ) => <void>|$|@
     # NOTE: after thinking and reading PBP (specifically Dollar-Underscore (p85) and Interator Variables (p105)), I think disallowing zero arguments is for the best.
     #       making operation on $_ require explicit coding breeds more maintainable code with little extra effort
     # so:
+    #   _ltrim == _ltrim() == _ltrim(())
+    # * NOTE: _ltrim / _ltrim() != _ltrim($_)
+    #
     #   $foo = _ltrim($bar);
     #   @foo = _ltrim(@bar) if @bar;
     #   $foo = _ltrim(@bar) if @bar;
