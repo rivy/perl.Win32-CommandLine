@@ -54,6 +54,25 @@ if ($ENV{CI}) { ## slightly FRAGILE
         add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
         }
     add_test( [ qq{$0 ~ ~}.uc($ENV{USERNAME}) ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+
+    my @paths = ('A_PATH', $ENV{SystemDrive}.':\\');
+    {
+        for ( @paths ) {
+            local $ENV{"~${ENV{USERNAME}}"} = $_;
+            add_test( [ qq{$0 ~} ], ( unixify($_) ) );
+            add_test( [ qq{$0 ~${ENV{USERNAME}}} ], ( unixify($_) ) );
+            }
+    }
+    {
+        my @texts = qw/ USERNAME 1 22 not_a_username NOTAUSERNAME_x /;
+        for ( @texts ) {
+            my $text = $_;
+            for ( @paths ) {
+                local $ENV{"~${ENV{${text}}}"} = $_;
+                add_test( [ qq{$0 ~${text}} ], ( unixify($_) ) );
+                }
+            }
+    }
    ##
    }
 
@@ -76,7 +95,18 @@ my @tests;
 sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }       ## NOTE: caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
-sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; eval { @got = Win32::CommandLine::parse(@args); 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`"; } return; }
+sub do_tests {
+    foreach my $t (@tests) {
+        my $line = shift @{$t};
+        my @args = @{shift @{$t}};
+        my @exp = @{$t};
+        my @got;
+        my $failed = 0;
+        eval { @got = Win32::CommandLine::parse(@args); 1; } or do { $failed = 1; @got = ( $@ =~ /^(.*)\s+at.*$/ ); };
+        eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`";
+        }
+    return;
+}
 
 #### SUBs
 
