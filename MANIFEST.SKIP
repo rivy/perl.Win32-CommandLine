@@ -49,6 +49,7 @@
 ^MYMETA.yml$
 # avoid MYMETA.json [ for Module::Build v0.38+ (March 2011); URLref: http://www.dagolden.com/index.php/1378/announcing-modulebuild-0-3800 @@ http://www.webcitation.org/66RJ9oZ1X ]
 ^MYMETA.json$
+^MYMETA.json.lock$
 
 # Avoid Makemaker generated and utility files
 ^MANIFEST\.bak$
