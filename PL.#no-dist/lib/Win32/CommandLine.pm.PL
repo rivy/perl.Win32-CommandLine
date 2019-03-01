@@ -501,7 +501,7 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
     my %opt = (
         surround_re       => '\s*',
         allowed_quotes_re => '[' . $_G{quote_meta} . ']',
-        _return_quote     => 0,                             # true/false [ default = false ], if true, return quote as first character in returned array
+        # _return_quote     => 0,                             # true/false [ default = false ], if true, return quote as first character in returned array
         );
 
     my $me = ( caller(0) )[3]; ## no critic ( ProhibitMagicNumbers )   ## caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
@@ -528,9 +528,9 @@ sub _dequote ## ( [ @ ][,\%OPTIONS] ) => <null>|$|@
         #print "_ = $_\n";
     }
 
-    if ( $opt{_return_quote} ) {
-        unshift @{$arg_ref}, $quoter;
-    }
+    # if ( $opt{_return_quote} ) {
+    #     unshift @{$arg_ref}, $quoter;
+    # }
 
     return if not defined wantarray;
     return wantarray ? @{$arg_ref} : "@{$arg_ref}";
