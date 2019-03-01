@@ -125,7 +125,7 @@ add_test( [ qq{$0 t 0""} ], ( q{t}, q{0} ) );
 add_test( [ qq{$0 't\\glob-file.tests\\'*x} ], ( ) );
 #
 
-if ($ENV{TEST_FRAGILE}) {
+if ($ENV{TEST_FRAGILE} or $ENV{CI}) {
     ## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
     ##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
     add_test( [ qq{$0 ~*} ], ( ) );
@@ -133,8 +133,8 @@ if ($ENV{TEST_FRAGILE}) {
     add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
     add_test( [ qq{$0 ~$ENV{USERNAME}/} ], ( unixify($ENV{USERPROFILE}.q{/}) ) );
     add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], ( 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ) );
-    ##
-    }
+   ##
+   }
 
 # rule tests
 # non-globbed tokens should stay the same

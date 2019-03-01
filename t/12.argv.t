@@ -205,7 +205,7 @@ add_test( [ qq{$0 --option="{,0}"} ], ( q/--option={,0}/ ) );
 add_test( [ qq{$0 "*"} ], ( q/*/ ) );
 
 ### TEST_FRAGILE == tests which require a specific environment setup to work
-if ($ENV{TEST_FRAGILE}) {
+if ($ENV{TEST_FRAGILE} or $ENV{CI}) {
     sub add_path_tests {
         my ($path_prefix, $path_file) = @_;
         my $path_original = $path_prefix.$path_file;
@@ -241,40 +241,41 @@ if ($ENV{TEST_FRAGILE}) {
     add_path_tests( $system_root_volume.$system_root_dir, $system_root_file );
 
 
-    # UNC tests;
-    # "\\127.0.0.1\...", "\\localhost\..." are supported, but the more esoteric UNC constructions "\\?\C:\..." and "\\?\UNC\ServerName\Share" are not supported
-    # URLrefs:
-    # [Wikipedia - UNC Pathnames] http://en.wikipedia.org/wiki/Path_(computing)#Uniform_Naming_Convention @@ http://www.webcitation.org/66OV1apf6
-    # [Get local fro UNC path] http://briancaos.wordpress.com/2009/03/05/get-local-path-from-unc-path @@ http://www.webcitation.org/66OU5E35i
-    # [UNC Path to a folder on my local computer] http://stackoverflow.com/questions/2787203/unc-path-to-a-folder-on-my-local-computer
-    # [Get UNV path from mapped drive or local share] http://www.camaswood.com/tech/get-unc-path-from-mapped-drive-or-local-share @@ http://www.webcitation.org/66OULPyWH
-    add_path_tests( q{\\\\127.0.0.1\\}.$drive_letter.q{$\\}, $system_root_file );
-    add_path_tests( q{//127.0.0.1/}.$drive_letter.q{$/}, $system_root_file );
-    add_path_tests( q{//127.0.0.1\\}.$drive_letter.q{$/}, $system_root_file );
-    add_path_tests( q{\\\\localhost\\}.$drive_letter.q{$\\}, $system_root_file );
-    add_path_tests( q{//localhost/}.$drive_letter.q{$/}, $system_root_file );
-    add_path_tests( q{//localhost\\}.$drive_letter.q{$/}, $system_root_file );
+    if ($ENV{TEST_FRAGILE}) {
+        # UNC tests;
+        # "\\127.0.0.1\...", "\\localhost\..." are supported, but the more esoteric UNC constructions "\\?\C:\..." and "\\?\UNC\ServerName\Share" are not supported
+        # URLrefs:
+        # [Wikipedia - UNC Pathnames] http://en.wikipedia.org/wiki/Path_(computing)#Uniform_Naming_Convention @@ http://www.webcitation.org/66OV1apf6
+        # [Get local fro UNC path] http://briancaos.wordpress.com/2009/03/05/get-local-path-from-unc-path @@ http://www.webcitation.org/66OU5E35i
+        # [UNC Path to a folder on my local computer] http://stackoverflow.com/questions/2787203/unc-path-to-a-folder-on-my-local-computer
+        # [Get UNV path from mapped drive or local share] http://www.camaswood.com/tech/get-unc-path-from-mapped-drive-or-local-share @@ http://www.webcitation.org/66OULPyWH
+        add_path_tests( q{\\\\127.0.0.1\\}.$drive_letter.q{$\\}, $system_root_file );
+        add_path_tests( q{//127.0.0.1/}.$drive_letter.q{$/}, $system_root_file );
+        add_path_tests( q{//127.0.0.1\\}.$drive_letter.q{$/}, $system_root_file );
+        add_path_tests( q{\\\\localhost\\}.$drive_letter.q{$\\}, $system_root_file );
+        add_path_tests( q{//localhost/}.$drive_letter.q{$/}, $system_root_file );
+        add_path_tests( q{//localhost\\}.$drive_letter.q{$/}, $system_root_file );
 
-    if (-e q{c:\Documents and Settings}) {
-        my $path = ( File::Glob::bsd_glob( 'c:\\documents and settings*', File::Glob::GLOB_NOCASE ) )[0]; # get path in correct case
-        # diag("path = $path");
-        my ($path_v, $path_d, $path_f) = File::Spec->splitpath( $path );
-        my $path_l;
-        ($path_l = $path_v) =~ s/:\z//;
-        # diag("path_l = '$path_l' ; path_v = '$path_v' ; path_d = '$path_d' ; path_f = '$path_f' ;");
-        add_path_tests( $path_v.q{\\}, $path_f );
-        add_path_tests( $path_v.q{/}, $path_d.$path_f );
-        add_path_tests( q{//}.$ENV{UserDomain}.q{/}.$path_l.q{$/}, $path_d.$path_f );   # MORE FRAGILE :: USERDOMAIN may not point to this machine
-        }
+        if (-e q{c:\Documents and Settings}) {
+            my $path = ( File::Glob::bsd_glob( 'c:\\documents and settings*', File::Glob::GLOB_NOCASE ) )[0]; # get path in correct case
+            # diag("path = $path");
+            my ($path_v, $path_d, $path_f) = File::Spec->splitpath( $path );
+            my $path_l;
+            ($path_l = $path_v) =~ s/:\z//;
+            # diag("path_l = '$path_l' ; path_v = '$path_v' ; path_d = '$path_d' ; path_f = '$path_f' ;");
+            add_path_tests( $path_v.q{\\}, $path_f );
+            add_path_tests( $path_v.q{/}, $path_d.$path_f );
+            add_path_tests( q{//}.$ENV{UserDomain}.q{/}.$path_l.q{$/}, $path_d.$path_f );   # MORE FRAGILE :: USERDOMAIN may not point to this machine
+            }
 
-    add_path_tests( q{//}.$ENV{UserDomain}.q{/}.$drive_letter.q{$/}, $system_root_file );   # MORE FRAGILE :: USERDOMAIN may not point to this machine
+        add_path_tests( q{//}.$ENV{UserDomain}.q{/}.$drive_letter.q{$/}, $system_root_file );   # MORE FRAGILE :: USERDOMAIN may not point to this machine
 
-    add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
-    add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
-    add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
-    add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `}.qq{$0}.q{ "c:\\"win*`)} ) );       ##"
-    add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `}.qq{$0}.q{ "c:\\"win*`)} ) );
-
+        add_test( [ qq{$0 }.q{c:/{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
+        add_test( [ qq{$0 }.q{c:\\{windows}}, { dosify => 1 } ], ( q{c:\\windows} ) );
+        add_test( [ qq{$0 }.q{c:\\{documents}*}, { dosify => 1 } ], ( q{"c:\\Documents and Settings"} ) );
+        add_test( [ qq{$0 }.q{"c:\\"win*} ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `}.qq{$0}.q{ "c:\\"win*`)} ) );       ##"
+        add_test( [ qq{$0 }.q{"c:\\"win*}, { dosify => 1 } ], ( q{Unbalanced command line quotes [#1] (at token`"c:\\"win*` from command line `}.qq{$0}.q{ "c:\\"win*`)} ) );
+    }
 
     # SLIGHTLY-FRAGILE
     my $username = $ENV{username};
@@ -345,7 +346,7 @@ add_test( [ qq{$0 "nodrive\\not\\a file $token"}, {dosquote => 'all'} ], ( qq{"n
 # add_test( [ qq{$0 "nodrive\\not\\a \"*&\" file $token"}, {dosquote => 'all'} ], ( qq{"nodrive\\not\\a "*&" file $token"} ) );
 
 ### TEST_FRAGILE == tests which require a specific environment setup to work
-if ($ENV{TEST_FRAGILE}) {
+if ($ENV{TEST_FRAGILE} or $ENV{CI}) {
     add_test( [ qq{$0 "c:\\documents and settings"} ], ( q{c:\\documents and settings} ) );
     add_test( [ qq{$0 "c:\\documents and settings"}, {dosify => 1} ], ( q{c:\\documents and settings} ) );
     add_test( [ qq{$0 "c:\\documents and settings"}, {dosify => 'all'} ], ( q{"c:\\documents and settings"} ) );
@@ -378,7 +379,17 @@ sub add_test { push @tests, [ (caller(0))[2], @_ ]; return; }       ## NOTE: cal
 sub add_test_for_caller { push @tests, [ (caller(1))[2].'(via line:'.(caller(0))[2].')', @_ ]; return; }        ## NOTE: caller(EXPR) => ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($i);
 sub test_num { return scalar(@tests); }
 ## no critic (Subroutines::ProtectPrivateSubs)
-sub do_tests { foreach my $t (@tests) { my $line = shift @{$t}; my @args = @{shift @{$t}}; my @exp = @{$t}; my @got; eval { @got = Win32::CommandLine::parse(@args); 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) ); eq_or_diff \@got, \@exp, "[line:$line]: `@args`"; } return; }
+sub do_tests {
+    foreach my $t (@tests) {
+        my $line = shift @{$t};
+        my @args = @{shift @{$t}};
+        my @exp = @{$t};
+        my @got;
+        eval { @got = Win32::CommandLine::parse(@args); 1; } or ( @got = ( $@ =~ /^(.*)\s+at.*$/ ) );
+        eq_or_diff \@got, \@exp, "[line:$line]: `@args`";
+        }
+    return;
+}
 
 #### SUBs
 

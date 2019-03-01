@@ -105,7 +105,7 @@ if (-e "$ENV{SystemRoot}/system" ) {
     }
 
 if ($ENV{TEST_FRAGILE}) {
-    # depends on xx.bat maintaining the exact same version output
+    # depends on an installed `xx.bat` maintaining the exact same version output
     if ($haveExtUtilsMakeMaker)
         {# ExtUtilsMakeMaker present
         # diag("script = $script");
@@ -148,7 +148,7 @@ add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`
 #   }
 
 
-# if ($ENV{TEST_FRAGILE}) {
+if ($ENV{TEST_FRAGILE} or $ENV{CI}) {
     # USERNAME expansion
     add_test( [ q{~} ], ( dosify($ENV{USERPROFILE}) ) );                ## ? FRAGILE
     add_test( [ qq{~$ENV{USERNAME}} ], ( dosify($ENV{USERPROFILE}) ) ); ## ? FRAGILE
@@ -161,7 +161,7 @@ add_test( [ q{perl -e "print `xx -e t\*.t`"} ], ( q{perl -e "print `xx -e t\*.t`
     # add_test( [ qq{~$ENV{USERNAME}} ], ( q{\\test#2} ) );    ## ? FRAGILE
     # delete $ENV{'~'.$ENV{'USERNAME'}};
     # add_test( [ qq{~$ENV{USERNAME}} ], ( dosify($ENV{USERPROFILE}) ) ); ## ? FRAGILE
-#    }
+   }
 
 # Subshells - argument generation via subshell execution & subsequent expansion of subshell output
 add_test( [ q{$( perl -e "print 0" )} ], ( q{0} ) );

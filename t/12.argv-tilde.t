@@ -30,7 +30,7 @@ sub do_tests;
 
 add_test( [ qq{$0 ~*} ], ( q{~*} ) );
 
-if ($ENV{TEST_FRAGILE}) {
+if ($ENV{CI}) { ## slightly FRAGILE
     ## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
     ##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
     add_test( [ qq{$0 ~} ], ( unixify($ENV{USERPROFILE}) ) );
@@ -54,8 +54,8 @@ if ($ENV{TEST_FRAGILE}) {
         add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
         }
     add_test( [ qq{$0 ~ ~}.uc($ENV{USERNAME}) ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
-    ##
-    }
+   ##
+   }
 
 ## ToDO: ~ expansion is correct; BUT $ENV override of ~ doesn't work ... should it? -- CHECK this and write a test
 
