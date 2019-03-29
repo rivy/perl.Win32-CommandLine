@@ -246,12 +246,6 @@ use warnings;
 
 use Pod::Usage;
 
-use Carp::Assert;
-
-use FindBin;                              # NOTE: BEGIN is used in FindBin; this can incompatible with any other modules using FindBin; so, DON'T use with any *module* submitted to CPAN; ## URLref: [perldoc::FindBin - Known Issues] http://perldoc.perl.org/FindBin.html#KNOWN-ISSUES
-
-use ExtUtils::MakeMaker;
-
 #-- config
 #my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) ); #"
 
