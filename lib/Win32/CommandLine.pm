@@ -890,9 +890,9 @@ sub _parse_do_glob
     for my $k ( keys %ENV ) {
         if ( $k =~ /^~(\w+)$/msx ) {
             my $username = $1;
-            $ENV{$k} =~ /\s*"?\s*(.*)\s*"?\s*/msx;
-            if   ( defined $1 ) { $home_paths{ lc($username) } = $1; }
-            else                { $home_paths{ lc($username) } = $ENV{$k}; }
+            my $path = $ENV{$k};
+            $path =~ s/\s*"?\s*(.*)\s*"?\s*/$1/msx;
+            $home_paths{ lc($username) } = $path;
         }
     }
     for my $k ( keys %home_paths ) { $home_paths{$k} =~ s/\\/\//gmsx; };    # unixify path seperators
