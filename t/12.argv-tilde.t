@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+# {; ## no critic ( ProhibitOneArgSelect ProhibitPunctuationVars RequireLocalizedPunctuationVars )
+# my $fh = select STDIN; $|++; select STDOUT; $|++; select STDERR; $|++; select $fh;  # DISABLE buffering on STDIN, STDOUT, and STDERR
+# }
+
 ## ToDO: compare with argv.t tests and combine as reasonable; since tests are all done at the same time, we could seperate the $ENV overrides into seperate test files
 
 #use lib 't/lib';
@@ -28,39 +32,40 @@ sub do_tests;
 
 ## accumulate tests
 
-add_test( [ qq{$0 ~*} ], ( q{~*} ) );
+add_test( [ qq{$0 ~*} ], [ q{~*} ] );
 
 if ($ENV{CI}) { ## slightly FRAGILE
     ## ToDO: This is really not a fair test on all computers unless we make sure the specific account(s) exist and know what the expansions should be...
     ##    :: using $ENV{USERPROFILE} should be safe, but backtest on XP with early perl's before removing the TEST_FRAGILE gate
-    add_test( [ qq{$0 ~} ], ( unixify($ENV{USERPROFILE}) ) );
-    add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
-    add_test( [ qq{$0 ~$ENV{USERNAME}/} ], ( unixify($ENV{USERPROFILE}.q{/}) ) );
-    add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], ( 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ) );
-    add_test( [ qq{$0 ~ ~}.lc($ENV{USERNAME}) ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+    add_test( [ qq{$0 ~} ], [ unixify($ENV{USERPROFILE}) ] );
+    add_test( [ qq{$0 ~ ~$ENV{USERNAME}} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
+    add_test( [ qq{$0 ~$ENV{USERNAME}/} ], [ unixify($ENV{USERPROFILE}.q{/}) ] );
+    add_test( [ qq{$0 x ~$ENV{USERNAME}\\ x} ], [ 'x', unixify($ENV{USERPROFILE}.q{/}), 'x' ] );
+    add_test( [ qq{$0 ~ ~}.lc($ENV{USERNAME}) ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
     if ($ENV{USERNAME} =~ /\A(.)(.*?)(.)\z/) {
         my $mixed_case_USERNAME;
         $mixed_case_USERNAME = lc($1).lc($2).uc($3);
-        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
         $mixed_case_USERNAME = lc($1).uc($2).lc($3);
-        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
         $mixed_case_USERNAME = lc($1).uc($2).uc($3);
-        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
         $mixed_case_USERNAME = uc($1).lc($2).lc($3);
-        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
         $mixed_case_USERNAME = uc($1).lc($2).uc($3);
-        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
         $mixed_case_USERNAME = uc($1).uc($2).lc($3);
-        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+        add_test( [ qq{$0 ~ ~$mixed_case_USERNAME} ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
         }
-    add_test( [ qq{$0 ~ ~}.uc($ENV{USERNAME}) ], ( unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ) );
+    add_test( [ qq{$0 ~ ~}.uc($ENV{USERNAME}) ], [ unixify($ENV{USERPROFILE}), unixify($ENV{USERPROFILE}) ] );
 
-    my @paths = ('A_PATH', $ENV{SystemDrive}.':\\');
+    my @paths = ('A_PATH', $ENV{SystemDrive}.'\\');
     {
         for ( @paths ) {
-            local $ENV{"~${ENV{USERNAME}}"} = $_;
-            add_test( [ qq{$0 ~} ], ( unixify($_) ) );
-            add_test( [ qq{$0 ~${ENV{USERNAME}}} ], ( unixify($_) ) );
+            my %environ;
+            $environ{"~${ENV{USERNAME}}"} = $_;
+            # add_test( [ qq{$0 ~} ], [ unixify($_) ], \%environ );
+            add_test( [ qq{$0 ~${ENV{USERNAME}}} ], [ unixify($_) ], \%environ );
             }
     }
     {
@@ -68,18 +73,18 @@ if ($ENV{CI}) { ## slightly FRAGILE
         for ( @texts ) {
             my $text = $_;
             for ( @paths ) {
-                local $ENV{"~${ENV{${text}}}"} = $_;
-                add_test( [ qq{$0 ~${text}} ], ( unixify($_) ) );
+                my %environ;
+                $environ{"~${text}"} = $_;
+                add_test( [ qq{$0 ~${text}} ], [ unixify($_) ], \%environ );
                 }
             }
     }
-   ##
-   }
+    }
 
 ## ToDO: ~ expansion is correct; BUT $ENV override of ~ doesn't work ... should it? -- CHECK this and write a test
 
 ## TODO: check both with and without nullglob, including using %opts for argv()
-add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], ( q{foo\\bar} ) );
+add_test( [ qq{$0 foo\\bar}, { nullglob => 0 } ], [ q{foo\\bar} ] );
 
 ## do tests
 
@@ -99,10 +104,13 @@ sub do_tests {
     foreach my $t (@tests) {
         my $line = shift @{$t};
         my @args = @{shift @{$t}};
-        my @exp = @{$t};
+        my @exp = @{shift @{$t}};
+        my %environ = %{shift @{$t} || {}};
+        my @keys = keys %environ;
+        # diag("%{$_} = ${environ{$_}}\n") for @keys;
         my @got;
         my $failed = 0;
-        eval { @got = Win32::CommandLine::parse(@args); 1; } or do { $failed = 1; @got = ( $@ =~ /^(.*)\s+at.*$/ ); };
+        eval { $ENV{$_} = $environ{$_} for @keys; @got = Win32::CommandLine::parse(@args); 1; } or do { $failed = 1; @got = ( $@ =~ /^(.*)\s+at.*$/ ); }; ## no critic (Variables::RequireLocalizedPunctuationVars)
         eq_or_diff \@got, \@exp, "[line:$line] testing: `@args`";
         }
     return;
