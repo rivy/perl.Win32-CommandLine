@@ -1,4 +1,4 @@
-#--character-encoding="utf8"     # treat files as UTF-8 (decode and encode)
+#--character-encoding="utf8"     # treat files as UTF-8 (decode and encode) ## enable after v20190309+ is released
 --output-line-ending="unix"     # use *nix LF EOLs
 #--preserve-line-endings
 --standard-error-output
