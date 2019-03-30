@@ -1,5 +1,8 @@
 #!perl -w -- ## no critic ( RequireEndWithOne RequireExplicitPackage RequireVersionVar )
 #(emacs/sublime) -*- mode: perl; tab-width: 4; -*-
+#spell-checker:words perltidy
+#spell-checker:words setlocal eXpand Xpand eXecute Xecute xargs windir ERRORLEVEL COMSPEC endlocal endofperl dosify stopwords reparse qq'd POSIX dequoted getopt nullglob subshell dosquote compat CMDLINE dosified ccopts execvp untaint reparsed reparsing ldopts
+#spell-checker:ignore setdos backquote
 
 use strict;
 use warnings;
@@ -26,7 +29,7 @@ __DATA__
 
 :: ToDO: perl must be referenced here as 'perl.exe' to avoid infinite recursion if this is called via a 'perl.BAT' batch script as "xx perl.exe $*"; using shell aliasing will avoid this complication, but is there another way to keep the script here clean of expectation of perl as PERL.EXE?
 :: ToDO: clean up documentation/comments
-:: ToDO: remove TCC/4NT compatiblity code
+:: ToDO: remove TCC/4NT compatibility code
 
 :: parent environment is kept untouched except as modified by "sourcing" of target command line text or executable output
 :: contains batch file techniques to allow "sourcing" of target command line text or executable output
@@ -124,7 +127,7 @@ goto :endofperl
 
 # xx [OPTIONS] <command> <arg(s)>
 # execute <command> with parsed <arg(s)>
-# BAT file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see URLref: [pl2bat : ADVANTAGES] http://search.cpan.org/dist/perl/win32/bin/pl2bat.pl#ADVANTAGES , specifically regarding pipelines and redirection for further explanation)
+# BAT file to work around Win32 I/O redirection bugs with execution of '.pl' files via the standard Win32 filename extension execution mechanism (see ref: [pl2bat : ADVANTAGES] http://search.cpan.org/dist/perl/win32/bin/pl2bat.pl#ADVANTAGES , specifically regarding pipelines and redirection for further explanation)
 # see linux 'xargs' and 'source' commands for something similar
 # FIXED (for echo): note: command line args are dequoted so commands taking string arguments and expecting them quoted might not work exactly the same (eg, echo 'a s' => 'a s' vs xx echo 'a s' => "a s")
 #   NOTE: using $"<string>" => "<string>" quote preservation behavior can overcome this issue (eg, xx perl -e $"print 'test'")
@@ -247,7 +250,7 @@ use warnings;
 use Pod::Usage;
 
 #-- config
-#my %fields = ( 'quotes' => qq("'`), 'seperators' => qq(:,=) ); #"
+#my %fields = ( 'quotes' => qq("'`), 'separators' => qq(:,=) ); #"
 
 #-- getopt
 use Getopt::Long qw(:config bundling bundling_override gnu_compat no_getopt_compat no_permute pass_through); ## # no_permute/pass_through to parse all args up to 1st unrecognized or non-arg or '--'
