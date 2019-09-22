@@ -15,6 +15,7 @@
 
 #### Documentation
 
+* docs ~ add CHANGELOG &ac; [`46be230`](https://github.com/rivy/perl.Win32-CommandLine/commit/46be23069eef8b826263add96506f9b1cdc210d8)
 * docs ~ improve commentary &ac; [`2dad5ed`](https://github.com/rivy/perl.Win32-CommandLine/commit/2dad5eda16ba04a1d07ee2feff835df86c8a0099)
 * docs ~ fix function references within comments &ac; [`cdda913`](https://github.com/rivy/perl.Win32-CommandLine/commit/cdda91374c6f64e82f26d91d660e81fc0df03db9)
 * docs ~ comment on _dos_quote() vs _dosify() &ac; [`aea092a`](https://github.com/rivy/perl.Win32-CommandLine/commit/aea092a7eeb8392e454f080d172037c378ceb62e)
@@ -25,6 +26,7 @@
 
 #### Maintenance
 
+* maint ~ add git-chglog configuration &ac; [`77432e5`](https://github.com/rivy/perl.Win32-CommandLine/commit/77432e5954a2fee8dce835771cbc98340201bec3)
 * maint ~ update EditorConfig settings &ac; [`dbf6f6d`](https://github.com/rivy/perl.Win32-CommandLine/commit/dbf6f6dc140b037d1af761620fffc909d75446bb)
 * maint ~ update perltidy comments &ac; [`991765c`](https://github.com/rivy/perl.Win32-CommandLine/commit/991765c2842866a444914bff10953715ffb3b7f8)
 * maint ~ fix spelling &ac; [`7c39424`](https://github.com/rivy/perl.Win32-CommandLine/commit/7c39424e0fec257cb699d5e757c467da0f2b3a79)
@@ -60,6 +62,19 @@
 * fix globstar implementation for corner cases (and testing) &ac; [`522f797`](https://github.com/rivy/perl.Win32-CommandLine/commit/522f79727ea6f98b04d72f88030989094e6208b6)
 * fix logic error in argument glob determination &ac; [`ecbecb7`](https://github.com/rivy/perl.Win32-CommandLine/commit/ecbecb7c1c13d9f3717c746ea0e3617fb04369b5)
 
+#### Dependency Updates
+
+* update Build framework (fix bare leading left braces in MANIFEST.SKIP regexes) &ac; [`861f3e0`](https://github.com/rivy/perl.Win32-CommandLine/commit/861f3e09bdcfd8681f25cda31036ada58df01b57)
+* update Travis CI &ac; [`4fe7b8a`](https://github.com/rivy/perl.Win32-CommandLine/commit/4fe7b8af6d1358dfa6dd5f865faf3ec45b3957e2)
+
+#### Maintenance
+
+* maint: rebuild &ac; [`71f7f50`](https://github.com/rivy/perl.Win32-CommandLine/commit/71f7f506365f8aeea907e19054484dfff096287c)
+
+#### Refactoring
+
+* refactor: reduce/remove dead code &ac; [`7cdcdc7`](https://github.com/rivy/perl.Win32-CommandLine/commit/7cdcdc7573561e1343162f494de4a06f54859339)
+
 ---
 
 ## [0.958](https://github.com/rivy/perl.Win32-CommandLine/compare/0.955_1...0.958) <small>(2019-01-11)</small>
@@ -79,6 +94,31 @@
 
 * fix overly aggressive globbing and resultant incorrect expansions (with added and fixed tests) &ac; [`d56c229`](https://github.com/rivy/perl.Win32-CommandLine/commit/d56c229e121f78a3daec973cf579af369c321a54)
 
+#### Dependency Updates
+
+* update: Build.PL config changes (realign with updated framework) &ac; [`4b0f9af`](https://github.com/rivy/perl.Win32-CommandLine/commit/4b0f9af1fbb46366f8ff1c6acafea5a315172aa7)
+* update Build framework &ac; [`68251a0`](https://github.com/rivy/perl.Win32-CommandLine/commit/68251a084faaa06d7bc1af3ad4f2d836ee7cdb58)
+* update Travis CI &ac; [`0b3ada1`](https://github.com/rivy/perl.Win32-CommandLine/commit/0b3ada1c950a94f61d36a56bd6d1ff998aa0da58)
+* update AppVeyor CI &ac; [`82d6c71`](https://github.com/rivy/perl.Win32-CommandLine/commit/82d6c71830fdd981125cb2343572c913b2047b79)
+* update Build framework &ac; [`1525fee`](https://github.com/rivy/perl.Win32-CommandLine/commit/1525fee07872f619e20f23b237ab5490ace28b55)
+
+#### Documentation
+
+* docs: improvements / refactoring &ac; [`15c1d52`](https://github.com/rivy/perl.Win32-CommandLine/commit/15c1d52226dae85aea20ce56f00e73b48659f1f1)
+
+#### Maintenance
+
+* maint: rebuild &ac; [`5744d1f`](https://github.com/rivy/perl.Win32-CommandLine/commit/5744d1f7229795799b17cfdadf5d48ec7979e55c)
+* maint: update notes &ac; [`23b843c`](https://github.com/rivy/perl.Win32-CommandLine/commit/23b843ca020202dc97e47a07aecbb91bac2e8c06)
+* maint: add VSCode settings &ac; [`b040965`](https://github.com/rivy/perl.Win32-CommandLine/commit/b040965eac73af4e6651b362445fb101485891c4)
+* maint: polish comments + limit perlcritic 'no critic' breadth &ac; [`c3304f2`](https://github.com/rivy/perl.Win32-CommandLine/commit/c3304f25fbc05be7b98272dd3e0484e1946d3114)
+* maint: update tests &ac; [`98a21aa`](https://github.com/rivy/perl.Win32-CommandLine/commit/98a21aaa819abef5a9bc8f5049de5ad1c6c94384)
+* maint: update ToDO / notes &ac; [`ec209d3`](https://github.com/rivy/perl.Win32-CommandLine/commit/ec209d3d246e8e5d8bc815c0672912bf38c35c28)
+
+#### Refactoring
+
+* refactor internal function names &ac; [`c43e348`](https://github.com/rivy/perl.Win32-CommandLine/commit/c43e348f193f625b2f5255da926b117009ba6fe0)
+
 ---
 
 ## [0.954](https://github.com/rivy/perl.Win32-CommandLine/compare/0.953_1...0.954) <small>(2018-02-05)</small>
@@ -89,7 +129,23 @@
 
 ## [0.953_1](https://github.com/rivy/perl.Win32-CommandLine/compare/0.951_1...0.953_1) <small>(2018-01-29)</small>
 
-*No changelog for this release.*
+#### Dependency Updates
+
+* update upstream Build framework &ac; [`630a41f`](https://github.com/rivy/perl.Win32-CommandLine/commit/630a41ff4fb8a243e7f2f875f10b5051a8f21a98)
+* update: Build framework fix &ac; [`3381e73`](https://github.com/rivy/perl.Win32-CommandLine/commit/3381e7374b31381038dd1a19d5082881e94ce164)
+
+#### Documentation
+
+* docs: moderate documentation fixup / remodeling (with corresponding perlcritic change) &ac; [`4c2ad68`](https://github.com/rivy/perl.Win32-CommandLine/commit/4c2ad68c2f190007c7d08fcf97d11c8d749574a0)
+* docs: improve and correct docs &ac; [`e4a6070`](https://github.com/rivy/perl.Win32-CommandLine/commit/e4a6070d02ce70124e7bb878d2b0bbc0ba2e405b)
+* docs: minor improvements and updates to comments and notes &ac; [`a93feaa`](https://github.com/rivy/perl.Win32-CommandLine/commit/a93feaab963c434bcc2828f2263769f3465febb0)
+* docs: correct transport for repo URL &ac; [`f3956f5`](https://github.com/rivy/perl.Win32-CommandLine/commit/f3956f56bb8ef6f61b8828c34d272d5d1bc9dfae)
+
+#### Maintenance
+
+* maint: rebuild for release &ac; [`6abfc0e`](https://github.com/rivy/perl.Win32-CommandLine/commit/6abfc0ef29dfddda13222e43efaec4a798f1f3ff)
+* maint: fix perlcritic for split copyright and license &ac; [`2089891`](https://github.com/rivy/perl.Win32-CommandLine/commit/208989119ff4497a3de79a6c3289e71ee5047120)
+* maint: AppVeyor config improvement; fixes code coverage warning output &ac; [`ef2825a`](https://github.com/rivy/perl.Win32-CommandLine/commit/ef2825a2acf34c80a474074389649af926de93ce)
 
 ---
 
@@ -98,6 +154,19 @@
 #### Changes
 
 * change: update no_index to include README.mkd &ac; [`9974fbb`](https://github.com/rivy/perl.Win32-CommandLine/commit/9974fbbe4ee447058d917829ad9d9ce61f96d408)
+
+#### Dependency Updates
+
+* update: Build framework &ac; [`a89ae37`](https://github.com/rivy/perl.Win32-CommandLine/commit/a89ae377435572eeaef5e2128e9e490cb4f7dbdd)
+
+#### Documentation
+
+* docs: minor fixes and improvements to docs / comments &ac; [`e3d9423`](https://github.com/rivy/perl.Win32-CommandLine/commit/e3d94236854fafd516ed9b58205f956d02c05018)
+
+#### Maintenance
+
+* maint: rebuild for release &ac; [`1f3fd01`](https://github.com/rivy/perl.Win32-CommandLine/commit/1f3fd012687113560b59e8fafc1f9bdb582b3922)
+* maint: AppVeyor build improvements &ac; [`09ee6aa`](https://github.com/rivy/perl.Win32-CommandLine/commit/09ee6aaecf4181cf66df1f151978d997eed9cf7a)
 
 ---
 
@@ -110,6 +179,24 @@
 #### Fixes
 
 * fix: remove $ENV{HARNESS_ACTIVE} checks from tests &ac; [`9542550`](https://github.com/rivy/perl.Win32-CommandLine/commit/9542550cf9487ab9ff6ffffeefaa07b818c1d946)
+
+#### Dependency Updates
+
+* update: Build framework + respective needed project changes &ac; [`a1af5c9`](https://github.com/rivy/perl.Win32-CommandLine/commit/a1af5c97fef39c06e7c50655dce6a92195af26f5)
+* update: Build framework &ac; [`2f8202c`](https://github.com/rivy/perl.Win32-CommandLine/commit/2f8202ca3b293d458e0dc957dd82f73c4610a11a)
+
+#### Documentation
+
+* docs: documentation updates &ac; [`6d48abb`](https://github.com/rivy/perl.Win32-CommandLine/commit/6d48abbe22fc866b375f24e8e725097a47e993e9)
+
+#### Maintenance
+
+* maint: rebuild for release &ac; [`1b62435`](https://github.com/rivy/perl.Win32-CommandLine/commit/1b624351c0e2334a0d24908b9fbf77a792ba01c0)
+* maint: refactor JSON:PP redefinition bugfix in AppVeyor config &ac; [`90adda4`](https://github.com/rivy/perl.Win32-CommandLine/commit/90adda4e1949f0ef47625a3524abb4b2d844b0d6)
+* upkeep: update ToDO &ac; [`3ecd7b5`](https://github.com/rivy/perl.Win32-CommandLine/commit/3ecd7b54bd9e4a6c33c3d1a9653a07796a0976c3)
+* maint: AppVeyor CI ~ enable test configurations for earlier versions of perl &ac; [`5f5a3ab`](https://github.com/rivy/perl.Win32-CommandLine/commit/5f5a3ab9fbf1b194d8ca7603874ba6421c083599)
+* maint: update AppVeyor build script to checkout by branch, if possible &ac; [`7091040`](https://github.com/rivy/perl.Win32-CommandLine/commit/7091040ee2dc893736789ea828d3ee7784a9d5e5)
+* maint: fix AppVeyor Coveralls reporting with patched version &ac; [`4d6d085`](https://github.com/rivy/perl.Win32-CommandLine/commit/4d6d085e26bba9d964e2b84d7703ce923b1e0593)
 
 ---
 
@@ -136,6 +223,26 @@
 * fix: correct module requirements for testing &ac; [`09765fc`](https://github.com/rivy/perl.Win32-CommandLine/commit/09765fc821384b13647708f242a806148df42f0e)
 * fix: improve compatibility with older perl versions &ac; [`56b578c`](https://github.com/rivy/perl.Win32-CommandLine/commit/56b578cc396cc9f037687da6c4ae8afe38bfef74)
 
+#### Dependency Updates
+
+* update: upstream Build framework &ac; [`524361c`](https://github.com/rivy/perl.Win32-CommandLine/commit/524361cb97d2196f55094c968b9a3bc5ea5564bd)
+* update: Build framework &ac; [`5aedb6e`](https://github.com/rivy/perl.Win32-CommandLine/commit/5aedb6e2a86ab2bc03c4a7cc04708679ed65c8d5)
+* update: upstream improvements to BUILD framework &ac; [`42f8262`](https://github.com/rivy/perl.Win32-CommandLine/commit/42f8262fb52c4177cf2de2f18a203a53ca462ab5)
+
+#### Documentation
+
+* docs: add repo README &ac; [`bc854ee`](https://github.com/rivy/perl.Win32-CommandLine/commit/bc854eebfaa24f045463d484b264398d9b3b5727)
+
+#### Maintenance
+
+* maint: rebuild for release &ac; [`7a24605`](https://github.com/rivy/perl.Win32-CommandLine/commit/7a2460505e20a803254bacd2c72733b6d3987153)
+* upkeep: notes &ac; [`58e88f4`](https://github.com/rivy/perl.Win32-CommandLine/commit/58e88f4be6357d006e9bc5b815f001f0a9512540)
+* maint: perltidy configuration improvements &ac; [`d529742`](https://github.com/rivy/perl.Win32-CommandLine/commit/d5297428c0d378f2a3e7eeb418abc7a6b6ebf7ae)
+* upkeep: enforce CRLF EOLs for .bat/.cmd files &ac; [`f13248f`](https://github.com/rivy/perl.Win32-CommandLine/commit/f13248fb6d023d8e81c56d82d4b17e238cf2e517)
+* upkeep: repo whitespace cleanup &ac; [`3cecb30`](https://github.com/rivy/perl.Win32-CommandLine/commit/3cecb30ef83f68d5cffac52e5355eb1362781711)
+* maint: refactor Travis CI configuration &ac; [`7d01e51`](https://github.com/rivy/perl.Win32-CommandLine/commit/7d01e515ba4644024ffb4da3569803245da624be)
+* maint: .gitignore cleanup &ac; [`e4c5ec2`](https://github.com/rivy/perl.Win32-CommandLine/commit/e4c5ec294f9f0bc53b28badf0c37b0a57b2ddd35)
+
 ---
 
 ## [0.945_1](https://github.com/rivy/perl.Win32-CommandLine/compare/0.943_1...0.945_1) <small>(2017-10-30)</small>
@@ -148,7 +255,9 @@
 
 ## [0.943_1](https://github.com/rivy/perl.Win32-CommandLine/compare/0.941_1...0.943_1) <small>(2017-09-20)</small>
 
-*No changelog for this release.*
+#### Maintenance
+
+* UPKEEP: update notes / ToDO &ac; [`d1aa2ba`](https://github.com/rivy/perl.Win32-CommandLine/commit/d1aa2ba0a2c148576e59860121ad1b92b5423320)
 
 ---
 
@@ -163,6 +272,10 @@
 * BUGFIX: add workaround for perl qx// bug for subshell execution of compound statements &ac; [`c8518c1`](https://github.com/rivy/perl.Win32-CommandLine/commit/c8518c1df0f81b57ca4d504ec95950b64c790586)
 * BUGFIX: fix 'dashprefix' handling &ac; [`3c7098a`](https://github.com/rivy/perl.Win32-CommandLine/commit/3c7098a5bc595b4f1342c9c50cb2ceb322514b71)
 * BUGFIX: fix control character ANSI escape sequences ('\cx') &ac; [`3ed3d86`](https://github.com/rivy/perl.Win32-CommandLine/commit/3ed3d86097c4274a50eab5ce6186794f7506275d)
+
+#### Maintenance
+
+* UPKEEP: update notes &ac; [`5ff8599`](https://github.com/rivy/perl.Win32-CommandLine/commit/5ff85996705a8974890e6f8709e8a4c183517d9e)
 
 ---
 
@@ -201,11 +314,22 @@
 * BUGFIX: fix failing signature tests &ac; [`accf5c8`](https://github.com/rivy/perl.Win32-CommandLine/commit/accf5c8ce7c3544377c72803538a5e94c0d43ccf)
 * BUGFIX: fix incorrectly escaped regex in my_maniskip() &ac; [`08af878`](https://github.com/rivy/perl.Win32-CommandLine/commit/08af878cf6355fa77d22399da2a9943b86d831f0)
 
+#### Dependency Updates
+
+* UPDATED: upstream change to MANIFEST.SKIP to avoid additional git-related files &ac; [`a490a19`](https://github.com/rivy/perl.Win32-CommandLine/commit/a490a198feef7a4d99761050192c6190ddb938e0)
+
+#### Maintenance
+
+* UPKEEP: notes update + move unused test to notes &ac; [`ce56ddf`](https://github.com/rivy/perl.Win32-CommandLine/commit/ce56ddffe08d5014db7746f5a17d60bfb006ea58)
+* UPKEEP: reorganize notes &ac; [`d4119c8`](https://github.com/rivy/perl.Win32-CommandLine/commit/d4119c87ae6fab18f63c93f0b4207908b782bfd8)
+
 ---
 
 ## [0.9.0](https://github.com/rivy/perl.Win32-CommandLine/compare/0.7.0...0.9.0) <small>(2014-01-12)</small>
 
-*No changelog for this release.*
+#### Maintenance
+
+* UPKEEP: clean-up/standardize editor directives &ac; [`7a5d218`](https://github.com/rivy/perl.Win32-CommandLine/commit/7a5d2182a91c0360a67a025acff7cf6906993140)
 
 ---
 
@@ -214,6 +338,10 @@
 #### Fixes
 
 * BUGFIX: change templating code to tolerate missing directories &ac; [`8c9e924`](https://github.com/rivy/perl.Win32-CommandLine/commit/8c9e924d84486d24806b8bcae44c2a6769c242a3)
+
+#### Maintenance
+
+* UPKEEP: whitespace cleanup in XS &ac; [`18b2825`](https://github.com/rivy/perl.Win32-CommandLine/commit/18b2825ba59584802c691293da465876ae75a693)
 
 ---
 
@@ -243,6 +371,12 @@
 * FIXED: Fixed a few subtle test bugs (discovered from smoke reports) &ac; [`4dd37f7`](https://github.com/rivy/perl.Win32-CommandLine/commit/4dd37f7a041847ed2a300657116e375903471d3a)
 * BUGFIX: Single "$" fix; BAT file corrections + CHANGED: Format, documentation, comment improvements &ac; [`a1095d7`](https://github.com/rivy/perl.Win32-CommandLine/commit/a1095d71764ef922425284f265872b7c7219d8eb)
 
+#### Dependency Updates
+
+* UPDATED: upstream improvements to Build.PL and generic tests &ac; [`272b544`](https://github.com/rivy/perl.Win32-CommandLine/commit/272b54426028591f5d9680c6b9a5b53b1b066a4b)
+* UPDATED: upstream improvements to Build.PL and generic tests &ac; [`2d8608d`](https://github.com/rivy/perl.Win32-CommandLine/commit/2d8608da06bfbac0a7678c53633f166ea0c66053)
+* UPDATED: Upstream minor build and test updates &ac; [`a5a4c14`](https://github.com/rivy/perl.Win32-CommandLine/commit/a5a4c14de8766b561f7171278817318d00a6bd7d)
+
 ---
 
 ## [0.5.8_124](https://github.com/rivy/perl.Win32-CommandLine/compare/0.5.8...0.5.8_124) <small>(2012-03-26)</small>
@@ -266,6 +400,11 @@
 * FIXED: repaired inadvertant consumption of redirected STDIN (via '<'); extensive internal whitespace cleanup &ac; [`9b0ede3`](https://github.com/rivy/perl.Win32-CommandLine/commit/9b0ede30d41d401dccb5dcc2e3648633fda9bcaf)
 * FIXED: corrected typo &ac; [`825796b`](https://github.com/rivy/perl.Win32-CommandLine/commit/825796b8bcbdc9831e57cbf651c6b16c5e1dadfa)
 
+#### Dependency Updates
+
+* UPDATED: upstream change to MANIFEST.SKIP to avoid newly generated .json files &ac; [`b2bfb3f`](https://github.com/rivy/perl.Win32-CommandLine/commit/b2bfb3fcd5e1aa6c682c019fc67f9de2dfdbff82)
+* UPDATED: upstream improvements to Build.PL and generic tests &ac; [`8b6cf8a`](https://github.com/rivy/perl.Win32-CommandLine/commit/8b6cf8a492628becc6be14131eb428f9031144f6)
+
 ---
 
 ## [0.5.7](https://github.com/rivy/perl.Win32-CommandLine/compare/0.5.6_22...0.5.7) <small>(2012-03-26)</small>
@@ -284,6 +423,10 @@
 #### Fixes
 
 * FIXED: updated bootstrap call to use normal form of $VERSION &ac; [`c98dae1`](https://github.com/rivy/perl.Win32-CommandLine/commit/c98dae1adaf20abdd51de042ed972f3ee5976501)
+
+#### Dependency Updates
+
+* UPDATED: upstream Build.PL and generic test improvements &ac; [`432b5ee`](https://github.com/rivy/perl.Win32-CommandLine/commit/432b5eeccace1c30fbbb6f82068104e0e9aedd95)
 
 ---
 
@@ -349,7 +492,7 @@
 * CHANGED: morefilters.v0.9.4 expand function cleanup &ac; [`5f5621a`](https://github.com/rivy/perl.Win32-CommandLine/commit/5f5621ae7dac460d28e73114ff5c1b065f4e8d29)
 * ADDED: morefilters module load for HGv1.2.1 &ac; [`afbf028`](https://github.com/rivy/perl.Win32-CommandLine/commit/afbf02824e97b7d9f29b4a4cb019ac15451b7f94)
 * Added tag 0.5.3 for changeset 8d4dfa9ccc42 &ac; [`73aa1ee`](https://github.com/rivy/perl.Win32-CommandLine/commit/73aa1ee4aa9dcc845675383d382629e4424227fe)
-* change/**LOCAL::** updated .build.xml to include BUILD.PL build targets; CHANGED/LOCAL: .build.xml cleanup and old code deletion; CHANGED: Build.PL.config newline added to end of file; CHANGED: .morefilters.py updated to used HG v1.2.1 API; CHANGED: xx.bat comment updates; CHANGED: which.pl changed to output quoted DOS paths (PENDING better/more automatic implementation); FIXED: implement standard handling of  =>  for TCC and CMD; FIXED: added ^ to special DOS character list for quoting; CHANGED: CommandLine.pm - updated misc comments and added TESTING comment section; UPDATED: upstream independent module test updates; CHANGED: added notes for  /  handling to General-Notes.txt &ac; [`c9d6961`](https://github.com/rivy/perl.Win32-CommandLine/commit/c9d6961ad83704ad4f5587d9b427167677132e1a)
+* change/**LOCAL:**: updated .build.xml to include BUILD.PL build targets; CHANGED/LOCAL: .build.xml cleanup and old code deletion; CHANGED: Build.PL.config newline added to end of file; CHANGED: .morefilters.py updated to used HG v1.2.1 API; CHANGED: xx.bat comment updates; CHANGED: which.pl changed to output quoted DOS paths (PENDING better/more automatic implementation); FIXED: implement standard handling of  =>  for TCC and CMD; FIXED: added ^ to special DOS character list for quoting; CHANGED: CommandLine.pm - updated misc comments and added TESTING comment section; UPDATED: upstream independent module test updates; CHANGED: added notes for  /  handling to General-Notes.txt &ac; [`c9d6961`](https://github.com/rivy/perl.Win32-CommandLine/commit/c9d6961ad83704ad4f5587d9b427167677132e1a)
 
 #### Fixes
 
@@ -360,6 +503,13 @@
 * FIXED: updated ANT xml to correct 'copy.filter.refid' usage; CHANGED: updated location of HG local configuration files &ac; [`0430362`](https://github.com/rivy/perl.Win32-CommandLine/commit/04303624bb712ed48eb73c6876880a4151e934a3)
 * FIXED: corrected version calculation for short and alpha type versions when $Version$ keywords are missing/unexpanded &ac; [`ed0b7ad`](https://github.com/rivy/perl.Win32-CommandLine/commit/ed0b7ad7567b149bc1e78d7feefe4ffde48660d7)
 * FIXED: updated morefilters scripts to work correctly with multiple python versions; CHANGED: updated .hgrc template to match morefilters changes &ac; [`390da6c`](https://github.com/rivy/perl.Win32-CommandLine/commit/390da6ce71a9e222f83c5a118354d0c69edeb418)
+
+#### Dependency Updates
+
+* UPDATED: upstream test improvements (including taint testing compatibility) &ac; [`92e877f`](https://github.com/rivy/perl.Win32-CommandLine/commit/92e877f5ffa80b4b8923d4d42bedb74360783229)
+* UPDATED: Build.PL.config simplification & cleanup after upstream Build.PL update &ac; [`9fb6458`](https://github.com/rivy/perl.Win32-CommandLine/commit/9fb645839a12c263c3fa233c5d94195b07d75571)
+* UPDATED: upstream Build.PL improvements &ac; [`f8b6849`](https://github.com/rivy/perl.Win32-CommandLine/commit/f8b6849e8b938d2572443dbfbfa1998204f0c970)
+* UPDATED: upstream update of independent module tests &ac; [`298a1de`](https://github.com/rivy/perl.Win32-CommandLine/commit/298a1debe93f443e59753c75ebdbceced1b0f21d)
 
 ---
 
@@ -391,6 +541,11 @@
 * FIXED: CHANGES case collision &ac; [`59cf7c9`](https://github.com/rivy/perl.Win32-CommandLine/commit/59cf7c920f99ccd5c94b202babf98301f34354c3)
 * FIXED: xx.BAT error printing incorrect version info for earlier versions of Pod::Usage; FIXED: t\NNxx.t test failure for xx.BAT version check (and made FRAGILE); CHANGED: xx.BAT comment cleanup; FIXED: CommandLine.pm - use of unintialized variable warning when unable to determine Parent PID (usually means missing Win32::API); CHANGED: CommandLine.pm documentation improvements; UPDATE: updated module independent tests from upstream Build.PL; CHANGED: minor .build.xml update redefining default target as 'copy'; CHANGED: module requirement improvements and changed add_to_cleanup to include wider range of vcNN.pdb files in Build.PL.config; UPDATED: Build.PL from upstream &ac; [`0481530`](https://github.com/rivy/perl.Win32-CommandLine/commit/048153089ad81365190005859513c45f6d5cc33d)
 
+#### Dependency Updates
+
+* UPDATED: 'master' branch named &ac; [`2f78794`](https://github.com/rivy/perl.Win32-CommandLine/commit/2f78794b3e66365ff8e3bd1d2cfa1f0935b46962)
+* UPDATED: RCS version tag changes &ac; [`197e71e`](https://github.com/rivy/perl.Win32-CommandLine/commit/197e71e32b0d1e0cf5bec3e54a79810227828aad)
+
 ---
 
 ## [0.5.1](https://github.com/rivy/perl.Win32-CommandLine/compare/0.4.4...0.5.1) <small>(2009-04-29)</small>
@@ -399,6 +554,11 @@
 
 * CHANGED: added new command line example script to extras &ac; [`3df3f73`](https://github.com/rivy/perl.Win32-CommandLine/commit/3df3f73b8b51633f3310449b4585f4f8a3e4f900)
 * Added tag 0.4.4 for changeset d1a4a8bb3948 &ac; [`039c101`](https://github.com/rivy/perl.Win32-CommandLine/commit/039c1013bc957ff4dc7b911ff6190d6fa66ecda4)
+
+#### Dependency Updates
+
+* UPDATED: upstream changes to Build.PL (importantly, distmeta rebuilds are now dependency gated [avoids distmeta rebuilds when possible on destination platforms]); UPDATED: upstream improvements to package independent module tests; CHANGED: added exit code passthrough xx.bat; CHANGED: ongoing documentation improvements; CHANGED: added specs for more compiler detrus to MANIFEST.SKIP; FIXED: minor glob() usage bug for nullglob based on better understanding of GLOB flags; CHANGED: minor cosmetic spacing changes to LICENSE text; UPDATED: (extras) initial notes to which.pl for possibly adding alias support; CHANGED: xx.bat tests modified to remove FRAGILE tests (PENDING rework and re-installation) &ac; [`b4fbd92`](https://github.com/rivy/perl.Win32-CommandLine/commit/b4fbd92cbecc2df9417228c281e2358b09dfd790)
+* UPDATED: Build.PL updated from upstream &ac; [`e499836`](https://github.com/rivy/perl.Win32-CommandLine/commit/e49983669099f866baca00c39c9967f6477eda52)
 
 ---
 
@@ -437,7 +597,9 @@
 
 ## [0.4.2](https://github.com/rivy/perl.Win32-CommandLine/compare/0.4.2.605...0.4.2) <small>(2009-04-03)</small>
 
-*No changelog for this release.*
+#### Dependency Updates
+
+* UPDATED: fixed Build.PL from upstream (now sorts MANIFEST to preserve SIGNATURE after 'build distmeta'); CHANGED: comment cleanup in Build.PL.config &ac; [`1e0c64f`](https://github.com/rivy/perl.Win32-CommandLine/commit/1e0c64fd92800f3bef033f54428ab8d9de366f05)
 
 ---
 
@@ -460,6 +622,11 @@
 
 * CHANGED: xx.bat version update &ac; [`c87f0b7`](https://github.com/rivy/perl.Win32-CommandLine/commit/c87f0b7c811702632096555a3d9ab578e998c27d)
 * Added tag 0.4.0 for changeset c297b38db706 &ac; [`d5bb7bf`](https://github.com/rivy/perl.Win32-CommandLine/commit/d5bb7bfbd166fcaebd818bf0521fc6919c9b25c4)
+
+#### Dependency Updates
+
+* UPDATED: Build.PL and MANIFEST.SKIP fix from upstream, allowing clean 'build test' anfter 'build install' &ac; [`ada46da`](https://github.com/rivy/perl.Win32-CommandLine/commit/ada46dad5f2a55f08113ca76f2cb365784ff8ab1)
+* UPDATED: Build.PL updated from upstream &ac; [`12aa966`](https://github.com/rivy/perl.Win32-CommandLine/commit/12aa966216eb651f7f24a393d67fc3f6c65369aa)
 
 ---
 
@@ -491,6 +658,11 @@
 
 * FIXED: incorrect module requirement code for module independent tests (from upstream); CHANGED: updated default version to correspond to current beta version &ac; [`a60186a`](https://github.com/rivy/perl.Win32-CommandLine/commit/a60186abdfe5de41be21cdd133b34fb2b7c734c1)
 
+#### Dependency Updates
+
+* UPDATED: module independent test updated from upstream; CHANGED: reclassified some tests as FRAGILE &ac; [`afbb30c`](https://github.com/rivy/perl.Win32-CommandLine/commit/afbb30cb36471c39f006753801af608e27750dd9)
+* UPDATED: module independent tests updated from upstream &ac; [`0c63d24`](https://github.com/rivy/perl.Win32-CommandLine/commit/0c63d2419ff020c54bcdecb86d51c08f81a07f27)
+
 ---
 
 ## [0.3.13](https://github.com/rivy/perl.Win32-CommandLine/compare/0.3.12...0.3.13) <small>(2009-03-30)</small>
@@ -504,17 +676,42 @@
 
 ---
 
-## 0.3.12 <small>(2009-03-17)</small>
+## [0.3.12](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.11...0.3.12) <small>(2009-03-17)</small>
 
 #### Changes
 
 * ADDED: changed exe removal to allow successful use of module from C# (through msscript.ocx); CHANGED: add vc90.pdb to MANIFESTS.SKIP for MSVC compilations; UPDATED: notes regarding possible install error messages &ac; [`2d6e339`](https://github.com/rivy/perl.Win32-CommandLine/commit/2d6e339bd3a25dc7cf3cb8ac7263c6ef14e6ddcf)
 * CHANGED: made %EXPORT_TAGS and [@EXPORT_OK](https://github.com/EXPORT_OK) more module name independent; CHANGED: moved CommandLine.pm BUG note to a test in NN.xx.t; ADDED: new NN.xx.t tests, including some to highlight possible design decisions; ADDED: some examples to POD for xx.bat usefulness; ADDED: notes for VCC compilation and possible GPFs (requiring perl.exe.manifest to find MSVCR90.dll) &ac; [`66fe9b6`](https://github.com/rivy/perl.Win32-CommandLine/commit/66fe9b6a03168b251c07735dcfdb87767c73b3d8)
 * CHANGED: default versions in major.minor format converted to perl Extended Version format; CHANGED: updated version comments in CommandLine.pm &ac; [`fee3541`](https://github.com/rivy/perl.Win32-CommandLine/commit/fee3541d8c04bd8afd5070d089925ac137d1a40d)
+
+#### Fixes
+
+* FIXED: changed VERSION to Extended Version format using version->new(); CHANGED: no-critic declarations and some reorganization of NN.xx.t tests &ac; [`f4ae2a0`](https://github.com/rivy/perl.Win32-CommandLine/commit/f4ae2a08449d981bdfa4d68d373837d74d702baf)
+* FIXED: xx.bat 'prolog' fixed (removed bare single quotes to avoid incorrect perl interpretation); ADDED: created tests for xx.bat script (NN.xx.t) [skips if missing testing modules]; CHANGED: updated version string printing in xx.bat and which.pl; CHANGED: updated BUGS and SUPPORT documentation in CommandLine.pm; CHANGED: update build_requires_href in Build.PLconfig to include NN.xx.t required testing modules (currently commented out) &ac; [`2e72b79`](https://github.com/rivy/perl.Win32-CommandLine/commit/2e72b79d859ba810243c2ee09b80bed7bcea62d9)
+
+#### Dependency Updates
+
+* UPDATED: more NN.xx.t tests; UPDATED: some CommandLine.pm documentation updates &ac; [`e002ba6`](https://github.com/rivy/perl.Win32-CommandLine/commit/e002ba6fddbb6e8e5ec0301931c41debb1041cbc)
+* UPDATED: Build.PL and module independent tests updated from upstream &ac; [`63ace53`](https://github.com/rivy/perl.Win32-CommandLine/commit/63ace53e786fca1c7c0e8ea123e235efc8780749)
+* UPDATED: Build.PL and module independent tests updated from upstream; CHANGED: updated Build.PL.config to use new config variable names; CHANGED: revised CommandLine.pm to use older require/ISA scheme to avoid a perl v5.8 minimum requirement &ac; [`fc7a1fc`](https://github.com/rivy/perl.Win32-CommandLine/commit/fc7a1fca2b71a78868d89d7d194faec7a3514a2e)
+
+---
+
+## [v0.3.11](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.10...v0.3.11) <small>(2009-03-09)</small>
+
+#### Changes
+
 * CHANGED: Build.PL.config updated to reflect Build.PL changes (lib_path now set correctly, ExtUtils::Manifest requirement now set); ADDED: _dos_quote() function to 'DOS quote' tokens without changing / to \ (as _dosify() does); BUGFIX: [] fixed non-globbed tokens incorrectly having / converted to \ (and rearranged timing of dos_quote(), dosify(), unixify() execution on ARGS); CHANGED: argv.t updated to do some minimal dosquote() testing; CHANGED: xx.bat updated to use 'dosquote' &ac; [`21c6df8`](https://github.com/rivy/perl.Win32-CommandLine/commit/21c6df8af383027ccf911756eea625183a1fcf21)
 * CHANGED: include bin/* in version testing &ac; [`066f26e`](https://github.com/rivy/perl.Win32-CommandLine/commit/066f26e4fcd7329727e4e5b1874bf7d86db4543a)
 * ADDED: ANT build file created (.build.xml) [equivalent to NANT build file but OS independent]; UPDATED: module independent test update from upstream &ac; [`cc2311b`](https://github.com/rivy/perl.Win32-CommandLine/commit/cc2311b149a8c32c6a1eb7f9623aa187a654c828)
 * Added tag v0.3.10 for changeset 15f573aa62b8 &ac; [`9b82277`](https://github.com/rivy/perl.Win32-CommandLine/commit/9b8227743f8c3ca84e40034ef7b1ab256fb6d26e)
+
+---
+
+## [v0.3.10](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.4...v0.3.10) <small>(2009-03-06)</small>
+
+#### Changes
+
 * CHANGED: reduced version to M.m form (<release> determined by tag, <build> determined by build software); UPDATED: Build.PL and module independent test updates from external repository; CHANGED: minor documentation clarification to xx.bat &ac; [`318dd41`](https://github.com/rivy/perl.Win32-CommandLine/commit/318dd41f2f8338026ca1ddb0d522646d664c7021)
 * CHANGED: Comment cleanup; CHANGED: default version correction for CommandLine.pm; BUGFIX: fix malfunctioning SIGNATURE verification after builds (workaround for ExtUtils::Manifest bug implemented in MANIFEST.SKIP) &ac; [`1f0ecea`](https://github.com/rivy/perl.Win32-CommandLine/commit/1f0ecead0203d0c68ca7655981e22942dfc6c5da)
 * CHANGED: comment cleanup multiple files; CHANGED: added network slash and backslash edge cases to argv.t &ac; [`58a832e`](https://github.com/rivy/perl.Win32-CommandLine/commit/58a832e0f92386b05abada1df6049d5456094f7c)
@@ -528,19 +725,94 @@
 * ADDED: added comine option to quote.bat; BUGFIX: added 'pass_through' GetOptions() argument to improve argument processing for xx.bat &ac; [`e92aac7`](https://github.com/rivy/perl.Win32-CommandLine/commit/e92aac76890e387b9d29205ade54f4f827455dd0)
 * CHANGED: updated some _argv tests to test for returned exceptions &ac; [`0aaa90e`](https://github.com/rivy/perl.Win32-CommandLine/commit/0aaa90e2aea1a5f7febdb65c076adb2fcd28cf65)
 * CHANGED: renamed x.bat to xx.bat; CHANGED: renamed exout.bat to so.bat; ADDED: created quote.bat as a better alternative to dosify.bat to quote STDIN based on current OS; MODIFIED: updated notes &ac; [`7859a82`](https://github.com/rivy/perl.Win32-CommandLine/commit/7859a8201200552e1332454113fab89e0ed0f8a4)
+
+#### Fixes
+
+* BUGFIX: version fixup &ac; [`9ee6afd`](https://github.com/rivy/perl.Win32-CommandLine/commit/9ee6afd972f91d001bd2aaa54d1404f72c06306f)
+* BUGFIX: default version fixup &ac; [`e2764c2`](https://github.com/rivy/perl.Win32-CommandLine/commit/e2764c2cb5d49fcd005510f1a96f393f118fa3d2)
+* BUGFIX: fixed incorrect parsing of subshell commands and $ characters &ac; [`92648fd`](https://github.com/rivy/perl.Win32-CommandLine/commit/92648fd535aa646a7a4159d62f21cd98dc69c4e2)
+
+#### Dependency Updates
+
+* UPDATED: updated Build.PL from outside repository to new version with customizable %ENV for actions; CHANGED: revised custom ACTION_test and added test %ENV{} variable in Build.PL.config; CHANGED: minor test code cleanup; CHANGED: nant .build implements copy+protect or warn for both incoming and outgoing script examples and extras to keep local machine up-to-date; CHANGED: moved responsibility for Build.PL re-execution on updates to parent nant .build file &ac; [`fe1b969`](https://github.com/rivy/perl.Win32-CommandLine/commit/fe1b969946f70c7b4836af73b26a56f640c1d8fb)
+
+---
+
+## [v0.3.4](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.3...v0.3.4) <small>(2009-02-27)</small>
+
+#### Changes
+
 * CHANGED: refactored _argv(), logically seperating work into multiple subroutines; ADDED: subshell expansion implemented; FIXED: multiple minor changes for 4NT/TCC/TCMD compatibility (to.bat); TODO: more testing of subshell expansions and exceptions &ac; [`f16d67b`](https://github.com/rivy/perl.Win32-CommandLine/commit/f16d67b81ced5e7a8bcec54845e446d3e3a41b26)
 * added which.pl as an extra &ac; [`053834e`](https://github.com/rivy/perl.Win32-CommandLine/commit/053834e41c6af6f1a219a9a553d4f51b675efae3)
 * Added tag v0.3.3 for changeset e661dd109cad &ac; [`e2ac01a`](https://github.com/rivy/perl.Win32-CommandLine/commit/e2ac01af05da1117b4a6afc98c79ef15a827d141)
+
+#### Fixes
+
+* FIXED: tilde prefix expansion _dosify bug and added verification tests &ac; [`27bea00`](https://github.com/rivy/perl.Win32-CommandLine/commit/27bea001583bd52b815a39781afc168accb2d1b0)
+
+#### Dependency Updates
+
+* update .build to automatically rebuild custom perl build scripts (through Build.PL) if out of date or missing &ac; [`1d9a955`](https://github.com/rivy/perl.Win32-CommandLine/commit/1d9a955894b9555080bfc62580625a8daacf3338)
+
+---
+
+## [v0.3.3](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.2...v0.3.3) <small>(2009-02-21)</small>
+
+#### Changes
+
 * ADDED: to.bat version information &ac; [`b0326a5`](https://github.com/rivy/perl.Win32-CommandLine/commit/b0326a540c0ac0e3833a0bed49329f2eb00bbc0e)
 * ADDED: option to able to disable globbing for args; MODIFIED: x and to modified to avoid 4nt/tcc redirection differences &ac; [`b868536`](https://github.com/rivy/perl.Win32-CommandLine/commit/b868536231c517d69e44756b21ea76f78b27c5f3)
 * Added ability to customize/set home_paths with %ENV vars &ac; [`7870204`](https://github.com/rivy/perl.Win32-CommandLine/commit/7870204f6d432c391887d509d49959ba87e6b22a)
 * Added 'dospath' option to return DOS/CMD.exe compatible reparsable tokens &ac; [`63ac045`](https://github.com/rivy/perl.Win32-CommandLine/commit/63ac045161863aa88909a4203fd36c42b49e335a)
 * Added tag v0.3.2 for changeset 15ea75534a46 &ac; [`ec1670e`](https://github.com/rivy/perl.Win32-CommandLine/commit/ec1670ead473708f9d67803ca064c4886f173ef5)
+
+#### Fixes
+
+* BUGFIX: x.bat command line capture failures for 4NT/TCC/TCMD &ac; [`f390cd7`](https://github.com/rivy/perl.Win32-CommandLine/commit/f390cd7b9631ed4278b8660a52808532c9239491)
+* FIXED: Inappropriate case sensitivity for tilde expansion; UPDATE: Build.PL update; Testing updates/refinements &ac; [`de6f130`](https://github.com/rivy/perl.Win32-CommandLine/commit/de6f130d0c19717555b1d7e0f064a5e3b2b8c5c7)
+* FIXED: $VERSION calculation error with collapsed keywords &ac; [`aa60920`](https://github.com/rivy/perl.Win32-CommandLine/commit/aa60920b262f33b0b7bf6f0e9c36bff961c4efd1)
+* BUGFIX x.bat to protect double quotes during CreateProcess() reparsing &ac; [`7be0cb5`](https://github.com/rivy/perl.Win32-CommandLine/commit/7be0cb58a21acf201df4044d28e22d65e19faf64)
+* BUGFIX x.bat to protect double quotes during CreateProcess() reparsing &ac; [`51c5f86`](https://github.com/rivy/perl.Win32-CommandLine/commit/51c5f865f7b25fe48b828e1de8f6de5c9c31bb8a)
+
+#### Dependency Updates
+
+* Updated Build.PL, updated tests and Perl::Critic compliance; FIXED: ~<name> expansion bugs &ac; [`c63501a`](https://github.com/rivy/perl.Win32-CommandLine/commit/c63501a38023d220b7004126d2673396d6d15dc3)
+* Updated sourcing executables * added preliminary 4NT/TCC compatibility * added inshex.bat (generic sourcing bat file for CMD) * ?? should we remove x -S ability and make it a normal pl2bat script again? (using alias cd="inshex x -e cd $*" instead of "x -S cd $*") &ac; [`38c6fa2`](https://github.com/rivy/perl.Win32-CommandLine/commit/38c6fa23ce0ecc89ab8fe7701755fac276770f09)
+
+---
+
+## [v0.3.2](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.1...v0.3.2) <small>(2008-11-14)</small>
+
+#### Changes
+
 * Added tag v0.3.1 for changeset f0320903c2f7 &ac; [`72d63d0`](https://github.com/rivy/perl.Win32-CommandLine/commit/72d63d0edcdb89e11df84753c51ad958ba4cd76c)
+
+#### Fixes
+
+* FIXED: Incorrect processing and globbing of tokens with forward and back slashes; tests added &ac; [`3a56fd3`](https://github.com/rivy/perl.Win32-CommandLine/commit/3a56fd337f9aeb2c973162f21aaefb29ad0f77ef)
+* Fixed: path problems with backslashes (UNC paths now work as expected) &ac; [`5a6e854`](https://github.com/rivy/perl.Win32-CommandLine/commit/5a6e8548347dd558039300be6970d4fc07d0b275)
+
+---
+
+## [v0.3.1](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.3.0...v0.3.1) <small>(2007-10-30)</small>
+
+#### Changes
+
 * Added tag v0.3.0 for changeset e2be14956fcc &ac; [`efdace5`](https://github.com/rivy/perl.Win32-CommandLine/commit/efdace521ecf80d9e21d45856fba758ac6fa7e32)
 * Added tag v0.1.0 for changeset f52584668e2d &ac; [`ebc1bd9`](https://github.com/rivy/perl.Win32-CommandLine/commit/ebc1bd909a26ce7450d9e65a3ecfa42a40d70381)
 * Added tag 0.3.0 for changeset b9a1539aa39f &ac; [`5f84386`](https://github.com/rivy/perl.Win32-CommandLine/commit/5f84386261944bbb6715e89c98df37f7079abddc)
 * Added tag v0.3 for changeset e2be14956fcc &ac; [`5030d65`](https://github.com/rivy/perl.Win32-CommandLine/commit/5030d65a4122fe55a16b0c8c24566f93aa9a108c)
+
+#### Fixes
+
+* Fixed null string bugs &ac; [`31cd451`](https://github.com/rivy/perl.Win32-CommandLine/commit/31cd4516781d9f12110433ecfe99e5349b841adb)
+
+---
+
+## [v0.3.0](https://github.com/rivy/perl.Win32-CommandLine/compare/v0.1.0...v0.3.0) <small>(2007-10-01)</small>
+
+#### Changes
+
 * Added tag [#1045](https://github.com/rivy/perl.Win32-CommandLine/issues/1045) for changeset f52584668e2d &ac; [`ac14302`](https://github.com/rivy/perl.Win32-CommandLine/commit/ac143020086d7eb326ef59d6409d88294e3104b7)
 * Added tag v0.1 for changeset f52584668e2d &ac; [`b40dbca`](https://github.com/rivy/perl.Win32-CommandLine/commit/b40dbca4506754efa2eabec0a52c3b92c56f13d6)
 * Added tag v0.1 for changeset f52584668e2d &ac; [`8b8b4ab`](https://github.com/rivy/perl.Win32-CommandLine/commit/8b8b4abd3090e275c58515acfecb0c78e5f9832d)
@@ -553,19 +825,8 @@
 * Added tag 0.1.2 for changeset 7e9fca7148f7 &ac; [`f7d2cc9`](https://github.com/rivy/perl.Win32-CommandLine/commit/f7d2cc928b9cee007091b0cb91fb9dabf637df41)
 * Added tag 0.1.0 for changeset f52584668e2d &ac; [`eb090cd`](https://github.com/rivy/perl.Win32-CommandLine/commit/eb090cd1bc1fe44b2fb51d085fabcebb4d21a0e2)
 
-#### Fixes
+---
 
-* FIXED: changed VERSION to Extended Version format using version->new(); CHANGED: no-critic declarations and some reorganization of NN.xx.t tests &ac; [`f4ae2a0`](https://github.com/rivy/perl.Win32-CommandLine/commit/f4ae2a08449d981bdfa4d68d373837d74d702baf)
-* FIXED: xx.bat 'prolog' fixed (removed bare single quotes to avoid incorrect perl interpretation); ADDED: created tests for xx.bat script (NN.xx.t) [skips if missing testing modules]; CHANGED: updated version string printing in xx.bat and which.pl; CHANGED: updated BUGS and SUPPORT documentation in CommandLine.pm; CHANGED: update build_requires_href in Build.PLconfig to include NN.xx.t required testing modules (currently commented out) &ac; [`2e72b79`](https://github.com/rivy/perl.Win32-CommandLine/commit/2e72b79d859ba810243c2ee09b80bed7bcea62d9)
-* BUGFIX: version fixup &ac; [`9ee6afd`](https://github.com/rivy/perl.Win32-CommandLine/commit/9ee6afd972f91d001bd2aaa54d1404f72c06306f)
-* BUGFIX: default version fixup &ac; [`e2764c2`](https://github.com/rivy/perl.Win32-CommandLine/commit/e2764c2cb5d49fcd005510f1a96f393f118fa3d2)
-* BUGFIX: fixed incorrect parsing of subshell commands and $ characters &ac; [`92648fd`](https://github.com/rivy/perl.Win32-CommandLine/commit/92648fd535aa646a7a4159d62f21cd98dc69c4e2)
-* FIXED: tilde prefix expansion _dosify bug and added verification tests &ac; [`27bea00`](https://github.com/rivy/perl.Win32-CommandLine/commit/27bea001583bd52b815a39781afc168accb2d1b0)
-* BUGFIX: x.bat command line capture failures for 4NT/TCC/TCMD &ac; [`f390cd7`](https://github.com/rivy/perl.Win32-CommandLine/commit/f390cd7b9631ed4278b8660a52808532c9239491)
-* FIXED: Inappropriate case sensitivity for tilde expansion; UPDATE: Build.PL update; Testing updates/refinements &ac; [`de6f130`](https://github.com/rivy/perl.Win32-CommandLine/commit/de6f130d0c19717555b1d7e0f064a5e3b2b8c5c7)
-* FIXED: $VERSION calculation error with collapsed keywords &ac; [`aa60920`](https://github.com/rivy/perl.Win32-CommandLine/commit/aa60920b262f33b0b7bf6f0e9c36bff961c4efd1)
-* BUGFIX x.bat to protect double quotes during CreateProcess() reparsing &ac; [`7be0cb5`](https://github.com/rivy/perl.Win32-CommandLine/commit/7be0cb58a21acf201df4044d28e22d65e19faf64)
-* BUGFIX x.bat to protect double quotes during CreateProcess() reparsing &ac; [`51c5f86`](https://github.com/rivy/perl.Win32-CommandLine/commit/51c5f865f7b25fe48b828e1de8f6de5c9c31bb8a)
-* FIXED: Incorrect processing and globbing of tokens with forward and back slashes; tests added &ac; [`3a56fd3`](https://github.com/rivy/perl.Win32-CommandLine/commit/3a56fd337f9aeb2c973162f21aaefb29ad0f77ef)
-* Fixed: path problems with backslashes (UNC paths now work as expected) &ac; [`5a6e854`](https://github.com/rivy/perl.Win32-CommandLine/commit/5a6e8548347dd558039300be6970d4fc07d0b275)
-* Fixed null string bugs &ac; [`31cd451`](https://github.com/rivy/perl.Win32-CommandLine/commit/31cd4516781d9f12110433ecfe99e5349b841adb)
+## v0.1.0 <small>(2007-09-11)</small>
+
+*No changelog for this release.*
