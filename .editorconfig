@@ -3,8 +3,8 @@
 # * top-most EditorConfig file
 root = true
 
+# Unix-style newlines with a newline ending every file
 [*]
-# default
 charset = utf-8
 end_of_line = lf
 indent_size = 4
@@ -13,9 +13,13 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.{bat,cmd,[Bb][Aa][Tt],[Cc][Mm][Dd]}]
-# BAT/CMD ~ DOS/Win requires BAT/CMD files to have CRLF EOLNs
+# DOS/Win requires BAT/CMD files to have CRLF EOLNs
 end_of_line = crlf
 
 [[Mm]akefile{,.*}]
-# makefile ~ requires TAB-style indentation
+# TAB-style indentation
 indent_style = tab
+
+[*.{yml,[Yy][Mm][Ll]}]
+# DOS/Win requires BAT/CMD files to have CRLF EOLNs
+indent_size = 2
