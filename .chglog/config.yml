@@ -1,6 +1,6 @@
 # spell-checker: ignore maint middot
 info:
-  title: "Win32-CommandLine"
+  title: Win32-CommandLine
   repository_url: https://github.com/rivy/perl.Win32-CommandLine
 style: github
 template: CHANGELOG.tpl.md
@@ -54,7 +54,7 @@ options:
       - Subject
   tag:
     # pattern: "^([RrVv](-[Vv]?)?)?\\d.*$"
-    pattern: "^([V])?\\d.*$"
+    pattern: "^(?i)([v])?\\d.*$"
   notes:
     keywords:
       - BREAKING CHANGE

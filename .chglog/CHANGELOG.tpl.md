@@ -1,7 +1,7 @@
 {{/* <!-- markdownlint-disable --><!-- spellchecker:ignore markdownlint --> */}}
 
 {{- define "format-commit" -}}
-* {{ if .Scope }}{{ .Type }}/**{{ .Scope }}:** {{ .Subject }}{{ else }}{{ .Header }}{{ end }} &ac; [`{{ .Hash.Short }}`]({{ commitURL .Hash.Long }})
+* {{ if .Scope }}{{ .Type }}/**{{ .Scope }}**: {{ .Subject }}{{ else }}{{ .Header }}{{ end }} &ac; [`{{ .Hash.Short }}`]({{ commitURL .Hash.Long }})
 {{ end -}}
 
 {{- define "format-commit-group" }}
@@ -26,7 +26,7 @@
 {{ if .CommitGroups -}}
 {{ range .CommitGroups }}{{ if eq .Title "Changes" }}{{ $output = true }}{{ template "format-commit-group" . }}{{- end -}}{{- end -}}
 {{ range .CommitGroups }}{{ if eq .Title "Fixes" }}{{ $output = true }}{{ template "format-commit-group" . }}{{- end -}}{{- end -}}
-{{- /* {{ range .CommitGroups }}{{ if not (eq .Title "Changes" "Fixes") }}{{ $output = true }}{{ template "format-commit-group" . }}{{ end -}}{{ end -}} */ -}}
+{{ range .CommitGroups }}{{ if not (eq .Title "Changes" "Fixes") }}{{ $output = true }}{{ template "format-commit-group" . }}{{ end -}}{{ end -}}
 {{- end -}}
 
 {{ if .RevertCommits }}{{ $output = true }}
