@@ -24,9 +24,10 @@
 {{/* <a name="{{ .Tag.Name }}"></a> */}}
 ## {{ if .Tag.Previous }}[{{ .Tag.Name }}]({{ $.Info.RepositoryURL }}/compare/{{ .Tag.Previous.Name }}...{{ .Tag.Name }}){{ else }}{{ .Tag.Name }}{{ end }} <small>({{ datetime "2006-01-02" .Tag.Date }})</small>
 {{ if .CommitGroups -}}
+{{ range .CommitGroups }}{{ if eq .Title "Enhancements" }}{{ $output = true }}{{ template "format-commit-group" . }}{{- end -}}{{- end -}}
 {{ range .CommitGroups }}{{ if eq .Title "Changes" }}{{ $output = true }}{{ template "format-commit-group" . }}{{- end -}}{{- end -}}
 {{ range .CommitGroups }}{{ if eq .Title "Fixes" }}{{ $output = true }}{{ template "format-commit-group" . }}{{- end -}}{{- end -}}
-{{ range .CommitGroups }}{{ if not (eq .Title "Changes" "Fixes") }}{{ $output = true }}{{ template "format-commit-group" . }}{{ end -}}{{ end -}}
+{{ range .CommitGroups }}{{ if not (eq .Title "Changes" "Enhancements" "Fixes") }}{{ $output = true }}{{ template "format-commit-group" . }}{{ end -}}{{ end -}}
 {{- end -}}
 
 {{ if .RevertCommits }}{{ $output = true }}
